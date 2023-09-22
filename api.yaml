@@ -1,24 +1,60 @@
-    openapi: 3.0.0
-    info:
-      title: Sample API
-      description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
-      version: 0.1.9
-    servers:
-      - url: http://api.example.com/v1
-        description: Optional server description, e.g. Main (production) server
-      - url: http://staging-api.example.com
-        description: Optional server description, e.g. Internal staging server for testing
-    paths:
-      /users:
-        get:
-          summary: Returns a list of users.
-          description: Optional extended description in CommonMark or HTML.
-          responses:
-            '200':    # status code
-              description: A JSON array of user names
-              content:
-                application/json:
-                  schema: 
-                    type: array
-                    items: 
-                      type: string
+openapi: 3.0.0
+info:
+  title: ASD api
+  version: 0.1.0
+servers:
+  - url: http://asd.ucm.es/v1/
+paths:
+  /ping:
+    get:
+      summary: Returns time.
+      parameters:
+        - in: query
+          name: mac
+          schema:
+            type: string
+          description: Device's mac
+      responses:
+        "200": # status code
+          description: raw unix epoch bytes
+          content: text/plain
+  /read-tui:
+    post:
+      summary: Client informs server of tui detection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tui_id
+                - mac
+              properties:
+                - tui_id:
+                  type: string
+                - mac:
+                  type: string
+  /room-state:
+    get:
+      summary: Returns the state of the room in the current slot of time taking into account the source of the request.
+      parameters:
+        - in: query
+          name: mac
+          schema:
+            type: string
+          description: Device's mac
+      responses:
+        "200": # status code
+          description: the state described below
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - state
+                properties:
+                  - state: correcto/irregular/incorrecto/ocupado/libre
+                    type: string
+                  - explanation:
+                    type: string
