@@ -18,9 +18,9 @@ paths:
         "200": # status code
           description: raw unix epoch bytes
           content: text/plain
-  /read-tui:
+  /image:
     post:
-      summary: Client informs server of tui detection
+      summary: Client send frame to server
       requestBody:
         required: true
         content:
@@ -28,11 +28,12 @@ paths:
             schema:
               type: object
               required:
-                - tui_id
+                - img
                 - mac
               properties:
-                - tui_id:
-                  type: string
+                - img:
+                  type: array
+                  items: number
                 - mac:
                   type: string
   /room-state:
