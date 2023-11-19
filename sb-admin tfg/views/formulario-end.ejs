@@ -113,19 +113,19 @@
                             <div class="card-body">
                                 <form method="post"> 
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" name="docente" id="docente" type="docente" value="David Camacho Torres" disabled/>
+                                        <input type="text" class="form-control" name="docente" id="docente" value="David Camacho Torres" readonly/>
                                         <label for="docente">Docente</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" name="asignatura" id="asignatura" type="asignatura" value="" disabled/>
+                                        <input type="text" class="form-control" name="asignatura" id="asignatura" value="" readonly/>
                                         <label for="asignatura">Asignatura y Grupo</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" name="espacio" id="espacio" type="espacio" value="" disabled/>
+                                        <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio %>" readonly/>
                                         <label for="espacio">Aula / Laboratorio</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" name="hora" id="hora" type="hora" value="" disabled/>
+                                        <input type="text" class="form-control" name="hora" id="hora" value="<%= hora %>" readonly/>
                                         <label for="hora">Hora</label>
                                     </div>
                                     <div class="form-check">
