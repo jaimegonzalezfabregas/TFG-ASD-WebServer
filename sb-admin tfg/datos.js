@@ -1,4 +1,4 @@
-const users = [
+const asignaturas = [
     {
         id: "EC",
         nombre: "Estructura de Computadores",
@@ -66,5 +66,18 @@ const users = [
         periodo: "2"
     }
   ];
+
+  const usuarios = [
+    {
+        id: 1,
+        nombre: 'Heliodoro de la Rosa del Palacio',
+        email: 'heliropa@fdi.ucm.es'
+    },
+    {
+        id: 2,
+        nombre: 'Cristóbal Sánchez Pereira',
+        email: 'crissp@fdi.ucm.es'
+    }
+  ]
   
-  module.exports = users;
+  module.exports.usuarios = usuarios;

@@ -1,9 +1,12 @@
 const express = require('express');
 const path = require('path');
 const ejs = require('ejs');
-const { time } = require('console');
+const moment = require('moment');
+const data = require('./datos');
 const app = express();
 const port = 5500;
+
+let sesion = { usuario: '' }
 
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname));
@@ -20,16 +23,22 @@ app.get('/formulario-end.html/', (req, res) => {
   if(Object.keys(req.query).length != 0) {
     esp = req.query.espacio;
   }
-  const currentTime = new Date();
-  let currentHour = currentTime.getHours();
-  let currentMinute = currentTime.getMinutes();
+  let currentHour = moment().format('HH:MM');
 
-  res.render('formulario-end', {espacio: esp, hora: `${currentHour}:${currentMinute}`});
+  res.render('formulario-end', {usuario: sesion.usuario, espacio: esp, hora: `${currentHour}`});
 });
 
 app.post('/login.html', (req, res) => {
   console.log(`Got a POST in login with ${JSON.stringify(req.body)}`);
-  res.redirect("/index.html");
+  for (index in data.usuarios) {
+    if (data.usuarios[index].email == req.body.usuario) {
+      sesion.usuario = data.usuarios[index].nombre;
+      res.redirect("/index.html");
+    }
+  }
+  if (sesion.usuario == '') {
+    res.redirect("/login.html");
+  }
 });
 
 app.post('/formulario-aulas-qr.html', (req, res) => {
