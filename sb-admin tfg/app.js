@@ -81,13 +81,13 @@ app.get('/formulario-end.html', (req, res) => {
 
 app.post('/formulario-aulas-qr.html', (req, res) => {
   console.log(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
-  res.redirect(`/formulario-end-qr.html`);
+  res.redirect(`/formulario-end-qr.html/?espacio=${req.query.espacio}`);
 });
 
 app.get('/formulario-end-qr.html', (req, res) => {
   console.log(req.query);
   let qrsrc = path.join(__dirname, '/qr.png');
-  QR.toFile(qrsrc, `http://localhost:5500/formulario-end-qr.html/?espacio="${req.query.espacio}"`, {
+  QR.toFile(qrsrc, `http://localhost:5500/formulario-end-qr.html/?espacio=${req.query.espacio}`, {
     errorCorrectionLevel: 'M'
   }, function(err) {
     if (err) throw err;

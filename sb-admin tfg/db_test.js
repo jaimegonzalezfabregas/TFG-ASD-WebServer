@@ -1,12 +1,19 @@
 const sqlite = require('sqlite3')
-const { Sequelize, DataTypes, Model } = require('sequelize')
+const { Sequelize, DataTypes } = require('sequelize')
 
 async function main() {
 
-    const db = new sqlite.Database('db_mockbase');
+    const db = new sqlite.Database('db_mockbase.db');
     
 
-    const seq = new Sequelize({dialect: 'sqlite', database: 'db_mockbase'});
+    const seq = new Sequelize({dialect: 'sqlite', database: 'db_mockbase.db'});
+
+    try {
+        await seq.authenticate();
+        console.log('Connection established.');
+    } catch (error) {
+        console.error('Conection not established:', error);
+    }
 
     await seq.sync();
 
@@ -25,24 +32,44 @@ async function main() {
 
     await m1.create({extra:'Something here'});
 
-    m1.build({extra:'Something here too'});
-    await m1.save();
+    const build = m1.build({extra:'Something here too'});
+    await build.save();
+
+    const q1 = await m1.findAll();
+    console.log("query in main:");
+    for (x of q1) {
+        console.log(x.dataValues);
+    }
 
     await seq.sync();
     await seq.close();
-}
 
-async function queries() {
-    const seq = new Sequelize({dialect: 'sqlite', database: 'db_mockbase'});
+    const seqx = new Sequelize({dialect: 'sqlite', database: 'db_mockbase.db'});
 
-    await seq.sync();
+    try {
+        await seqx.authenticate();
+        console.log('Connection established.');
+    } catch (error) {
+        console.error('Conection not established:', error);
+    }
 
-    const m1 = sequelize.models.m1;
+    await seqx.sync();
 
-    await m1.sync();
+    const m1x = seqx.define('M1', {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true
+        },
+        extra: {
+            type: DataTypes.STRING
+        }
+    });
 
-    console.log((await m1.findAll).dataValues);
+    await m1x.sync();
+
+    const q2 = await m1x.findAll();
+    console.log("query in queries:" + q2);
 }
 
 main();
-queries();
