@@ -22,5 +22,22 @@
 }
 
 .text-title {
-    color: #990033
+    color: #990033;
+}
+
+.below-navbar {
+    padding-top: 56px;
+}
+
+.text-error {
+    color: #d60000;
+}
+
+.qr-m {
+    height: 280px;
+    width: 280px;
+}
+
+.vh-75 {
+    height: 75vh
 }

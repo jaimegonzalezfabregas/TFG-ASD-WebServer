@@ -15,7 +15,7 @@
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-menu">
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <a class="navbar-brand ps-3" href="index.html"> Seguimiento Docente </a>
+            <a class="navbar-brand ps-3" href="../index.html"> Seguimiento Docente </a>
             
             <!-- Navbar-->
             <ul class="d-md-inline-block navbar-nav ms-auto me-0 me-md-3 my-2 my-md-0">
@@ -35,11 +35,29 @@
                 <nav class="sb-sidenav accordion sb-sidenav-dark bg-menu" id="sidenavAccordion">
                     <div class="sb-sidenav-menu">
                         <div class="nav">
-                            <div class="sb-sidenav-menu-heading text-bg-menu">Core</div>
-                            <a class="nav-link text-bg-menu" href="index.html">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Dashboard
+                            <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
+                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAsistencia" aria-expanded="false" aria-controls="collapseAsistencia">
+                                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                Registrar asistencia
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
+                            <div class="collapse" id="collapseAsistencia" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                <nav class="sb-sidenav-menu-nested nav">
+                                    <a class="nav-link text-bg-menu" href="formulario-aulas.html">Registrar asistencia</a>
+                                    <a class="nav-link text-bg-menu" href="formulario-aulas-qr.html">QR</a>
+                                </nav>
+                            </div>
+                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
+                                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                Gestión
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                <nav class="sb-sidenav-menu-nested nav">
+                                    <a class="nav-link text-bg-menu" href="cambio-clase.html">Cambiar Clase</a>
+                                    <a class="nav-link text-bg-menu" href="anular-clase.html">Cancelar Clase</a>
+                                </nav>
+                            </div>
                             <div class="sb-sidenav-menu-heading text-bg-menu">Interface</div>
                             <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                                 <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>

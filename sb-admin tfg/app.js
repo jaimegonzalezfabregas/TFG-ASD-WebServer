@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
-const ejs = require('ejs');
+const QR = require('qrcode');
+const { Sequelize, DataTypes } = require ('sequelize');
 const moment = require('moment');
 const data = require('./datos');
 const app = express();
@@ -17,7 +18,57 @@ app.get('/', (req, res) => {
   res.sendFile(path.join( __dirname, "/login.html"));
 });
 
-app.get('/formulario-end.html/', (req, res) => {
+app.post('/login.html', async (req, res) => {
+  console.log(`Got a POST in login with ${JSON.stringify(req.body)}`);
+
+  const sequelize = new Sequelize({ dialect: 'sqlite', storage: './database.db'});
+
+  try {
+      await sequelize.authenticate();
+      console.log('Connection successful.');
+  }
+  catch (error) {
+      console.error('Unable to connect:', error);
+  }
+
+  defineDocente(sequelize);
+  const Docente = sequelize.models.Docente;
+
+  await Docente.sync();
+  
+  const check = await Docente.findAll();
+
+  console.log(check);
+  for (i in check) {
+    console.log(check[i].dataValues);
+  }
+
+  const query = await Docente.findOne({
+    attributes: ['email', 'password'],
+    where: {
+      email: req.body.usuario
+    }
+  })
+
+  console.log(query);
+  if (query != null && query.dataValues.password == req.body.password) {
+    sesion.usuario = query.dataValues.email;
+    res.redirect("/index.html");
+  }
+  else {
+    res.render('login', {usuario: req.body.usuario});
+  }
+
+  await sequelize.close();
+
+});
+
+app.post('/formulario-aulas.html', (req, res) => {
+  console.log(`Got a POST in formulario-aulas with ${JSON.stringify(req.body)}`);
+  res.redirect(`/formulario-end.html/?espacio=${req.body.espacio}`);
+});
+
+app.get('/formulario-end.html', (req, res) => {
   console.log(req.query);
   let esp = '';
   if(Object.keys(req.query).length != 0) {
@@ -28,34 +79,53 @@ app.get('/formulario-end.html/', (req, res) => {
   res.render('formulario-end', {usuario: sesion.usuario, espacio: esp, hora: `${currentHour}`});
 });
 
-app.post('/login.html', (req, res) => {
-  console.log(`Got a POST in login with ${JSON.stringify(req.body)}`);
-  for (index in data.usuarios) {
-    if (data.usuarios[index].email == req.body.usuario) {
-      sesion.usuario = data.usuarios[index].nombre;
-      res.redirect("/index.html");
-    }
-  }
-  if (sesion.usuario == '') {
-    res.redirect("/login.html");
-  }
-});
-
 app.post('/formulario-aulas-qr.html', (req, res) => {
   console.log(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
   res.redirect(`/formulario-end-qr.html`);
 });
 
-app.post('/formulario-aulas.html', (req, res) => {
-  console.log(`Got a POST in formulario-aulas with ${JSON.stringify(req.body)}`);
-  res.redirect(`/formulario-end.html/?espacio=${req.body.espacio}`);
-});
-
-app.post('/formulario-end.html', (req, res) => {
-  console.log(`Got a POST in formulario-end with ${JSON.stringify(req.body)}`);
-  res.redirect(`/index.html`);
+app.get('/formulario-end-qr.html', (req, res) => {
+  console.log(req.query);
+  let qrsrc = path.join(__dirname, '/qr.png');
+  QR.toFile(qrsrc, `http://localhost:5500/formulario-end-qr.html/?espacio="${req.query.espacio}"`, {
+    errorCorrectionLevel: 'M'
+  }, function(err) {
+    if (err) throw err;
+    console.log('QR code saved!');
+  });
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 });
+
+async function defineDocente(sequelize) {
+
+  const Docente = sequelize.define('Docente', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    nombre: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    apellidos: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }
+  }, {
+    freezeTableName: true
+  });
+
+  await Docente.sync();
+}
