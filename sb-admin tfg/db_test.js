@@ -36,7 +36,7 @@ async function main() {
     await build.save();
 
     const q1 = await m1.findAll();
-    console.log("query in main:");
+    console.log("query with first connection:");
     for (x of q1) {
         console.log(x.dataValues);
     }
@@ -69,7 +69,7 @@ async function main() {
     await m1x.sync();
 
     const q2 = await m1x.findAll();
-    console.log("query in queries:" + q2);
+    console.log("query with second connection:" + q2);
 }
 
 main();

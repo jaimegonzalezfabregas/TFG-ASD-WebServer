@@ -10,13 +10,22 @@ const port = 5500;
 let sesion = { usuario: '' }
 
 app.set('view engine', 'ejs');
-app.use(express.static(__dirname));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join( __dirname, "/login.html"));
+  console.log('Get / detected');
+  if (sesion.usuario == '') {
+    res.redirect("/login.html");
+  }
+  else {
+    res.redirect("/index.html");
+  }
 });
+
+// Utiliza __dirname como directorio para los ficheros.
+// Importante que esté debajo de get '/', para que este rediriga a login.html (Si no, abre index.html)
+app.use(express.static(__dirname));
 
 app.post('/login.html', async (req, res) => {
   console.log(`Got a POST in login with ${JSON.stringify(req.body)}`);
@@ -81,7 +90,7 @@ app.get('/formulario-end.html', (req, res) => {
 
 app.post('/formulario-aulas-qr.html', (req, res) => {
   console.log(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
-  res.redirect(`/formulario-end-qr.html/?espacio=${req.query.espacio}`);
+  res.redirect(`/formulario-end-qr.html/?espacio=${req.body.espacio}`);
 });
 
 app.get('/formulario-end-qr.html', (req, res) => {
@@ -93,6 +102,7 @@ app.get('/formulario-end-qr.html', (req, res) => {
     if (err) throw err;
     console.log('QR code saved!');
   });
+  res.render('formulario-end-qr', { qr: filename });
 });
 
 app.listen(port, () => {
