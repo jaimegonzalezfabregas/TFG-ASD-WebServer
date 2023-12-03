@@ -342,14 +342,18 @@ app.post('/formulario-aulas-qr.html', (req, res) => {
 
 app.get('/formulario-end-qr.html', (req, res) => { //NO CARGA EL QR
   console.log(req.query);
-  let qrsrc = path.join(__dirname, './qr.png');
-  QR.toFile(qrsrc, `http://localhost:5500/formulario-end-qr.html/?espacio=${req.query.espacio}`, {
-    errorCorrectionLevel: 'M'
-  }, function(err) {
-    if (err) throw err;
-    console.log('QR code saved!');
-  });
-  res.render('formulario-end-qr', { qr: qrsrc });
+  const terminacion = (req.query.espacio.toLowerCase()).replace(" ", "");
+  console.log(terminacion);
+  let qrsrc = path.join(__dirname, 'js/qrs/qr_' + terminacion + '.png');
+  console.log(qrsrc);
+  // Falta hacer el QR de manera dinámica (preguntar)
+  // QR.toFile(qrsrc, `http://localhost:5500/formulario-end-qr.html/?espacio=${req.query.espacio}`, {
+  //   errorCorrectionLevel: 'M' // Al verse en una pantalla de ordenador, L o M sirven, si no, H
+  // }, function(err) {
+  //   if (err) throw err;
+  //   console.log('QR code saved!');
+  // });
+  res.render('formulario-end-qr', { qrimg: qrsrc });
 });
 
 app.get('/lista-registro-motivo-falta', (req, res) => {
