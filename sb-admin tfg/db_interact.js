@@ -165,7 +165,7 @@ async function relations() {
 
     const db = new sqlite.Database('./test.db');
 
-    const sequelize = new Sequelize({dialect: 'sqlite', database: './test.db'});
+    const sequelize = new Sequelize({dialect: 'sqlite', storage: './test.db'});
     try {
         await sequelize.authenticate();
         console.log('Connection successful.');

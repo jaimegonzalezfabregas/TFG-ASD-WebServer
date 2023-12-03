@@ -6,7 +6,9 @@ async function main() {
     const db = new sqlite.Database('db_mockbase.db');
     
 
-    const seq = new Sequelize({dialect: 'sqlite', database: 'db_mockbase.db'});
+    const seq = new Sequelize({dialect: 'sqlite', storage: 'db_mockbase.db'});
+
+    seq.drop();
 
     try {
         await seq.authenticate();
@@ -28,12 +30,21 @@ async function main() {
         }
     });
 
-    await m1.sync();
+    await m1.sync({ force: true });
 
-    await m1.create({extra:'Something here'});
+    const t = await seq.transaction();
 
-    const build = m1.build({extra:'Something here too'});
-    await build.save();
+    try {
+        await m1.create({extra:'Something here'});
+
+        const build = m1.build({extra:'Something here too'});
+        await build.save();
+
+    } catch (error) {
+        console.log('Error on transaction seq: ', error);
+    }
+
+    t.commit();
 
     const q1 = await m1.findAll();
     console.log("query with first connection:");
@@ -44,7 +55,7 @@ async function main() {
     await seq.sync();
     await seq.close();
 
-    const seqx = new Sequelize({dialect: 'sqlite', database: 'db_mockbase.db'});
+    const seqx = new Sequelize({dialect: 'sqlite', storage: 'db_mockbase.db'});
 
     try {
         await seqx.authenticate();
@@ -69,7 +80,10 @@ async function main() {
     await m1x.sync();
 
     const q2 = await m1x.findAll();
-    console.log("query with second connection:" + q2);
+    console.log("query with second connection:");
+    for (x of q2) {
+        console.log(x.dataValues);
+    }
 }
 
 main();

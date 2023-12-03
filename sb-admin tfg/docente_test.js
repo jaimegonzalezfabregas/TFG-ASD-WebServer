@@ -11,7 +11,7 @@ async function docente() {
     
     db.close();
 
-    const sequelize = new Sequelize({ dialect: 'sqlite', database: path.join(__dirname, '/database.db') })
+    const sequelize = new Sequelize({ dialect: 'sqlite', storage: './database.db' })
 
     try {
         await sequelize.authenticate();
@@ -64,7 +64,7 @@ async function docente() {
 
     await sequelize.close();
 
-    const sequelize2 = new Sequelize({ dialect: 'sqlite', database: path.join(__dirname, '/database.db') })
+    const sequelize2 = new Sequelize({ dialect: 'sqlite', storage: './database.db' });
 
     try {
         await sequelize2.authenticate();
