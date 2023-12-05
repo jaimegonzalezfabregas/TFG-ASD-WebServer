@@ -1,61 +1,569 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: ASD api
+  title: Gestión de seguimiento docente
+  description: |-
+    API para gestionar el seguimient docente
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.1.0
 servers:
-  - url: http://asd.ucm.es/v1/
+  - url: http://localhost:3000/api/v1/
+tags:
+  - name: espacios
+    description: Gestión de espacios
+  - name: dispositivos
+    description: Gestión de dispositivos
+  - name: seguimiento
+    description: Gestión del seguimiento
+
 paths:
-  /ping:
+  /espacios:
     get:
-      summary: Returns time.
-      parameters:
-        - in: query
-          name: mac
-          schema:
-            type: string
-          description: Device's mac
+      tags:
+        - espacios
+      summary: Devuelve los espacios gestionados
+      description: Devuelve una lista de espacios
+      operationId: getEspacios
       responses:
-        "200": # status code
-          description: raw unix epoch bytes
-          content: text/plain
-  /image:
+        '200':
+          $ref: '#/components/responses/ListaEspacios'
+      security:
+        - ApiKeyAuth: []
+
+  /espacios/{idEspacio}:
+    get:
+      tags:
+        - espacios
+      summary: Devuelve los detalles de un espacio
+      description: Devuelve un espacio
+      operationId: getEspacioById
+      parameters:
+        - $ref: '#/components/parameters/idEspacio'
+      responses:
+        '200':
+          $ref: '#/components/responses/Espacio'
+      security:
+        - ApiKeyAuth: []
+
+  /dispositivos:
+    get:
+      tags:
+        - dispositivos
+      summary: Devuelve los dispositivos gestionados
+      description: Devuelve una lista de dispositivos
+      operationId: getDispositivos
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaDispositivos'
+      security:
+        - ApiKeyAuth: []
+
     post:
-      summary: Client send frame to server
+      tags:
+        - dispositivos
+      summary: Añade un nuevo dispositivo
+      description: Añade una nuevo dispositivo al sistema
+      operationId: creaDispositivo
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - img
-                - mac
-              properties:
-                - img:
-                  type: array
-                  items: number
-                - mac:
-                  type: string
-  /room-state:
+        $ref : '#/components/requestBodies/DispositivoNuevo'
+      responses:
+        '200':
+          $ref: '#/components/responses/Dispositivo'
+        '422':
+          description: Datos no válidos
+      security:
+        - ApiKeyAuth: []
+  
+  /dispositivos/{idDispositivo}:
     get:
-      summary: Returns the state of the room in the current slot of time taking into account the source of the request.
+      tags:
+        - dispositivos
+      summary: Busca un dispositivo por su id
+      description: Devuelve un dispositivo
+      operationId: getDispositivoById
+      parameters:
+        - $ref: '#/components/parameters/idDispositivo'
+      responses:
+        '200':
+          $ref: '#/components/responses/Dispositivo'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Dispositivo no encontrado
+      security:
+        - ApiKeyAuth: []
+
+    delete:
+      tags:
+        - dispositivos
+      summary: Borra un dispositivo
+      description: Borr un dispositivo
+      operationId: deleteDispositivo
+      parameters:
+        - $ref: '#/components/parameters/idDispositivo'
+      responses:
+        '204':
+          description: Operación exitosa
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Dispositivo no encontrado
+      security:
+        - ApiKeyAuth: []
+
+  /seguimiento:
+    post:
+      tags:
+        - seguimiento
+      summary: Registra una asistencia en un espacio
+      description: Registra una asistencia en un espacio
+      operationId: registroAsistencia
+      requestBody:
+        $ref : '#/components/requestBodies/SeguimientoNuevo'
+      responses:
+        '200':
+          $ref: '#/components/responses/ResultadoSeguimiento'
+        '422':
+          description: Datos no válidos
+      security:
+        - ApiKeyAuth: []
+
+  /ble:
+    get:
+      tags:
+        - seguimiento
+      summary: Devuelve una lista de MACs de dispositivos BLE
+      description: Develve la lista de MACs de dispositivos BLE para las actividades docentes a llevar a cabo en un espacio en una ventana de tiempo.
+      operationId: getMacsBLE
       parameters:
         - in: query
-          name: mac
+          name: espacioId
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: Id del espacio para filtrar la búsqueda
+        - in: query
+          name: comienzo
           schema:
             type: string
-          description: Device's mac
+            format: date-time
+          required: false
+          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
+        - in: query
+          name: fin
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
       responses:
-        "200": # status code
-          description: the state described below
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - state
-                properties:
-                  - state: correcto/irregular/incorrecto/ocupado/libre
-                    type: string
-                  - explanation:
-                    type: string
+        '200':
+          $ref: '#/components/responses/ListaMACsUsuarios'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Espacio no encontrado
+      security:
+        - ApiKeyAuth: []
+
+components:
+  parameters:
+
+    idEspacio:
+      name: idEspacio
+      in: path
+      description: ID del espacio
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+    idDispositivo:
+      name: idDispositivo
+      in: path
+      description: ID del dispositivo
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+
+  schemas:
+    conId:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: Id de la entidad
+      required:
+        - id
+
+    conMod:
+      type: object
+      properties:
+        creadoEn:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación de la entidad
+        actualizadoEn:
+          type: string
+          format: date-time
+          description: Fecha y hora de la última actualización de la entidad
+        creadoPor:
+          type: integer
+          format: int64
+          example: 1
+          description: Id del usuario que ha creado la entidad
+        actualizadoPor:
+          type: integer
+          format: int64
+          example: 2
+          description: Id del último usuario que ha actualizado la entidad
+      required:
+        - creadoEn
+        - actualizadoEn
+        - creadoPor
+        - actualizadoPor
+
+    EspacioUpdateData:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: Aula 8
+          description: Nombre amigable del espacio
+
+    EspacioData:
+      allOf:
+        - $ref: '#/components/schemas/EspacioUpdateData'
+        - type: object
+          required:
+            - nombre
+
+    EspacioRef:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/EspacioUpdateData'
+
+    Espacio:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        - $ref: '#/components/schemas/EspacioData'
+
+    DispositivoBasicUpdateData:          
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nombre amigable del dispositivo
+          example: Lector QR, BLE, NFC
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del espacio donde está colocado el dispositivo
+          example: 1
+
+    DispositivoUpdateData:
+      allOf:
+        - $ref: '#/components/schemas/DispositivoBasicUpdateData'
+        - type: object
+          properties:
+            idExternoDispositivo:
+              type: string
+              description: Id de la plataforma externa de gestión de dispositivos IOT
+              example: abcdefg
+
+    DispositivoBasicData:          
+      allOf:
+        - $ref: '#/components/schemas/DispositivoBasicUpdateData'
+        - type: object
+          required:
+            - nombre
+
+    DispositivoRef:          
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/DispositivoBasicData'
+
+    DispositivoData:          
+      allOf:
+        - $ref: '#/components/schemas/DispositivoUpdateData'
+        - type: object
+          properties:
+            endpointSeguimiento:
+              type: string
+              description: Endpoint para registrar el seguimiento docente
+              example: https://localhost:3000/api/v1/seguimiento
+            totpConfig:
+              type: object
+              properties:
+                t0:
+                  type: integer
+                  format: int32
+                  description: T0 definido RFC6238 4.2
+                  example: 0
+                secret:
+                  type: string
+                  format: byte
+                  description: Clave 20-byte en base64 para HMAC-SHA1 utilizado para generar el TOTP
+                  example: TJjIrdXFPpDYeSTvLH5CBRhJTiM=
+              required:
+                - t0
+                - secret
+          required:
+            - nombre
+            - espacioId
+            - idExternoDispositivo
+            - endpointSeguimiento
+            - totpConfig
+
+    Dispositivo:          
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        - $ref: '#/components/schemas/DispositivoData'
+
+    RegistroSeguimiento:
+      type: object
+      properties:
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del espacio
+          example: 1
+        totp:
+          type: object
+          properties:
+            value:
+              type: number
+              format: int32
+              description: Valor del TOTP calculado
+            time:
+              type: integer
+              format: int32
+              description: Segundos desde T0 utilizados para el cálculo del TOTP
+          required:
+            - value
+            - time
+        tipo_registro:
+          type: string
+          example: RegistroSeguimientoDocenteApp
+      required:
+        - espacioId
+        - totp
+        - tipo_registro
+      discriminator:
+        propertyName: tipo_registro
+
+    RegistroSeguimientoUsuario:
+      allOf:
+        - $ref: '#/components/schemas/RegistroSeguimiento'
+        - type: object
+          properties:
+            idUsuario:
+              type: integer
+              format: int64
+              description: Id del Usuario
+
+    BaseRegistroSeguimientoDispositivo:
+      type: object
+      properties:
+        dispositivoId:
+          type: integer
+          format: int64
+          description: Id del dispositivo
+
+    RegistroSeguimientoDispositivoBle:
+      allOf:
+        - $ref: '#/components/schemas/BaseRegistroSeguimientoDispositivo'
+        - type: object
+          properties:
+            mac:
+              type: string
+              description: MAC del dispositivo BLE en formato cadena hexadecimal separada con ':'
+              example: '00:11:22:33:FF:EE'
+
+    RegistroSeguimientoDispositivoQr:
+      allOf:
+        - $ref: '#/components/schemas/BaseRegistroSeguimientoDispositivo'
+        - type: object
+          properties:
+            qr:
+              type: string
+              format: binary
+              description: Payload obtenido de la lectura del QR en base64
+
+    RegistroSeguimientoDispositivoNFC:
+      allOf:
+        - $ref: '#/components/schemas/BaseRegistroSeguimientoDispositivo'
+        - type: object
+          properties:
+            uid:
+              type: string
+              description: UID de la tarjeta NFC Mifare de la UCM (TUI)
+              example: 'y7w1T/D23w=='
+
+    SeguimientoNuevo:
+      oneOf:
+        - $ref: '#/components/schemas/RegistroSeguimientoUsuario'
+        - $ref: '#/components/schemas/RegistroSeguimientoDispositivoBle'
+        - $ref: '#/components/schemas/RegistroSeguimientoDispositivoQr'
+        - $ref: '#/components/schemas/RegistroSeguimientoDispositivoNFC'
+      discriminator:
+        propertyName: tipo_registro
+
+    ResultadoSeguimiento:
+      type: object
+      properties:
+        resultado:
+          type: string
+          enum:
+            - correcto
+            - no_esperado
+          description: |
+            'correcto': si el seguimiento de la actividad docente es el esperado.
+            'no_esperado': si se registra un seguimiento que no estaba esperada (e.g. no es el profesor habitual ni hay una sustitución para la actividad docente programada)
+      required:
+        - resultado
+
+    MACsUsuario:
+      type: object
+      properties:
+        usuarioId:
+          type: integer
+          format: int64
+          description: Id del usuario
+          example: 1
+        nombre:
+          type: string
+          description: Nombre del Usuario
+          example: Grace Hopper
+        macs:
+          type: array
+          items:
+            type: string
+            format: binary
+          example: ['00:11:22:33:FF:EE', '11:22:33:44:AA:BB']
+
+  requestBodies:
+    EspacioNuevo:
+      required: true
+      description: Nuevo espacio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EspacioData'
+
+    DispositivoNuevo:
+      required: true
+      description: Nuevo dispositivo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DispositivoBasicData'
+
+    SeguimientoNuevo:
+      required: true
+      description: Nuevo registro de seguimiento
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SeguimientoNuevo'
+          examples:
+            RegistroSeguimientoUsuario:
+              value:
+                tipo_registro: RegistroSeguimientoUsuario
+                espacioId: 1
+                usuarioId: 1
+                totp:
+                  value: 94287082
+                  time: 59
+            RegistroSeguimientoDispositivoBle:
+              value:
+                tipo_registro: RegistroSeguimientoDispositivoBle
+                espacioId: 1
+                dispositivoId: 1
+                mac: '00:11:22:33:FF:EE'
+                totp:
+                  value: 07081804
+                  time: 1111111109
+            RegistroSeguimientoDispositivoQr:
+              value:
+                tipo_registro: RegistroSeguimientoDispositivoQr
+                espacioId: 1
+                dispositivoId: 2
+                qr: |
+                  ZXlKaGJHY2lPaUpTVTBFdFQwRkZVQ0lzSW1WdVl5STZJa0V5TlRaRFFrTXRTRk0xTVRJaUxDSnJhV1FpT2lJeE9HSXhZMlkzTlRoak1XUTBaV00yWW1SaE5qVTRPVE0xTjJGaVpHUTROU0lzSW5SNWNDSTZJa3BYVkNJc0ltTjBlU0k2SWtwWFZDSjkuZ0NieFA3OG8zRGdwRFRVUWJ1SG5pdUdnWXBBVHFnR2tSR3k3cGFDNmhScno3TjdlSWE2c0FPV0RPOUZobmotYzhvY01sNGNGNEpiX212NXFSUENoOXI1N1BCcXg3ak9oTUlNUFR3SkdwamN5QmFxdEhsWmx1MXZ1cFk1dFEzWTJqR3oxVGk0Qm55d2FlRUhQeUlQUUp0TjdGN2hJQU9Semo3SVk0c0lLa1ZYdFFKWmdhS1c4cEVIcV9HQ3FqOGk1YWFpTTB1Sm5SRzNHT2gzbGl2cDlOcGp2OWRvcXAzZ3lQYTF6anJnMkgxUnNPR24wajJRTUd2dHVWZmt1TndGLVNvUEtGRUN5SE9xMFpLMW9IMnNUTzgtSnd2SGZsYklaUXI1eFdUcFM4cTdNYlVYRXVxVVJ0cmcwVGotMno2dGRhT0xUNGIzVWVEdWZLMmFyM2JCZlJENC1uUkFMdG9ZMGVrY015R0ZPUzdvMU14bDNoeTVzSUctRXlTeVdldUJWeTY4YURXRHBpOXFab1F1WTFUYnh4YWtqbmNDT0d1X0doMWwxbV9tSzJsX0lkeVhDVF9HQ2Z6RnE0WlRrUFo1ZXlkTkJBUFp1eEJMVWI0QnJNYjVpRGRaalQ3QWdHT2xScmVfd0lSSG1tS204VzluRGVRUVJtYklYTzIzSnVPdzkuQkRDYXJmcTJyX1VrOERITmZzTndTUS40RHVReDFjZkpYYWRIbnVkclZhQnNzNDV6eHlkNmlvdXVTelpVeU9lTTRpa0ZfN2hET2d3bWFDbWEtWjk3X1FaQko1RHpWbjlTSmhLVVRBcXBWUjNCUkdBeEpfSEFYVTVqYVRqWHFidlVheHNoN1o1VGdaOWVjazBGSW9lMWxrd3Y1MXhFdllxcVFfWG9qcjRNQUVtTHVNRV85QXJDSzltTmFNQURJek9qNFZvUXRhRFAxbDI2eXRvY2Mtb0VOaWZCUllHdTI4TGJKTGt5UUt6eVF5NkZ1QU90V2pMTTBXQ1hWNy1vX2R2ajZxZmVZSE5CRDdZQlN4eXFkZ0Q4ZGN4TUJOZDJzSzczWXNaUEhFYTBWMS04eno3aG0zYkgzdFplbHB3UFdTY3FMTFdfU1VINTg2YzBGVmVJNmdndnF6amZMWl9ZNmVRaWJWU2RYZk90SkJrMjJRckxzdUNYYlJLOEcxdzl0MjNQd3U4dWtVQXc0djBsN0hlYVdfMFNKeUtTUFFBTlJQODNNeUZiSzdmbXpUWWFXOVRZTjJKcktOLVBMcGQyZElGU20yR2FfRWZhQ3dOSkJtNFJETXpETnJm
+                totp:
+                  value: 14050471
+                  time: 1111111111
+            RegistroSeguimientoDispositivoNFC:
+              value:
+                tipo_registro: RegistroSeguimientoDispositivoNFC
+                espacioId: 1
+                dispositivoId: 3
+                uid: 'y7w1T/D23w=='
+                totp:
+                  value: 89005924
+                  time: 1234567890
+                
+
+  responses:
+    Espacio:
+      description: Espacio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Espacio'
+
+    ListaEspacios:
+      description: Lista de espacios
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EspacioRef'
+
+    Dispositivo:
+      description: Espacio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Dispositivo'
+
+    ListaDispositivos:
+      description: Lista de espacios
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/DispositivoRef'
+
+    ResultadoSeguimiento:
+      description: Resultado seguimineto
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResultadoSeguimiento'
+
+    ListaMACsUsuarios:
+      description: Resultado de consulta de MACs
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MACsUsuario'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
