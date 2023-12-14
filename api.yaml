@@ -269,16 +269,10 @@ components:
           format: int64
           description: Id del espacio donde está colocado el dispositivo
           example: 1
-
-    DispositivoUpdateData:
-      allOf:
-        - $ref: '#/components/schemas/DispositivoBasicUpdateData'
-        - type: object
-          properties:
-            idExternoDispositivo:
-              type: string
-              description: Id de la plataforma externa de gestión de dispositivos IOT
-              example: abcdefg
+        idExternoDispositivo:
+          type: string
+          description: Id de la plataforma externa de gestión de dispositivos IOT
+          example: abcdefg
 
     DispositivoBasicData:          
       allOf:
@@ -286,15 +280,17 @@ components:
         - type: object
           required:
             - nombre
+            - espacioId
+            - idExternoDispositivo
 
-    DispositivoRef:          
+    DispositivoRef:
       allOf:
         - $ref: '#/components/schemas/conId'
         - $ref: '#/components/schemas/DispositivoBasicData'
 
     DispositivoData:          
       allOf:
-        - $ref: '#/components/schemas/DispositivoUpdateData'
+        - $ref: '#/components/schemas/DispositivoBasicUpdateData'
         - type: object
           properties:
             endpointSeguimiento:
