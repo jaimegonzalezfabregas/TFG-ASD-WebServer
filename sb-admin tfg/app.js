@@ -7,7 +7,7 @@ const { Docente, Actividad, Espacio, Asignatura, Grupo, Recurrencia, Excepcion, 
 const app = express();
 const port = 5500;
 
-let sesion = null
+let sesion = null // solo puede haber una sesion abierta en el servidor??
 
 app.set('view engine', 'ejs');
 app.use(express.json());
