@@ -1,3 +1,4 @@
+// Para llamar a esta función, sequelize debe haber definido todos los modelos que se importan como const
 async function relate(sequelize) {
 
     const docente = sequelize.models.Docente;

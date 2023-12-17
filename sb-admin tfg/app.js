@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const QR = require('qrcode');
 const { Sequelize, DataTypes, Op } = require ('sequelize');
 const moment = require('moment');
 const { Docente, Actividad, Espacio, Asignatura, Grupo, Recurrencia, Excepcion, Plan, Titulacion, Asistencia } = require('./models');
@@ -19,6 +18,7 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Página web
 app.get('/', (req, res) => {
   console.log('Get / detected');
   if (checkSesion(res, null)) {
@@ -36,11 +36,13 @@ app.post('/login', async (req, res) => {
   const sequelize = new Sequelize(db_name, db_user, db_pass, { dialect: 'mysql', host: 'localhost', port: 7052});
 
   try {
-      await sequelize.authenticate();
-      console.log('Connection successful.');
+    await sequelize.authenticate();
+    console.log('Connection successful.');
   }
   catch (error) {
-      console.error('Unable to connect:', error);
+    console.error('Unable to connect:', error);
+    res(500, "Something went wrong");
+    return;
   }
 
   const docente = Docente.model(sequelize, DataTypes);
@@ -77,6 +79,16 @@ app.get('/formulario-aulas', async (req, res) => {
   //Añadir comprobaciones (Sesión iniciada, tiene clases en ese periodo, etc.)
   
   sequelize = new Sequelize(db_name, db_user, db_pass, { dialect: 'mysql', host: 'localhost', port: 7052});
+
+  try {
+    await sequelize.authenticate();
+    console.log('Connection successful.');
+  }
+  catch (error) {
+    console.error('Unable to connect:', error);
+    res(500, "Something went wrong");
+    return;
+  }
   
   const espacio = Espacio.model(sequelize, DataTypes);
   
@@ -233,6 +245,16 @@ app.get('/formulario-end', async (req, res) => {
 
     const sequelize = new Sequelize(db_name, db_user, db_pass, { dialect: 'mysql', host: 'localhost', port: 7052});
 
+    try {
+      await sequelize.authenticate();
+      console.log('Connection successful.');
+    }
+    catch (error) {
+      console.error('Unable to connect:', error);
+      res(500, "Something went wrong");
+      return;
+    }
+
     const join_actividad_docentes = sequelize.define('Join_Actividad_Docentes', {}, { freezeTableName: true });
     const join_actividad_clase = sequelize.define('Join_Actividad_Clase', {}, { freezeTableName: true });
     const join_actividad_espacio = sequelize.define('Join_Actividad_Espacio', {}, { freezeTableName: true });
@@ -384,6 +406,16 @@ app.post('/formulario-end', async (req, res) => {
     // query a base de datos para conseguir asignatura y grupo que sería
   
     const sequelize = new Sequelize(db_name, db_user, db_pass, { dialect: 'mysql', host: 'localhost', port: 7052});
+
+    try {
+      await sequelize.authenticate();
+      console.log('Connection successful.');
+    }
+    catch (error) {
+      console.error('Unable to connect:', error);
+      res(500, "Something went wrong");
+      return;
+    }
   
     const espacio = Espacio.model(sequelize, DataTypes);
     const asistencia = Asistencia.model(sequelize, DataTypes);
@@ -485,6 +517,16 @@ app.get('/formulario-aulas-qr', async (req, res) => {
   //Añadir comprobaciones (Sesión iniciada, tiene clases en ese periodo, etc.)
   
   sequelize = new Sequelize(db_name, db_user, db_pass, { dialect: 'mysql', host: 'localhost', port: 7052});
+
+  try {
+    await sequelize.authenticate();
+    console.log('Connection successful.');
+  }
+  catch (error) {
+    console.error('Unable to connect:', error);
+    res(500, "Something went wrong");
+    return;
+  }
   
   const espacio = Espacio.model(sequelize, DataTypes);
 
@@ -636,3 +678,4 @@ function checkSesion(res, emmitter) {
   }
   return true;
 }
+

@@ -22,6 +22,22 @@ function model(sequelize, DataTypes) {
             type: DataTypes.STRING,
             allowNull: false,
             uniqueTriad: true
+        },
+        creadoEn: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
+        actualizadoEn: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
+        creadoPor: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        actualizadoPor: {
+            type: DataTypes.STRING,
+            allowNull: false
         }
     }, {
         freezeTableName: true,
@@ -30,7 +46,9 @@ function model(sequelize, DataTypes) {
                 unique: true,
                 fields: ['numero', 'tipo', 'edificio']
             }
-        ]
+        ],
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     return Espacio;

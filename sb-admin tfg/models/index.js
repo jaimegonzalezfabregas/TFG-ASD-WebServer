@@ -11,5 +11,7 @@ module.exports = {
     Asistencia: require('./asistencia.js'),
     Excepcion: require('./excepcion.js'),
     Recurrencia: require('./recurrencia.js'),
-    Relaciones: require('./relaciones_db.js')
+    Relaciones: require('./relaciones_db.js'),
+    Rel_Dispositivos: require('./relaciones_dispositivos.js'),
+    Dispositivo: require('./dispositivo.js')
 }

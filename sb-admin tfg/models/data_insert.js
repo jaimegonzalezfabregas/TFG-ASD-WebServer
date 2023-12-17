@@ -1,7 +1,7 @@
 const path = require('path')
 const { Sequelize, DataTypes } = require("sequelize")
 const moment = require('moment');
-const { Docente, Actividad, Espacio, Asignatura, Grupo, Excepcion, Recurrencia, Plan, Titulacion, Relaciones, Asistencia } = require ('../models');
+const { Docente, Actividad, Espacio, Asignatura, Grupo, Excepcion, Recurrencia, Plan, Titulacion, Relaciones, Rel_Dispositivos, Asistencia, Dispositivo } = require ('../models');
 
 //db_name: string with the filename and extension of the database (example: 'database.db')
 async function db_insert(db_name, user, pass, db_host, db_port) {
@@ -25,6 +25,7 @@ async function db_insert(db_name, user, pass, db_host, db_port) {
     const recurrencia = Recurrencia.model(sequelize, DataTypes);
     const excepcion = Excepcion.model(sequelize, DataTypes);
     const asistencia = Asistencia.model(sequelize, DataTypes);
+    const dispositivo = Dispositivo.model(sequelize, DataTypes);
 
     const clase = sequelize.define('Clase', {
         id: {
@@ -53,8 +54,10 @@ async function db_insert(db_name, user, pass, db_host, db_port) {
     await actividad.sync({force: true});
     await docente.sync({force: true});
     await asistencia.sync({force: true});
+    await dispositivo.sync({force: true});
 
     await Relaciones.relate(sequelize);
+    await Rel_Dispositivos.relate_for_api(sequelize);
 
     await sequelize.sync({ force: true });
     
@@ -81,38 +84,38 @@ async function db_insert(db_name, user, pass, db_host, db_port) {
 
         await grupo.create({curso: 3, letra: 'A'});
 
-        await espacio.create({numero: 1, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 2, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 3, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 4, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 5, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 6, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 7, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 8, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 9, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 10, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 11, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 12, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 13, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 14, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 15, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 16, tipo: 'Aula', edificio: 'FdI'});
-        await espacio.create({numero: 1, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 2, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 3, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 4, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 5, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 6, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 7, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 8, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 9, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 10, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 11, tipo: 'Laboratorio', edificio: 'FdI'});
-        await espacio.create({numero: 1008, tipo: 'Aula', edificio: 'Multiusos'});
-        await espacio.create({numero: 1208, tipo: 'Aula', edificio: 'Multiusos'});
-        await espacio.create({numero: 1210, tipo: 'Aula', edificio: 'Multiusos'});
-        await espacio.create({numero: 1218, tipo: 'Aula', edificio: 'Multiusos'});
-        await espacio.create({numero: 1220, tipo: 'Aula', edificio: 'Multiusos'});
+        await espacio.create({numero: 1, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 2, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 3, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 4, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 5, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 6, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 7, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 8, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 9, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 10, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 11, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 12, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 13, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 14, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 15, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 16, tipo: 'Aula', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 2, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 3, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 4, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 5, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 6, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 7, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 8, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 9, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 10, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 11, tipo: 'Laboratorio', edificio: 'FdI', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1008, tipo: 'Aula', edificio: 'Multiusos', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1208, tipo: 'Aula', edificio: 'Multiusos', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1210, tipo: 'Aula', edificio: 'Multiusos', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1218, tipo: 'Aula', edificio: 'Multiusos', creadoPor: 1, actualizadoPor: 1});
+        await espacio.create({numero: 1220, tipo: 'Aula', edificio: 'Multiusos', creadoPor: 1, actualizadoPor: 1});
 
         await actividad.create({fecha_inicio: moment.now(), tiempo_inicio: '16:00', tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creado_por: 'Galdo', responsable_id: 3});
         await actividad.create({fecha_inicio: moment.now(), tiempo_inicio: '18:00', tiempo_fin: '19:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creado_por: 'Galdo', responsable_id: 3});
@@ -130,11 +133,13 @@ async function db_insert(db_name, user, pass, db_host, db_port) {
 
     } catch (error) {
         console.log('Error on transaction: ', error);
+        await transaction.rollback();
+        await sequelize.close();
+        return;
     }
 
     await transaction.commit();
-
     await sequelize.close();
 }
 
-db_insert('database', 'root', 'FE3Hadrestia', 'localhost', 7052);
+db_insert('database', 'root', '', 'localhost', 7052);
