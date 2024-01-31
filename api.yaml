@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Gestión de seguimiento docente
   description: |-
-    API para gestionar el seguimient docente
+    API para gestionar el seguimiento docente
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,6 +16,8 @@ tags:
     description: Gestión de dispositivos
   - name: seguimiento
     description: Gestión del seguimiento
+  - name: usuarios
+    description: Gestión de logins
 
 paths:
   /espacios:
@@ -167,6 +169,43 @@ paths:
           description: Espacio no encontrado
       security:
         - ApiKeyAuth: []
+  
+  /login:
+    post:
+      tags:
+        - usuarios
+      summary: Devuelve los parámetros de un usuario
+      description: Dados un email y una contraseña válidas y en base de datos, devuelve los parámetros del usuario asociado
+      operationId: loginUser
+      requestBody:
+        $ref: '#/components/requestBodies/LoginUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/UsuarioData'
+        '422':
+          description: Datos no válidos
+        
+  /usuarios/{idUsuario}:
+    post:
+      tags:
+        - usuarios
+      summary: Devuelve cierta información de cierto usuario por su id
+      description: Dada una opción, devuelve información relacionada a esta opción del usuario con id = {idUsuario}
+      operationId: queryUser
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      requestBody:
+        $ref: '#/components/requestBodies/InfoUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/UsuarioInfoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+        '422':
+          description: Datos no válidos
+      
 
 components:
   parameters:
@@ -185,6 +224,16 @@ components:
       name: idDispositivo
       in: path
       description: ID del dispositivo
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idUsuario:
+      name: idUsuario
+      in: path
+      description: ID del usuario
       required: true
       schema:
         type: integer
@@ -238,6 +287,10 @@ components:
           type: string
           example: Aula 8
           description: Nombre amigable del espacio
+        edificio:
+          type: string
+          example: Facultad de Informática
+          description: Edificio del espacio de forma amigable
 
     EspacioData:
       allOf:
@@ -452,6 +505,72 @@ components:
             format: binary
           example: ['00:11:22:33:FF:EE', '11:22:33:44:AA:BB']
 
+    UsuarioBasicData:
+      type: object
+      properties:
+        email: 
+          type: string
+          description: Email del usuario
+          example: 'grhopper@gmail.com'
+
+    UsuarioLoginData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioBasicData'
+        - type: object
+          properties:
+            password:
+              type: string
+              description: Contraseña del usuario (codificada ??)
+              example: "As34dnF5fsDlRPfdnsmRSDDFJAJ48274hfnkk7834bnfFayfajsEdjajsDjaJDRJEJaSD"
+
+    UsuarioData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioBasicData'
+        - type: object
+          properties:
+            email: 
+              type: string
+              description: Email del usuario
+              example: 'grhopper@gmail.com'
+            nombre:
+              type: string
+              description: Nombre del Usuario
+              example: Grace Hopper
+            rol:
+              type: string
+              description: Rol del Usuario
+              example: Admin
+
+    Usuario:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioData'
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        
+    UsuarioQuery:
+      type: object
+      properties:
+        opcion:
+          type: string
+          enum:
+            - espacios_rutina
+            - espacios_irregularidad
+          description: |
+            'espacios_rutina': Lista de espacios en los que debería estar el usuario en el tramo horario
+            'espacios_irregularidad': Lista de espacios en los que no debería estar el usuario en el tramo horario
+      required:
+        - opcion
+        
+    UsuarioEspacios:
+      type: object
+      properties:
+        espacios:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de espacios válidos
+          example: [ { "id": 1 } ]
+
   requestBodies:
     EspacioNuevo:
       required: true
@@ -514,6 +633,21 @@ components:
                   value: 89005924
                   time: 1234567890
                 
+    LoginUsuario:
+      required: true
+      description: Email y Contraseña de un usuario existente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioLoginData'
+          
+    InfoUsuario:
+      required: true
+      description: Opcion para especificar información a devolver sobre un usuario existente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioQuery'
 
   responses:
     Espacio:
@@ -533,14 +667,14 @@ components:
               $ref: '#/components/schemas/EspacioRef'
 
     Dispositivo:
-      description: Espacio
+      description: Dispositivo
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Dispositivo'
 
     ListaDispositivos:
-      description: Lista de espacios
+      description: Lista de dispositivos
       content:
         application/json:
           schema:
@@ -561,6 +695,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/MACsUsuario'
+            
+    UsuarioData:
+      description: Datos de un usuario a devolver en un login
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioData'
+            
+    UsuarioInfoData:
+      descriprion: Datos de un usuario a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioEspacios'
 
   securitySchemes:
     ApiKeyAuth:
