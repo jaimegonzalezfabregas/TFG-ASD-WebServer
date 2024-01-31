@@ -1,0 +1,42 @@
+.btn-height-4 {
+    --bs-btn-line-height: 2.5;
+}
+
+.btn-width-3 {
+    --bs-btn-line-width: 5.0;
+}
+
+.btn-feature {
+    height: 40px;
+    width: 300px;
+}
+
+.bg-menu {
+    --bs-bg-opacity: 1;
+    background-color: RGBA(69, 69, 69, var(--bs-bg-opacity)) !important;
+}
+
+.text-bg-menu {
+    color: #fff !important;
+    background-color: RGBA(69, 69, 69, var(--bs-bg-opacity , 1)) !important;
+}
+
+.text-title {
+    color: #990033;
+}
+
+.below-navbar {
+    padding-top: 56px;
+}
+
+.text-error {
+    color: #d60000;
+}
+
+.qr {
+    padding: 0px
+}
+
+.vh-75 {
+    height: 75vh
+}
