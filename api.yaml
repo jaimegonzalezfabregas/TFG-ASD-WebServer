@@ -366,7 +366,7 @@ components:
                   type: string
                   format: byte
                   description: Clave 20-byte en base64 para HMAC-SHA1 utilizado para generar el TOTP
-                  example: TJjIrdXFPpDYeSTvLH5CBRhJTiM=
+                  example: JBSWY3DPEHPK3PXP
               required:
                 - t0
                 - secret
