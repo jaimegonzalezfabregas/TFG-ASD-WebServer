@@ -704,7 +704,7 @@ components:
             $ref: '#/components/schemas/UsuarioData'
             
     UsuarioInfoData:
-      descriprion: Datos de un usuario a devolver a petición de una query
+      description: Datos de un usuario a devolver a petición de una query
       content:
         application/json:
           schema:
