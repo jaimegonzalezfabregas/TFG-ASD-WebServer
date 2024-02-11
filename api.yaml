@@ -38,7 +38,7 @@ paths:
       tags:
         - espacios
       summary: Devuelve los detalles de un espacio
-      description: Devuelve un espacio
+      description: Devuelve un espacio.
       operationId: getEspacioById
       parameters:
         - $ref: '#/components/parameters/idEspacio'
@@ -47,6 +47,28 @@ paths:
           $ref: '#/components/responses/Espacio'
       security:
         - ApiKeyAuth: []
+        
+  /espacios/usuarios/{idUsuario}:
+    post:
+      tags:
+        - espacios
+        - usuarios
+      summary: Devuelve una lista de los espacios influenciada por una opción de cierto usuario por su id
+      description: Dada una opción, devuelve una lista de espacios en los que puede estar el usuario con id = {idUsuario}, o en los que no es común que esté, todo en la hora actual.
+      operationId: getEspaciosOfUsuario
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      requestBody:
+        $ref: '#/components/requestBodies/InfoUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/EspacioUsuarioInfoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+        '422':
+          description: Datos no válidos
 
   /dispositivos:
     get:
@@ -175,7 +197,7 @@ paths:
       tags:
         - usuarios
       summary: Devuelve los parámetros de un usuario
-      description: Dados un email y una contraseña válidas y en base de datos, devuelve los parámetros del usuario asociado
+      description: Dados un email y una contraseña válidas y en base de datos, devuelve los parámetros del usuario asociado.
       operationId: loginUser
       requestBody:
         $ref: '#/components/requestBodies/LoginUsuario'
@@ -185,28 +207,35 @@ paths:
         '422':
           description: Datos no válidos
         
-  /usuarios/{idUsuario}:
-    post:
+  /actividades/usuarios/{idUsuario}:
+    get:
       tags:
+        - actividades
         - usuarios
-      summary: Devuelve cierta información de cierto usuario por su id
-      description: Dada una opción, devuelve información relacionada a esta opción del usuario con id = {idUsuario}
-      operationId: queryUser
+      summary: Devuelve una lista de las actividades de un usuario por su id
+      description: Devuelve una lista de las actividades del usuario con id = {idUsuario}.
+      operationId: getActividadesOfUsuario
       parameters:
         - $ref: '#/components/parameters/idUsuario'
-      requestBody:
-        $ref: '#/components/requestBodies/InfoUsuario'
       responses:
         '200':
-          $ref: '#/components/responses/UsuarioInfoData'
+          $ref: '#/components/responses/ActividadUsuarioInfoData'
         '400':
           description: Id suministrado no válido
         '404':
           description: Usuario no encontrado
-        '422':
-          description: Datos no válidos
       
-
+  /time:
+    get:
+      tags:
+        - dispositivos
+      summary: Devuelve el tiempo actual
+      description: Devuelve el tiempo actual en formato epoch.
+      operationId: getLocalTime
+      responses:
+        '200':
+          $ref: '#/components/responses/EpochActual'
+  
 components:
   parameters:
 
@@ -279,6 +308,14 @@ components:
         - actualizadoEn
         - creadoPor
         - actualizadoPor
+  
+    EpochActual:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: En formato epoch, el tiempo actual
+          example: "1707416266705"
 
     EspacioUpdateData:
       type: object
@@ -348,6 +385,7 @@ components:
     DispositivoData:          
       allOf:
         - $ref: '#/components/schemas/DispositivoUpdateData'
+        - $ref: '#/components/schemas/EpochActual'
         - type: object
           properties:
             endpointSeguimiento:
@@ -366,7 +404,7 @@ components:
                   type: string
                   format: byte
                   description: Clave 20-byte en base64 para HMAC-SHA1 utilizado para generar el TOTP
-                  example: JBSWY3DPEHPK3PXP
+                  example: TJjIrdXFPpDYeSTvLH5CBRhJTiM=
               required:
                 - t0
                 - secret
@@ -547,7 +585,7 @@ components:
         - $ref: '#/components/schemas/conId'
         - $ref: '#/components/schemas/conMod'
         
-    UsuarioQuery:
+    EspacioUsuarioQuery:
       type: object
       properties:
         opcion:
@@ -569,6 +607,16 @@ components:
           items:
             $ref: '#/components/schemas/conId'
           description: Array con ids de espacios válidos
+          example: [ { "id": 1 } ]
+          
+    UsuarioActividades:
+      type: object
+      properties:
+        actividades:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de actividades válidas
           example: [ { "id": 1 } ]
 
   requestBodies:
@@ -647,7 +695,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UsuarioQuery'
+              $ref: '#/components/schemas/EspacioUsuarioQuery'
 
   responses:
     Espacio:
@@ -703,12 +751,26 @@ components:
           schema:
             $ref: '#/components/schemas/UsuarioData'
             
-    UsuarioInfoData:
+    EspacioUsuarioInfoData:
       description: Datos de un usuario a devolver a petición de una query
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UsuarioEspacios'
+             $ref: '#/components/schemas/UsuarioEspacios'
+             
+    ActividadUsuarioInfoData:
+      description: Datos de un usuario a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/UsuarioActividades'
+            
+    EpochActual:
+      description: Timestamp en formato estándar del momento actual
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EpochActual'
 
   securitySchemes:
     ApiKeyAuth:
