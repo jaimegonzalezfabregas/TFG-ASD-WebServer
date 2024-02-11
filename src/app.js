@@ -39,7 +39,6 @@ app.post('/login', async (req, res) => {
   }
   
   let usuario = await (messaging.sendToApiJSON(data, '/login'));
-  console.log('usuario devuelto: ' + typeof(usuario));
 
   if (usuario != null) {
     sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email };
@@ -66,33 +65,31 @@ app.get('/formulario-aulas', async (req, res) => {
       opcion: (req.query.all != 'yes') ? "espacios_rutina" : "espacios_irregularidad"
     }
 
-    console.log(JSON.stringify(data));
-    console.log(sesion.id);
-
     const id_sesion = (sesion.id).toString();
     const api_path = `/usuarios/${id_sesion}`;
-    console.log(api_path);
-    let espacios_ids = await messaging.sendToApiJSON(data, api_path).espacios;
-
-    console.log(espacios_ids);
+    let espacios_ids = (await messaging.sendToApiJSON(data, api_path)).espacios;
 
     let espacios_data = [];
-    espacios_ids.forEach((esp) => {
-      espacios_data.push(messaging.getFromApi(`/espacios/${esp}`));
-    });
-        
+    for (let i = 0; i < espacios_ids.length; i++) {
+      const id_esp = (espacios_ids[i].id).toString();
+      const api_esp_path = `/espacios/${id_esp}`;
+      console.log(api_esp_path);
+      espacios_data.push((await messaging.getFromApi(api_esp_path)));
+    }
+
     //Sacamos un array separando los espacios por edificio ([{ edificio, espacios }, { edificio, espacios }, ...])
     let espacios_doc = [];
     let edif = null;
     espacios_data.forEach((esp) => {
+      console.log(esp);
       if (esp.edificio != edif) {
         edif = esp.edificio;
         espacios_doc.push({ edificio: edif, espacios: []});
       }
-      espacios_doc[espacios_doc.length - 1].espacios.push(esp.nombre);
+      espacios_doc[espacios_doc.length - 1].espacios.push(esp.nombre );
     });
 
-    console.log(espacios_doc[0].espacios);
+    console.log(espacios_doc);
     //Enseñamos únicamente los espacios que coincidan con las actividades
     res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
     return;
@@ -124,7 +121,7 @@ app.get('/formulario-end', async (req, res) => {
     if(Object.keys(req.query).length != 0) {
       esp = req.query.espacio;
     }
-    let currentHour = moment().format('HH:MM');
+    const currentHour = '16:30';//moment().format('HH:MM');
     console.log(esp);
 
     // query a base de datos para conseguir asignatura y grupo que sería
@@ -185,7 +182,6 @@ app.get('/formulario-end', async (req, res) => {
 
       console.log(query_act);
 
-      const currentHour = '16:30';//moment().format('HH:MM');
       let actividades_posibles = [];
       query_act.forEach((act) => {
         if (act.dataValues.tiempo_inicio <= currentHour && currentHour <= act.dataValues.tiempo_fin) {
@@ -232,12 +228,6 @@ app.get('/formulario-end', async (req, res) => {
           }
         });
 
-        // let clases_posibles = [];
-
-        // query_act_clase.forEach((cl) => {
-        //   clases_posibles.push(cl.dataValues.clase_id);
-        // });
-
         console.log('Searching in Clase for asignatura_id, grupo_id');
         query_clase = await clase.findOne({
           attributes:['asignatura_id', 'grupo_id'],
@@ -249,9 +239,6 @@ app.get('/formulario-end', async (req, res) => {
         });
 
         console.log(query_clase);
-
-        // let asignaturas = []
-        // let grupos = []
 
         console.log('Searching in Asignatura for nombre, siglas');
         query_asig = await asignatura.findOne({

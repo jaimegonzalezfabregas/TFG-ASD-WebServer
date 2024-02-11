@@ -5,13 +5,11 @@ const moment = require('moment');
 const { authenticator, totp } = require('otplib');
 const db = require('./models');
 const app = express();
-const hostName = 'localhost';
-const port = 8070;
 // Rutas de la API
 const api_path = '/api/v1';
+const api_config = require('./config/api.config');
 
 app.use(express.json());
-db.db.initDb();
 
 app.get(api_path + '/espacios', async (req, res) => {
     /*
@@ -26,12 +24,13 @@ app.get(api_path + '/espacios', async (req, res) => {
         security:
             - ApiKeyAuth: []
     */
-    console.log(db.db);
-    const transaction = await db.db.sequelize.transaction();
+    console.log(db);
+    const transaction = await db.sequelize.transaction();
     
     try {
         console.log('Searching in Espacio for id, numero, tipo, edificio');
-        const query = await db.db.sequelize.models.Espacio.findAll({
+        console.log(`${JSON.stringify(db.sequelize.models)} ${db.sequelize.models.Espacio}`)
+        const query = await db.sequelize.models.Espacio.findAll({
             attributes:['id', 'tipo', 'numero', 'edificio']
         });
 
@@ -71,11 +70,11 @@ app.get(api_path + '/espacios/:idEspacio', async (req, res) => {
             - ApiKeyAuth: []
     */
 
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
     
     try {
         console.log('Searching in Espacio for id, creadoPor, actualizadoPor, creadoEn, actualizadoEn, numero, tipo, edificio');
-        const query = await db.db.sequelize.models.Espacio.findOne({
+        const query = await db.sequelize.models.Espacio.findOne({
             attributes:['id', 'creadoPor', 'actualizadoPor', 'creadoEn', 'actualizadoEn', 'edificio', 'tipo', 'numero', 'edificio'],
             where: {
                 id: req.params.idEspacio
@@ -122,11 +121,11 @@ app.get(api_path + '/dispositivos', async (req, res) => {
             - ApiKeyAuth: []
     */
 
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
     
     try {
         console.log('Searching in Dispositivo for id, nombre, espacioId, idExternoDispositivo');
-        const query = await db.db.sequelize.models.Dispositivo.findAll({
+        const query = await db.sequelize.models.Dispositivo.findAll({
             attributes:['id', 'nombre', 'espacioId', 'idExternoDispositivo']
         });
 
@@ -174,26 +173,30 @@ app.post(api_path + '/dispositivos', async (req, res) => {
             return;
         }
         
-        const transaction = await db.db.sequelize.transaction();
+        const transaction = await db.sequelize.transaction();
 
         try {   
+            const endpointSeguimiento = 'http://' + api_config.host + ':' + api_config.port + api_path + '/seguimiento';
             const dispSecret = authenticator.generateSecret();
-            const disp = await db.db.sequelize.models.Dispositivo.create({ nombre: req.body.nombre, espacioId: req.body.espacioId, 
+            const disp = await db.sequelize.models.Dispositivo.create({ nombre: req.body.nombre, espacioId: req.body.espacioId, 
                 idExternoDispositivo: req.body.idExternoDispositivo, creadoPor: 1, actualizadoPor: 1, 
-                endpointSeguimiento: ('http://' + hostName + api_path) , t0: 0, secret: dispSecret }); // Preguntar por creadoPor, actualizadoPor y t0 (calcular tiempo o siempre 0)
+                endpointSeguimiento: endpointSeguimiento , t0: 0, secret: dispSecret }); // Preguntar por creadoPor, actualizadoPor y t0 (calcular tiempo o siempre 0)
 
             const respuesta = {
                 id: disp.id,
                 nombre: req.body.nombre,
                 espacioId: req.body.espacioId,
                 idExternoDispositivo: req.body.idExternoDispositivo,
-                creadoPor: db.db.sequelize.models.Dispositivo.creadoPor,
-                actualizadoPor: db.db.sequelize.models.Dispositivo.actualizadoPor,
-                endpointSeguimiento: ('http://' + hostName + api_path),
+                creadorEn: disp.creadoEn,
+                creadoPor: disp.creadoPor,
+                actualizadoEn: disp.actualizadoEn,
+                actualizadoPor: disp.actualizadoPor,
+                endpointSeguimiento: endpointSeguimiento,
                 totpConfig: {
                     t0: 0,
                     secret: dispSecret
-                }
+                },
+                timestamp: moment().format("YYYY-DD-MMThh:mm:ss.SSSZ")
             }
 
             res.setHeader('Content-Type', 'application/json');
@@ -245,11 +248,11 @@ app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => {
         return;
     }
         
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
         
     try {
         console.log('Searching in Dispositivo for all columns');
-        const query = await db.db.sequelize.models.Dispositivo.findOne({
+        const query = await db.sequelize.models.Dispositivo.findOne({
             attributes: { exclude: [] },
             where: {
                 espacioId: req.params.idDispositivo
@@ -306,11 +309,11 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => {
         return;
     }
 
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
 
     try {
         console.log('Searching in Dispositivo for id');
-        const query = await db.db.sequelize.models.Dispositivo.findOne({
+        const query = await db.sequelize.models.Dispositivo.findOne({
             attributes: ['id'],
              where: {
                     espacioId: req.params.idDispositivo
@@ -323,7 +326,7 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => {
             return;
         }
             
-        await db.db.sequelize.models.Dispositivo.destroy({
+        await db.sequelize.models.Dispositivo.destroy({
             where: {
                 id: query.dataValues.id
             }
@@ -340,6 +343,28 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => {
 
     await transaction.commit();
 
+});
+
+// /time
+app.get(api_path + '/time', (req, res) => {
+    /*
+        tags:
+            - dispositivos
+        summary: Devuelve la hora
+        description: Devuelve la hora actual al dispositivo
+        operationId: getLocalTime
+        responses:
+            '200':
+            $ref: '#/components/responses/TimestampActual'
+    */
+    
+    const resultado = {
+        timestamp: moment.now()
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send(resultado);
+   
 });
 
 // /seguimiento
@@ -367,11 +392,11 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
             case "RegistroSeguimientoUsuario":
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
 
-                    const transaction = await db.db.sequelize.transaction();
+                    const transaction = await db.sequelize.transaction();
 
                     try {
                         console.log('Searching in Dispositivo for id');
-                        const query_disp = await db.db.sequelize.models.Dispositivo.findOne({ // Si hay más de un dispositivo habría que comprobar todos
+                        const query_disp = await db.sequelize.models.Dispositivo.findOne({ // Si hay más de un dispositivo habría que comprobar todos
                             attributes: ['id', 'secret'],
                             where: {
                                 espacioId: req.body.espacioId
@@ -385,7 +410,7 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
                         }
 
                         console.log('Searching in Docente for id');
-                        const query_user = await db.db.sequelize.models.Docente.findOne({
+                        const query_user = await db.sequelize.models.Docente.findOne({
                             attributes: ['id'],
                             where: {
                                 id: req.body.usuarioId
@@ -406,7 +431,7 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
                             return;
                         }
 
-                        await db.db.sequelize.models.Asistencia.create({ docente_id: req.body.usuarioId, espacio_id: req.body.espacioId, fecha: moment.now(), estado: "Asistida"});
+                        await db.sequelize.models.Asistencia.create({ docente_id: req.body.usuarioId, espacio_id: req.body.espacioId, fecha: moment().format("YYYY-DD-MMThh:mm:ss.SSSZ"), estado: "Asistida"});
 
                         await transaction.commit();
                     }
@@ -476,7 +501,6 @@ app.get(api_path + '/ble', (req, res) => {
     */
 });
 
-
 // /login
 app.post(api_path + '/login', async(req, res) => {
     /*
@@ -496,15 +520,15 @@ app.post(api_path + '/login', async(req, res) => {
             - ApiKeyAuth: []
     */
 
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
     
     try {
         console.log('Searching in Docente for id, email, password, nombre, apellidos');
 
-        const query = await db.db.sequelize.models.Docente.findOne({
+        const query = await db.sequelize.models.Docente.findOne({
             attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol'],
             where: {
-            email: req.body.email
+                email: req.body.email
             }
         });
         
@@ -527,8 +551,8 @@ app.post(api_path + '/login', async(req, res) => {
     }
 });
 
-// /usuarios/{idUsuario}
-app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
+// /espacios/usuarios/{idUsuario}
+app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => {
     /*
         tags:
             - usuarios
@@ -558,11 +582,11 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
         return;
     }
     
-    const transaction = await db.db.sequelize.transaction();
+    const transaction = await db.sequelize.transaction();
     
     try {
         console.log('Searching in Docente for id');
-        const query_doc = await db.db.sequelize.models.Docente.findOne({
+        const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id'],
             where: {
                 id: req.params.idUsuario
@@ -587,10 +611,10 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
             case "espacios_rutina":
 
                 console.log('Searching in Actividad impartida por Docente for actividad_id');
-                const query_r = await db.db.sequelize.models.Actividad.findAll({
+                const query_r = await db.sequelize.models.Actividad.findAll({
                     attributes: ['id'], 
                     include: {
-                        model: db.db.sequelize.models.Docente,
+                        model: db.sequelize.models.Docente,
                         as: 'impartida_por',
                         where: {
                             id: req.params.idUsuario 
@@ -610,7 +634,7 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
                     console.log('Searching in Actividad for id, tiempo_inicio, tiempo_fin');
                     
                     //Comprobamos que estén en la franja horaria actual
-                    const query_act_r = await db.db.sequelize.models.Actividad.findAll({
+                    const query_act_r = await db.sequelize.models.Actividad.findAll({
                         attributes:['id', 'tiempo_inicio', 'tiempo_fin'],
                         where: {
                             id: {
@@ -631,10 +655,10 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
                         console.log('Searching in Espacio ocupado por Actividad for id');
                         
                         //Encontramos todos los ids de los espacios pertenecientes a actividades posibles
-                        const query_esp_r = await db.db.sequelize.models.Espacio.findAll({
+                        const query_esp_r = await db.sequelize.models.Espacio.findAll({
                             attributes:['id'],
                             include: {
-                                model: db.db.sequelize.models.Actividad,
+                                model: db.sequelize.models.Actividad,
                                 association: 'ocupado_por',
                                 where: {
                                     id: {
@@ -658,10 +682,10 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
             case "espacios_irregularidad":
 
                 console.log('Searching in Actividad impartida por Docente for id');
-                const query_i = await db.db.sequelize.models.Actividad.findAll({
+                const query_i = await db.sequelize.models.Actividad.findAll({
                     attributes: ['id'], 
                     include: {
-                        model: db.db.sequelize.models.Docente,
+                        model: db.sequelize.models.Docente,
                         as: 'impartida_por',
                         where: { 
                             id: req.params.idUsuario
@@ -681,7 +705,7 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
                     console.log('Searching in Actividad for id, tiempo_inicio, tiempo_fin');
                     
                     //Comprobamos que estén en la franja horaria actual
-                    const query_act_i = await db.db.sequelize.models.Actividad.findAll({
+                    const query_act_i = await db.sequelize.models.Actividad.findAll({
                         attributes:['id', 'tiempo_inicio', 'tiempo_fin'],
                         where: {
                             id: {
@@ -702,10 +726,10 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
                         console.log('Searching in Espacio ocupado por Actividad for espacio_id');
                         
                         //Encontramos todos los ids de los espacios pertenecientes a actividades posibles
-                        const query_esp_i = await db.db.sequelize.models.Espacio.findAll({
+                        const query_esp_i = await db.sequelize.models.Espacio.findAll({
                             attributes:['id'],
                             include: {
-                                model: db.db.sequelize.models.Actividad,
+                                model: db.sequelize.models.Actividad,
                                 as: 'ocupado_por',
                                 where: {
                                     id: {
@@ -720,7 +744,7 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
                             espacios_ids.push({ id: esp.dataValues.id });
                         });
 
-                        let query_neg_i = await db.db.sequelize.models.Espacio.findAll({
+                        let query_neg_i = await db.sequelize.models.Espacio.findAll({
                             attributes: ['id'],
                             where: {
                                 [Op.not]: { [Op.or]: espacios_ids }
@@ -758,7 +782,94 @@ app.post(api_path + '/usuarios/:idUsuario', async (req, res) => {
 
 });
 
+// /actividades/usuarios/:idUsuario
+app.get('/actividades/usuarios/:idUsuario', async (req, res) => {
+    /*
+        tags:
+            - actividades
+            - usuarios
+        summary: Devuelve una lista de las actividades de un usuario por su id
+        description: Devuelve una lista de las actividades del usuario con id = {idUsuario}.
+        operationId: getActividadesOfUsuario
+        parameters:
+            - $ref: '#/components/parameters/idUsuario'
+        responses:
+            '200':
+            $ref: '#/components/responses/ActividadUsuarioInfoData'
+            '400':
+            description: Id suministrado no válido
+            '404':
+            description: Usuario no encontrado
+    */
 
-app.listen(port, () => {
-    console.log(`Api listening on port ${port}`)
+    try{
+        idUsuario = Number(req.params.idUsuario);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+        
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Docente for id');
+        const query_doc = await db.sequelize.models.Docente.findOne({
+            attributes:['id'],
+            where: {
+                id: req.params.idUsuario
+            }
+        });
+    
+        // Comprobamos que el usuario exista en la base de datos
+        if (Object.keys(query_doc.dataValues).length == 0) {
+            res.status(404).send('Usuario no encontrado');
+            await transaction.rollback();
+            return;
+        }
+    
+        let respuesta = { actividades: [] };
+    
+        console.log('Searching in Actividad impartida por Docente for actividad_id');
+        const query_r = await db.sequelize.models.Actividad.findAll({
+            attributes: ['id'], 
+            include: {
+                model: db.sequelize.models.Docente,
+                as: 'impartida_por',
+                where: {
+                    id: req.params.idUsuario 
+                }
+            },
+        });
+                    
+        //Si tiene actividades
+        if (query_r.length != 0) {
+            console.log(query_r);
+    
+            query_r.forEach((act) => {
+                respuesta.actividades.push({id: act.dataValues.id});
+            });
+        }
+    
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(respuesta);
+            
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+    
+    await transaction.commit();
+});
+
+// /actividades/:idActividad
+app.get('/actividades/:idActividad', async (req, res) => {
+    
+});
+
+app.listen(8071, () => {
+    console.log(`Api listening on port 8071`)
   });
