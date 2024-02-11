@@ -5,7 +5,9 @@ function model(sequelize, DataTypes) {
     
     const Join_Actividad_Docentes = sequelize.define('Join_Actividad_Docentes', {
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     return Join_Actividad_Docentes;

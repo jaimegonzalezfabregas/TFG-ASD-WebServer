@@ -9,7 +9,9 @@ function model(sequelize, DataTypes) {
             primaryKey: true
         }
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Plan.associate = function (models) {

@@ -1,73 +1,43 @@
-//Archivo para hacer un único require y tener siempre el mismo sequelize con las mismas asociaciones de modelos.
+'use strict';
 
-const { Sequelize, DataTypes } = require('sequelize');
-const path = require('path');
 const fs = require('fs');
-const db_config = require('../config/db.config');
-
+const path = require('path');
+const Sequelize = require('sequelize');
+const process = require('process');
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
-async function authSequelize(sequelize) {
-    try {
-        await sequelize.authenticate();
-        console.log('Connection successful.');
-        return true;
-    }
-    catch (error) {
-        console.error('Unable to connect:', error);
-        res.status(500).send('Something went wrong');
-        await sequelize.close();
-        return false;
-    }
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
-db.initDb = async function () {
-    // Inicializamos la base de datos con los parámetros pertinentes
-    const sequelize = new Sequelize(db_config.name, db_config.user, db_config.password, { dialect: db_config.dialect, host: db_config.host, port: db_config.port });
+fs
+  .readdirSync(__dirname)
+  .filter(file => {
+    return (
+      file.indexOf('.') !== 0 &&
+      file !== basename &&
+      file.slice(-9) === '.model.js'
+    );
+  })
+  .forEach(file => {
+    const model = require(path.join(__dirname, file)).model(sequelize, Sequelize.DataTypes);
+    console.log(model.name);
+    db[model.name] = model;
+  });
 
-    try{
-        if (authSequelize(sequelize)) {
-            // Obtenemos todos los ficheros .js de la carpeta
-            const files = fs.readdirSync(__dirname).filter((file) => 
-                file.indexOf('.') != 0 && file != path.basename(__filename) && file.slice(-9) == '.model.js');
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
-            await Promise.all(files.map(async file => {
-                const _model = (require(path.join(__dirname, file))).model(sequelize, DataTypes);
-                db[_model.name] = _model;
-            }));
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
 
-            // ).forEach(async (file) => {
-            //     const model = require(path.join(__dirname, file));
-            //     model.model(sequelize, DataTypes);
-            //     db[model.name] = model;
-            // });
-            
-            // Llamamos a la función associate de cada modelo si este la tiene
-            Object.keys(db).forEach((modelName) => {
-                // Si el componente tiene asociaciones, las ejecutamos
-                console.log(modelName);
-                console.log(db[modelName].associate);
-                if (db[modelName].associate) {
-                    console.log()
-                    db[modelName].associate(db);
-                }
-            });
-            
-            // Añadimos a db la sesión de sequelize
-            db.sequelize = sequelize;
-            db.Sequelize = Sequelize;
-
-            await sequelize.sync();
-            return db;
-        }
-        else {
-            console.log("Something went wrong");
-            throw error;
-        }
-    }
-    catch (error) {
-        console.log(error);
-    }
-}
-
-module.exports = { db }
+module.exports = db;

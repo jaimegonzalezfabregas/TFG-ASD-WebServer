@@ -37,7 +37,9 @@ function model(sequelize, DataTypes) {
             allowNull: true
         }
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Recurrencia.associate = function (models) {

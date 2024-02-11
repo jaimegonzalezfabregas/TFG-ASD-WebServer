@@ -25,7 +25,9 @@ function model(sequelize, DataTypes) {
             allowNull: false
         }
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Asignatura.associate = function (models) {

@@ -39,7 +39,9 @@ function model(sequelize, DataTypes) {
                 unique: true,
                 fields: ['docente_id', 'espacio_id', 'fecha'] //Solo docente y fecha o todos??
             }
-        ]
+        ],
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     return Asistencia;

@@ -23,7 +23,9 @@ function model(sequelize, DataTypes) {
                 unique: true,
                 fields: ['curso', 'letra']
             }
-        ]
+        ],
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Grupo.associate = function (models) {

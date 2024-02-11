@@ -8,7 +8,10 @@ function model(sequelize, DataTypes) {
             primaryKey: true,
             autoIncrement: true
         }
-    }, { freezeTableName: true }
+    }, { 
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn' }
     ); //Tabla de la agrupación asignatura y grupo
 
     Clase.associate = function(models) {

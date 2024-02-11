@@ -41,7 +41,9 @@ function model(sequelize, DataTypes) {
             allowNull: false
         }
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Dispositivo.associate = function (models) {

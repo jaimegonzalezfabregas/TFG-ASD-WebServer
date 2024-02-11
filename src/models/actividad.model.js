@@ -43,7 +43,9 @@ function model(sequelize, DataTypes) {
             type: DataTypes.STRING
         } //La fecha de creación de este atributo la guarda automáticamente sequelize
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Actividad.associate = function (models) {

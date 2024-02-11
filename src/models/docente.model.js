@@ -30,7 +30,9 @@ function model(sequelize, DataTypes) {
             defaultValue: 'Usuario'
         }
     }, {
-        freezeTableName: true
+        freezeTableName: true,
+        createdAt: 'creadoEn',
+        updatedAt: 'actualizadoEn'
     });
 
     Docente.associate = function (models) {
