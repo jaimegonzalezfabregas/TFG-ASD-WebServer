@@ -3,11 +3,25 @@ const path = require('path');
 const { Op } = require ('sequelize');
 const moment = require('moment');
 const { authenticator, totp } = require('otplib');
+const bcrypt = require('bcrypt');
 const db = require('./models');
 const app = express();
 // Rutas de la API
 const api_path = '/api/v1';
 const api_config = require('./config/api.config');
+
+const spices = [
+    "inOPPh4IThFNhRF0",
+    "rYYzv9VdRixlne1k",
+    "j8XT8s3IsGqTNrYJ",
+    "2CkN3WNmw9ZtkZ0p",
+    "1EievW4P3Cn1dgvZ",
+    "EXQgyv6DYck0thU8",
+    "DHetHwn1uzphv0Gu",
+    "TGZbU4V6klXw8hHe",
+    "Oxi8DnH6KVXytWFB",
+    "Gfx7HYNlCLr5KEaQ"
+]
 
 app.use(express.json());
 
@@ -526,13 +540,25 @@ app.post(api_path + '/login', async(req, res) => {
         console.log('Searching in Docente for id, email, password, nombre, apellidos');
 
         const query = await db.sequelize.models.Docente.findOne({
-            attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol'],
+            attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol', 'secret'],
             where: {
                 email: req.body.email
             }
         });
         
-        if (query == null || query.dataValues.password != req.body.password) {
+        if (query != null) {
+            let valid = false;
+            for (let i = 0; i < spices.length; i++) {
+                if (bcrypt.compareSync(spices[i] + req.body.password, query.dataValues.password)) {
+                    valid = true;
+                    break;
+                }
+            }
+            if (!valid) {
+                throw error("Datos inválidos al hacer login");
+            }
+        }
+        else {
             throw error("Datos inválidos al hacer login");
         }
 
@@ -870,6 +896,6 @@ app.get('/actividades/:idActividad', async (req, res) => {
     
 });
 
-app.listen(8071, () => {
-    console.log(`Api listening on port 8071`)
+app.listen(api_config.port, () => {
+    console.log(`Api listening on port ${api_config.port}`)
   });
