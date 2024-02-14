@@ -37,6 +37,18 @@ module.exports = {
       actualizadoPor: {
         type: Sequelize.DataTypes.STRING,
         allowNull: false
+      },      
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
+      },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
       }
     }, {
       freezeTableName: true,
@@ -45,9 +57,7 @@ module.exports = {
           unique: true,
           fields: ['numero', 'tipo', 'edificio']
         }
-      ],
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
+      ]
     });
   },
 

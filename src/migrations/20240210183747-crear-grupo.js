@@ -22,6 +22,18 @@ module.exports = {
       letra: {
         type: Sequelize.DataTypes.STRING(1),
         allowNull: false
+      },      
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
+      },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
       }
     }, {
       freezeTableName: true,
@@ -30,9 +42,7 @@ module.exports = {
           unique: true,
           fields: ['curso', 'letra']
         }
-      ],
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
+      ]
     });
   },
 

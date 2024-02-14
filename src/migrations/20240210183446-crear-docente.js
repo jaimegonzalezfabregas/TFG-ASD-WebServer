@@ -34,12 +34,23 @@ module.exports = {
       },
       rol: {
         type: Sequelize.DataTypes.ENUM('Usuario', 'Decanato', 'Admin'),
-        defaultValue: 'Usuario'
+        defaultValue: 'Usuario',
+        allowNull: false
+      },
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
+      },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
       }
     }, {
-      freezeTableName: true,
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
+      freezeTableName: true
     });
     
   },
