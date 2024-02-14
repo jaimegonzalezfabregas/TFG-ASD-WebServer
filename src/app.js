@@ -66,7 +66,7 @@ app.get('/formulario-aulas', async (req, res) => {
     }
 
     const id_sesion = (sesion.id).toString();
-    const api_path = `/usuarios/${id_sesion}`;
+    const api_path = `/espacios/usuarios/${id_sesion}`;
     let espacios_ids = (await messaging.sendToApiJSON(data, api_path)).espacios;
 
     let espacios_data = [];
@@ -81,15 +81,13 @@ app.get('/formulario-aulas', async (req, res) => {
     let espacios_doc = [];
     let edif = null;
     espacios_data.forEach((esp) => {
-      console.log(esp);
       if (esp.edificio != edif) {
         edif = esp.edificio;
         espacios_doc.push({ edificio: edif, espacios: []});
       }
-      espacios_doc[espacios_doc.length - 1].espacios.push(esp.nombre );
+      espacios_doc[espacios_doc.length - 1].espacios.push({ id: esp.id, nombre: esp.nombre });
     });
 
-    console.log(espacios_doc);
     //Enseñamos únicamente los espacios que coincidan con las actividades
     res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
     return;
@@ -118,159 +116,91 @@ app.get('/formulario-end', async (req, res) => {
 
   if (checkSesion(res, redirection)) { 
     let esp = '';
-    if(Object.keys(req.query).length != 0) {
+    if (Object.keys(req.query).length != 0) {
       esp = req.query.espacio;
     }
     const currentHour = '16:30';//moment().format('HH:MM');
-    console.log(esp);
+    const esp_data = (await messaging.getFromApi(`/espacios/${esp}`));
 
     // query a base de datos para conseguir asignatura y grupo que sería
+    const id_sesion = (sesion.id).toString();
+    const api_path_act_us = `/actividades/usuarios/${id_sesion}`;
+    let actividades_ids_us = (await messaging.getFromApi(api_path_act_us)).actividades;
+    const api_path_act_esp = `/actividades/espacios/${esp}`;
+    let actividades_ids_esp = (await messaging.getFromApi(api_path_act_esp)).actividades;
 
-    const sequelize = new Sequelize(db_config.name, db_config.user, db_config.password, { dialect: db_config.dialect, host: db_config.host, port: db_config.port});
+    let actividades_ids = actividades_ids_us.filter(x => {
+      for(let i = 0; i < actividades_ids_esp.length; i++) {
+        if (x.id == actividades_ids_esp[i].id) {
+          return true;
+        }
+      }
+      return false;
+    });
 
-    try {
-      await sequelize.authenticate();
-      console.log('Connection successful.');
+    console.log(actividades_ids);
+
+    let actividades_data = [];
+    for (let i = 0; i < actividades_ids.length; i++) {
+      const id_act = (actividades_ids[i].id).toString();
+      const api_act_path = `/actividades/${id_act}`;
+      console.log(api_act_path);
+      actividades_data.push((await messaging.getFromApi(api_act_path)));
     }
-    catch (error) {
-      console.error('Unable to connect:', error);
-      res(500, "Something went wrong");
-      return;
-    }
 
-    const join_actividad_docentes = sequelize.define('Join_Actividad_Docentes', {}, { freezeTableName: true });
-    const join_actividad_clase = sequelize.define('Join_Actividad_Clase', {}, { freezeTableName: true });
-    const join_actividad_espacio = sequelize.define('Join_Actividad_Espacio', {}, { freezeTableName: true });
-    const actividad = Actividad.model(sequelize, DataTypes);
-    const espacio = Espacio.model(sequelize, DataTypes);
-    const clase = sequelize.define('Clase', {}, { freezeTableName: true });
-    const asignatura = Asignatura.model(sequelize, DataTypes);
-    const grupo = Grupo.model(sequelize, DataTypes);
-
-    await sequelize.sync();
-    
-    console.log('Searching in Join_Actividad_Docentes for actividad_id');
-    const query = await join_actividad_docentes.findAll({
-      attributes: ['actividad_id'], 
-      where: { 
-        docente_id: sesion.id
+    //Comprobamos que estén en la franja horaria actual
+    let actividades_posibles = [];
+    actividades_data.forEach((act) => {
+      if (act.tiempo_inicio <= currentHour && currentHour <= act.tiempo_fin) {
+        actividades_posibles.push(act);
       }
     });
 
-    //Si tiene actividades
-    if (query.length != 0) {
+    if (actividades_posibles.length != 0) {
 
-      console.log(query);
-
-      let actividades_ids = [];
-      query.forEach((act) => {
-        actividades_ids.push(act.dataValues.actividad_id);
-      });
-
-      console.log('Searching in Actividad for id, tiempo_inicio, tiempo_fin');
-      
-
-      //Comprobamos que estén en la franja horaria actual
-      const query_act = await actividad.findAll({
-        attributes:['id', 'tiempo_inicio', 'tiempo_fin'],
-        where: {
-          id: {
-            [Op.or]: actividades_ids
-          }
+      let clases_data = [];
+      for (let i = 0; i < actividades_posibles.length; i++) {
+        for (let j = 0; j < actividades_posibles[i].clase_ids.length; j++) {
+          const id_cl = (actividades_posibles[i].clase_ids[j].id).toString();
+          const api_cl_path = `/clases/${id_cl}`;
+          clases_data.push((await messaging.getFromApi(api_cl_path)));
+          console.log(clases_data[j]);
         }
-      });
-
-      console.log(query_act);
-
-      let actividades_posibles = [];
-      query_act.forEach((act) => {
-        if (act.dataValues.tiempo_inicio <= currentHour && currentHour <= act.dataValues.tiempo_fin) {
-          actividades_posibles.push(act.dataValues.id);
-        }
-      });
-
-      
-      
-      if (actividades_posibles.length != 0) {
-
-        const esp_split = esp.split(" ");
-
-        console.log('Searching in Espacio for id');
-
-        query_esp_id = await espacio.findOne({
-          attributes: ['id'],
-          where: {
-            tipo: esp_split[0],
-            numero: parseInt(esp_split[1]),
-            edificio: esp_split[2]
-          }
-        });
-
-        console.log(query_esp_id);
-
-        //Si hay más de una, qué hacemos??
-        console.log('Searching in Join_Actividad_Espacio for actividad_id');
-        query_esp_act = await join_actividad_espacio.findOne({
-          attributes:['actividad_id'],
-          where: {
-            espacio_id: query_esp_id.dataValues.id,
-            actividad_id: {
-              [Op.or]: actividades_posibles
-            }
-          }
-        });
-
-        console.log('Searching in Join_Actividad_Clase for clase_id');
-        query_act_clase = await join_actividad_clase.findOne({
-          attributes:['clase_id'],
-          where: {
-            actividad_id: query_esp_act.dataValues.actividad_id
-          }
-        });
-
-        console.log('Searching in Clase for asignatura_id, grupo_id');
-        query_clase = await clase.findOne({
-          attributes:['asignatura_id', 'grupo_id'],
-          where: {
-            id: {
-              [Op.or]: [query_act_clase.dataValues.clase_id] // clases_posibles
-            } 
-          }
-        });
-
-        console.log(query_clase);
-
-        console.log('Searching in Asignatura for nombre, siglas');
-        query_asig = await asignatura.findOne({
-          attributes:['nombre', 'siglas'],
-          where: {
-            id:{
-              [Op.or]: [query_clase.dataValues.asignatura_id]
-            }
-          }
-        });
-
-        console.log(query_asig);
-
-        console.log('Searching in Grupo for curso, letra');
-        query_grupo = await grupo.findOne({
-          attributes:['curso', 'letra'],
-          where: {
-            id:{
-              [Op.or]: [query_clase.dataValues.grupo_id]
-            }
-          }
-        });
-
-        const str_asig = query_asig.dataValues.nombre + " (" + query_asig.dataValues.siglas + ")";
-        const str_grupo = query_grupo.dataValues.curso + "º" + query_grupo.dataValues.letra;
-
-        res.render('formulario-end', {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp, hora: `${currentHour}`, asignaturaygrupo: str_asig + " " + str_grupo});
-        return;
       }
-    }
 
-    res.render('formulario-end', {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp, hora: `${currentHour}`, asignaturaygrupo: ""});
+      let clases_info = [];
+      for (let i = 0; i < clases_data.length; i++) {
+        const id_asig = (clases_data[i].asignatura_id).toString();
+        const api_asig_path = `/asignaturas/${id_asig}`;
+        const id_gr = (clases_data[i].grupo_id).toString();
+        const api_gr_path = `/grupos/${id_gr}`;
+        clases_info.push({grupo: (await messaging.getFromApi(api_gr_path)), asignatura: (await messaging.getFromApi(api_asig_path)) });
+      }
+
+      let resultado = {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp_data.nombre + " " + esp_data.edificio,
+        hora: `${currentHour}`,
+        clases: [] // [ { asignatura: , grupo: } ]
+      };
+
+      
+      console.log(resultado);
+      console.log(JSON.toString(resultado));
+
+      clases_info.forEach((clase) => {
+        const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
+        const str_grupo = clase.grupo.curso + "º" + clase.grupo.letra;
+
+        resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
+        
+      });
+      
+      console.log(resultado);
+      res.render('formulario-end', resultado);
+      return;
+    }
+    else {
+      res.render('formulario-end', {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp_data.nombre + " " + esp_data.edificio, hora: `${currentHour}`, clases: [] });
+    }
   }
 });
 

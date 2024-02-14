@@ -89,7 +89,7 @@ app.get(api_path + '/espacios/:idEspacio', async (req, res) => {
     try {
         console.log('Searching in Espacio for id, creadoPor, actualizadoPor, creadoEn, actualizadoEn, numero, tipo, edificio');
         const query = await db.sequelize.models.Espacio.findOne({
-            attributes:['id', 'creadoPor', 'actualizadoPor', 'creadoEn', 'actualizadoEn', 'edificio', 'tipo', 'numero', 'edificio'],
+            attributes:['id', 'creadoPor', 'actualizadoPor', 'creadoEn', 'actualizadoEn', 'edificio', 'tipo', 'numero'],
             where: {
                 id: req.params.idEspacio
             }
@@ -564,7 +564,7 @@ app.post(api_path + '/login', async(req, res) => {
 
         await transaction.commit();
 
-        let resultado = JSON.stringify({id: query.dataValues.id, nombre: query.dataValues.nombre, email: query.dataValues.email, rol: query.dataValues.rol});
+        let resultado = JSON.stringify({id: query.dataValues.id, nombre: query.dataValues.nombre, apellidos: query.dataValues.apellidos, email: query.dataValues.email, rol: query.dataValues.rol});
         console.log('resultado:', resultado);
         res.status(200).send(resultado);
 
@@ -651,8 +651,6 @@ app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => {
                 //Si tiene actividades
                 if (query_r.length != 0) {
 
-                    console.log(query_r);
-
                     query_r.forEach((act) => {
                         actividades_ids.push(act.dataValues.id);
                     });
@@ -685,7 +683,7 @@ app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => {
                             attributes:['id'],
                             include: {
                                 model: db.sequelize.models.Actividad,
-                                association: 'ocupado_por',
+                                as: 'ocupado_por',
                                 where: {
                                     id: {
                                         [Op.or]: actividades_posibles
@@ -809,7 +807,7 @@ app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => {
 });
 
 // /actividades/usuarios/:idUsuario
-app.get('/actividades/usuarios/:idUsuario', async (req, res) => {
+app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => {
     /*
         tags:
             - actividades
@@ -870,7 +868,6 @@ app.get('/actividades/usuarios/:idUsuario', async (req, res) => {
                     
         //Si tiene actividades
         if (query_r.length != 0) {
-            console.log(query_r);
     
             query_r.forEach((act) => {
                 respuesta.actividades.push({id: act.dataValues.id});
@@ -892,8 +889,330 @@ app.get('/actividades/usuarios/:idUsuario', async (req, res) => {
 });
 
 // /actividades/:idActividad
-app.get('/actividades/:idActividad', async (req, res) => {
+app.get(api_path + '/actividades/:idActividad', async (req, res) => {
+    /*
+      tags:
+        - actividades
+      summary: Devuelve información sobre una actividad por su id
+      description: Devuelve un json con parámetros informativos de la actividad con id = {idActividad}ç
+      operationId: getActividadById
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/Actividad'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+    */
+    try {
+        idActividad = Number(req.params.idActividad);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Actividad for id, fecha_inicio, fecha_fin, tiempo_inicio, tiempo_fin, es_todo_el_dia, es_recurrente');
+        const query_act = await db.sequelize.models.Actividad.findOne({
+            attributes:['id', 'fecha_inicio', 'fecha_fin', 'tiempo_inicio', 'tiempo_fin', 'es_todo_el_dia', 'es_recurrente'],
+            where: {
+                id: req.params.idActividad
+            },
+            include: {
+                model: db.sequelize.models.Clase,
+                as: 'sesion_de',
+                attributes: ['id']
+            }
+        });
+
+        if (Object.keys(query_act.dataValues).length == 0) {
+            res.status(404).send('Actividad no encontrada');
+            await transaction.rollback();
+            return;
+        }
+
+        // Sacamos información no necesaria
+        const clase_ids = []
+        query_act.sesion_de.forEach((sesion) => {
+            clase_ids.push({id: sesion.id});
+        });
+
+        const resultado = { 
+            id: query_act.id, fecha_inicio: query_act.fecha_inicio,
+            fecha_fin: query_act.fecha_fin, tiempo_inicio: query_act.tiempo_inicio,
+            tiempo_fin: query_act.tiempo_fin, es_todo_el_dia: query_act.es_todo_el_dia,
+            es_recurrente: query_act.es_recurrente, clase_ids: clase_ids
+        };
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+      
+    await transaction.commit();
+});
+
+// /actividades/espacios/:idEspacio
+app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => {
+    /*
+      tags:
+        - actividades
+        - espacios
+      summary: Devuelve una lista de las actividades de un espacio por su id
+      description: Devuelve una lista de las actividades del usuario con id = {idEspacio}.
+      operationId: getActividadesOfEspacio
+      parameters:
+        - $ref: '#/components/parameters/idEspacio'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadEspacioInfoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Espacio no encontrado
+    */
+    try {
+        idEspacio = Number(req.params.idEspacio);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        const query_esp = await db.sequelize.models.Espacio.findOne({
+            attributes:['id'],
+            where: {
+                id: req.params.idEspacio
+            }
+        });
+
+        // Comprobamos que el espacio exista en la base de datos
+        if (Object.keys(query_esp.dataValues).length == 0) {
+            res.status(404).send('Espacio no encontrado');
+            await transaction.rollback();
+            return;
+        }
     
+        let respuesta = { actividades: [] };
+    
+        console.log('Searching in Actividad for id');
+        const query_act = await db.sequelize.models.Actividad.findAll({
+            attributes:['id'],
+            include: {
+                model: db.sequelize.models.Espacio,
+                as: 'impartida_en',
+                where: {
+                    id: req.params.idEspacio
+                }
+            }
+        });
+               
+        //Si tiene actividades
+        if (query_act.length != 0) {
+            query_act.forEach((act) => {
+                respuesta.actividades.push({id: act.dataValues.id});
+            });
+        }
+    
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(respuesta);
+            
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+    
+    await transaction.commit();
+});
+
+// /clases/:idClase
+app.get(api_path + '/clases/:idClase', async (req, res) => {
+    /*
+      tags:
+        - clases
+      summary: Devuelve información sobre una clase por su id
+      description: Devuelve la asignatura y el grupo al que hace referencia la clase con id = {idClase}
+      operationId: getClaseById
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada      
+    */
+    try {
+        idClase = Number(req.params.idClase);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Clase for asignatura_id, grupo_id');
+        const query_cla = await db.sequelize.models.Clase.findOne({
+            attributes:['asignatura_id', 'grupo_id'],
+            where: {
+                id: req.params.idClase
+            }
+        });
+
+        if (Object.keys(query_cla.dataValues).length == 0) {
+            res.status(404).send('Clase no encontrada');
+            await transaction.rollback();
+            return;
+        }
+
+        const resultado = query_cla.dataValues;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+      
+    await transaction.commit();
+});
+
+// /asignaturas/:idAsignatura
+app.get(api_path + '/asignaturas/:idAsignatura', async (req, res) => {
+    /*
+      tags:
+        - asignaturas
+      summary: Devuelve información de una asignatura por su id
+      description: Devuelve información de la asignatura con id = {idAsignatura}
+      operationId: getAsignaturaById
+      parameters:
+        - $ref: '#/components/parameters/idAsignatura'
+      responses:
+        '200':
+          $ref: '#/components/responses/AsignaturaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asignatura no encontrada      
+    */
+    try {
+        idAsignatura = Number(req.params.idAsignatura);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Asignatura for nombre, siglas, departamento, periodo');
+        const query_asig = await db.sequelize.models.Asignatura.findOne({
+            attributes:['nombre', 'siglas', 'departamento', 'periodo'],
+            where: {
+                id: req.params.idAsignatura
+            }
+        });
+
+        if (Object.keys(query_asig.dataValues).length == 0) {
+            res.status(404).send('Asignatura no encontrada');
+            await transaction.rollback();
+            return;
+        }
+
+        const resultado = query_asig.dataValues;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+      
+    await transaction.commit();
+});
+
+// /grupos/:idGrupo
+app.get(api_path + '/grupos/:idGrupo', async (req, res) => {
+    /*
+      tags:
+        - grupos
+      summary: Devuelve información de un grupo por su id
+      description: Devuelve información del grupo con id = {idAsignatura}
+      operationId: getGrupoById
+      parameters:
+        - $ref: '#/components/parameters/idGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Grupo no encontrado      
+    */
+    try {
+        idGrupo = Number(req.params.idGrupo);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Grupo for curso, letra');
+        const query_gru = await db.sequelize.models.Grupo.findOne({
+            attributes:['curso', 'letra'],
+            where: {
+                id: req.params.idGrupo
+            }
+        });
+
+        if (Object.keys(query_gru.dataValues).length == 0) {
+            res.status(404).send('Grupo no encontrado');
+            await transaction.rollback();
+            return;
+        }
+
+        const resultado = query_gru.dataValues;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+      
+    await transaction.commit();
 });
 
 app.listen(api_config.port, () => {
