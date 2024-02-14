@@ -39,7 +39,7 @@ function model(sequelize, DataTypes) {
             type: DataTypes.ENUM('Sí', 'No'),
             allowNull: false
         },
-        creado_por: {
+        creadoPor: {
             type: DataTypes.STRING
         } //La fecha de creación de este atributo la guarda automáticamente sequelize
     }, {
@@ -51,7 +51,8 @@ function model(sequelize, DataTypes) {
     Actividad.associate = function (models) {
         //Una actividad puede tener varias como hijo (procede de)
         models.Actividad.hasMany(models.Actividad, 
-            { as: 'actividad_padre' }
+            { as: 'actividad_padre',
+            foreignKey: 'actividad_padre_id' }
         ); 
         //Una actividad puede tener otra como padre (procede de)
         models.Actividad.belongsTo(models.Actividad, 
