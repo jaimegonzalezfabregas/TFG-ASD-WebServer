@@ -135,8 +135,15 @@
                                         <label for="docente">Docente</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="asignatura" id="asignatura" value="<%= asignaturaygrupo %>" readonly/>
-                                        <label for="asignatura">Asignatura y Grupo</label>
+                                        <!--select class="select form-control" id="clase">
+                                            <% clases.forEach(function(clase) { %>
+                                                <option value="<%= clase.asignatura %> <%= clase.grupo %>"></option>
+                                            <% }); %>
+                                        </select-->
+                                        <% clases.forEach(function(clase) { %>
+                                            <input type="text" class="select form-control" name="asignatura" id="asignatura" value="<%= clase.asignatura %> <%= clase.grupo %>" readonly/>
+                                        <% }); %>
+                                        <label for="clase">Asignatura y Grupo</label>
                                     </div>
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio %>" readonly/>
@@ -168,5 +175,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="./assets/js/datatable-select2-filter.js"></script>
     </body>
 </html>
