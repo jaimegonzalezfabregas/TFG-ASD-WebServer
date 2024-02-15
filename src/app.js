@@ -177,14 +177,11 @@ app.get('/formulario-end', async (req, res) => {
         clases_info.push({grupo: (await messaging.getFromApi(api_gr_path)), asignatura: (await messaging.getFromApi(api_asig_path)) });
       }
 
-      let resultado = {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp_data.nombre + " " + esp_data.edificio,
-        hora: `${currentHour}`,
-        clases: [] // [ { asignatura: , grupo: } ]
+      let resultado = {usuario: sesion.nombre + " " + sesion.apellidos, 
+                       espacio: { id: esp, nombre: esp_data.nombre + " " + esp_data.edificio },
+                       hora: `${currentHour}`, clases: [], actividad_ids: actividades_ids 
+                       // clases = [ { asignatura: , grupo: } ]
       };
-
-      
-      console.log(resultado);
-      console.log(JSON.toString(resultado));
 
       clases_info.forEach((clase) => {
         const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
@@ -199,48 +196,20 @@ app.get('/formulario-end', async (req, res) => {
       return;
     }
     else {
-      res.render('formulario-end', {usuario: sesion.nombre + " " + sesion.apellidos, espacio: esp_data.nombre + " " + esp_data.edificio, hora: `${currentHour}`, clases: [] });
+      res.render('formulario-end', {usuario: sesion.nombre + " " + sesion.apellidos, 
+                                    espacio: {id: esp, nombre: esp_data.nombre + " " + esp_data.edificio }, 
+                                    hora: `${currentHour}`, clases: [], actividad_ids: [] });
     }
   }
 });
 
 app.post('/formulario-end', async (req, res) => {
-    console.log(req.body);
+    console.log(JSON.stringify(req.body));
     // query a base de datos para conseguir asignatura y grupo que sería
-  
-    const sequelize = new Sequelize(db_config.name, db_config.user, db_config.password, { dialect: db_config.dialect, host: db_config.host, port: db_config.port});
 
-    try {
-      await sequelize.authenticate();
-      console.log('Connection successful.');
-    }
-    catch (error) {
-      console.error('Unable to connect:', error);
-      res(500, "Something went wrong");
-      return;
-    }
-  
-    const espacio = Espacio.model(sequelize, DataTypes);
-    const asistencia = Asistencia.model(sequelize, DataTypes);
-    const actividad = Actividad.model(sequelize, DataTypes);
-    const join_actividad_docentes = sequelize.define('Join_Actividad_Docentes', {}, { freezeTableName: true });
-    const join_actividad_espacio = sequelize.define('Join_Actividad_Espacio', {}, { freezeTableName: true });
-  
-    post_espacio = req.body.espacio.split(' ');
-  
-    //Sacamos el id del espacio
-    console.log('post_espacio');
-    console.log(post_espacio);
-  
-    console.log('Searching in Espacio for id');
-    const query_espacio = await espacio.findOne({
-      attributes: ['id'],
-      where: {
-        tipo: post_espacio[0],
-        numero: parseInt(post_espacio[1]),
-        edificio: post_espacio[2]
-      }
-    });
+    const espacio_id = req.body.espacioId;
+
+    const actividades_ids = JSON.parse(req.body.actividad_ids)
   
     console.log(query_espacio);
   
