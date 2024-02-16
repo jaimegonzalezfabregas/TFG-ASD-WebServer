@@ -39,7 +39,7 @@ function model(sequelize, DataTypes) {
         models.Docente.hasMany(models.Actividad, { as: 'responsable', foreignKey: { name: 'responsable_id', allowNull: false }}); //Un docente es responsable de varias clases (responsable)
         models.Docente.belongsToMany(models.Actividad, { as: 'imparte', through: { model: models.Join_Actividad_Docentes, foreignKey: 'docente_id', allowNull: false }, foreignKey: 'docente_id' }); //Un docente imparte varias clases (imparte)
         models.Docente.belongsToMany(models.Espacio, { as: 'ha_impartido', through: { model: models.Asistencia, foreignKey: 'docente_id', allowNull: false }, foreignKey: 'docente_id' }); //Un docente asiste a varios espacios para realizar actividades
-
+        models.Docente.hasMany(models.Macs, { as: 'asociado_a', foreignKey: { name: 'usuario_id', allowNull: false }}); // Un docente puede tener varias Macs asociadas
     };
 
     return Docente;
