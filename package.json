@@ -4,7 +4,8 @@
   "description": "## Funcionalidades - Formulario de inscripción simple",
   "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "mocks" : "mocks-server"
   },
   "author": "",
   "license": "ISC",
@@ -20,5 +21,8 @@
     "sequelize": "^6.37.0",
     "sequelize-cli": "^6.6.2",
     "wretch": "^2.8.0"
+  },
+  "devDependencies": {
+    "@mocks-server/main": "^4.1.0"
   }
 }
