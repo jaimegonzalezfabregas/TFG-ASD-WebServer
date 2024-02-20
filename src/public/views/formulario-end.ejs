@@ -135,11 +135,14 @@
                                         <label for="docente">Docente</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="asignatura" id="asignatura" value="<%= asignaturaygrupo %>" readonly/>
-                                        <label for="asignatura">Asignatura y Grupo</label>
+                                        <% clases.forEach(function(clase) { %>
+                                            <input type="text" class="select form-control" name="asignatura" id="clase" value="<%= clase.asignatura %> <%= clase.grupo %>" readonly/>
+                                        <% }); %>
+                                        <label for="clase">Asignatura y Grupo</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio %>" readonly/>
+                                        <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio.nombre %>" readonly/>
+                                        <input id="espacioId" name="espacioId" type="hidden" value="<%= espacio.id %>"/>
                                         <label for="espacio">Aula / Laboratorio</label>
                                     </div>
                                     <div class="form-floating mb-3">
@@ -156,6 +159,7 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
                                         <a class="btn btn-primary" href="../formulario-aulas">Atrás</a>
+                                        <input id="actividad_ids" name="actividad_ids" type="hidden" value="<%= JSON.stringify(actividad_ids) %>"/>
                                         <button class="btn btn-primary" type="submit">OK</a>
                                     </div>
                                 </form>
@@ -168,5 +172,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="./assets/js/datatable-select2-filter.js"></script>
     </body>
 </html>

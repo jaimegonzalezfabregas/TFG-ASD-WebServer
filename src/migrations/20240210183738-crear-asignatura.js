@@ -37,11 +37,21 @@ module.exports = {
           model: 'Plan',
           key: 'id'
         }
+      },      
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
+      },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
       }
     }, {
       freezeTableName: true,
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
     });
 
   },

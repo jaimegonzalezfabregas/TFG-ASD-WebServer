@@ -46,18 +46,28 @@ module.exports = {
       },
       creado_por: {
         type: Sequelize.DataTypes.STRING
-      }, //La fecha de creación de este atributo la guarda automáticamente sequelize
+      }, 
       actividad_id: {
         type: Sequelize.DataTypes.INTEGER,
         references: {
           model: 'Actividad',
           key: 'id'
         }
+      },      
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
+      },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
       }
     }, {
-      freezeTableName: true,
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
+      freezeTableName: true
     });
   },
 

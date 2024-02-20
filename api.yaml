@@ -226,6 +226,93 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Usuario no encontrado
+          
+  /actividades/espacios/{idEspacio}:
+    get:
+      tags:
+        - actividades
+        - espacios
+      summary: Devuelve una lista de las actividades de un espacio por su id
+      description: Devuelve una lista de las actividades del usuario con id = {idEspacio}.
+      operationId: getActividadesOfEspacio
+      parameters:
+        - $ref: '#/components/parameters/idEspacio'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadUsuarioInfoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Espacio no encontrado
+        
+
+  /actividades/{idActividad}:
+    get:
+      tags:
+        - actividades
+      summary: Devuelve información sobre una actividad por su id
+      description: Devuelve parámetros informativos de la actividad con id = {idActividad}
+      operationId: getActividadById
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/Actividad'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+          
+  /clases/{idClase}:
+    get:
+      tags:
+        - clases
+      summary: Devuelve información sobre una clase por su id
+      description: Devuelve la asignatura y el grupo al que hace referencia la clase con id = {idClase}
+      operationId: getClaseById
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+  
+  /asignaturas/{idAsignatura}:
+    get:
+      tags:
+        - asignaturas
+      summary: Devuelve información de una asignatura por su id
+      description: Devuelve información de la asignatura con id = {idAsignatura}
+      operationId: getAsignaturaById
+      parameters:
+        - $ref: '#/components/parameters/idAsignatura'
+      responses:
+        '200':
+          $ref: '#/components/responses/AsignaturaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asignatura no encontrada
+          
+  /grupos/{idGrupo}:
+    get:
+      tags:
+        - grupos
+      summary: Devuelve información de un grupo por su id
+      description: Devuelve información del grupo con id = {idAsignatura}
+      operationId: getGrupoById
+      parameters:
+        - $ref: '#/components/parameters/idGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Grupo no encontrado
       
   /time:
     get:
@@ -270,6 +357,47 @@ components:
         type: integer
         format: int64
       example: 1
+      
+    idActividad:
+      name: idActividad
+      in: path
+      description: ID de la actividad
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idClase:
+      name: idClase
+      in: path
+      description: ID de la clase
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idAsignatura:
+      name: idAsignatura
+      in: path
+      description: ID de la asignatura
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+    idGrupo:
+      name: idGrupo
+      in: path
+      description: ID del grupo
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
 
 
   schemas:
@@ -361,16 +489,15 @@ components:
           format: int64
           description: Id del espacio donde está colocado el dispositivo
           example: 1
+        idExternoDispositivo:
+          type: string
+          description: Id de la plataforma externa de gestión de dispositivos IOT
+          example: abcdefg
+        
 
     DispositivoUpdateData:
       allOf:
         - $ref: '#/components/schemas/DispositivoBasicUpdateData'
-        - type: object
-          properties:
-            idExternoDispositivo:
-              type: string
-              description: Id de la plataforma externa de gestión de dispositivos IOT
-              example: abcdefg
 
     DispositivoBasicData:          
       allOf:
@@ -537,7 +664,11 @@ components:
         nombre:
           type: string
           description: Nombre del Usuario
-          example: Grace Hopper
+          example: Grace
+        apellidos:
+          type: string
+          description: Apellidos del Usuario
+          example: Hopper
         macs:
           type: array
           items:
@@ -575,7 +706,11 @@ components:
             nombre:
               type: string
               description: Nombre del Usuario
-              example: Grace Hopper
+              example: Grace
+            apellidos:
+              type: string
+              description: Apellidos del Usuario
+              example: Hopper
             rol:
               type: string
               description: Rol del Usuario
@@ -601,7 +736,7 @@ components:
       required:
         - opcion
         
-    UsuarioEspacios:
+    ListaEspacios:
       type: object
       properties:
         espacios:
@@ -611,7 +746,7 @@ components:
           description: Array con ids de espacios válidos
           example: [ { "id": 1 } ]
           
-    UsuarioActividades:
+    ListaActividades:
       type: object
       properties:
         actividades:
@@ -620,7 +755,89 @@ components:
             $ref: '#/components/schemas/conId'
           description: Array con ids de actividades válidas
           example: [ { "id": 1 } ]
-
+          
+    ActividadData:
+      type: object
+      properties:
+        fecha_inicio:
+          type: string
+          description: Fecha de inicio de la actividad
+          example: "2024-02-14T09:00:00.000Z"
+        fecha_fin:
+          type: string
+          description: Fecha de inicio de la actividad
+          example: "2024-06-30T18:40:00.000Z"
+        tiempo_inicio:
+          type: string
+          description: Hora del dia a la que comienza la actividad
+        tiempo_fin:
+          type: string
+          description: Hora del dia a la que finaliza la actividad
+        es_recurrente:
+          type: string
+          enum:
+            - Si
+            - No
+          description: Si es o no recurrente la actividad
+        es_todo_el_dia:
+          type: string
+          enum:
+            - Si
+            - No
+          description: Si es todo el día o no la actividad. Si no lo es se ignoran los campos de tiempo_inicio y tiempo_fin
+        clase_ids:
+            type: array
+            items:
+              $ref: '#/components/schemas/conId'
+            description: Array con ids de clases válidas, para las cuales se realiza la actividad
+            example: [ { "id": 1 }, { "id": 3 } ]
+        
+    Actividad:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/ActividadData'
+        
+    ClaseData:
+      type: object
+      properties:
+        asignatura_id:
+          $ref: '#/components/schemas/conId'
+        grupo_id:
+          $ref: '#/components/schemas/conId'
+    
+    AsignaturaData:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nombre de la asignatura
+          example: "Programación Declarativa"
+        siglas:
+          type: string
+          description: Siglas de la asignatura
+          example: "PD"
+        departamento:
+          type: string 
+          description: Departamento que imparte esta asignatura
+        periodo:
+          type: integer
+          enum:
+            - 1
+            - 2
+          description: Periodo / Cuatrimestre en el que se imparte esta asignatura
+    
+    GrupoData:
+      type: object
+      properties:
+        curso:
+          type: integer
+          description: Curso al que pertenece al grupo
+          example: 3
+        letra:
+          type: string
+          description: Letra asociada al grupo
+          example: "A"
+ 
   requestBodies:
     EspacioNuevo:
       required: true
@@ -746,6 +963,13 @@ components:
           schema:
             $ref: '#/components/schemas/MACsUsuario'
             
+    Actividad:
+      description: Datos de una actividad mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Actividad'
+            
     UsuarioData:
       description: Datos de un usuario a devolver en un login
       content:
@@ -754,18 +978,42 @@ components:
             $ref: '#/components/schemas/UsuarioData'
             
     EspacioUsuarioInfoData:
-      description: Datos de un usuario a devolver a petición de una query
+      description: Datos de un usuario sobre espacios a devolver a petición de una query
       content:
         application/json:
           schema:
-             $ref: '#/components/schemas/UsuarioEspacios'
+             $ref: '#/components/schemas/ListaEspacios'
              
     ActividadUsuarioInfoData:
-      description: Datos de un usuario a devolver a petición de una query
+      description: Datos de un usuario sobre actividades a devolver a petición de una query
       content:
         application/json:
           schema:
-             $ref: '#/components/schemas/UsuarioActividades'
+             $ref: '#/components/schemas/ListaActividades'
+             
+    ActividadEspacioInfoData:
+      description: Datos de un espacio sobre actividades a devolver a petición de una query
+             
+    ClaseData:
+      description: Datos de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ClaseData'
+                
+    AsignaturaData:
+      description: Datos de una asignatura
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AsignaturaData'
+                
+    GrupoData:
+      description: Datos de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GrupoData'
             
     EpochActual:
       description: Timestamp en formato estándar del momento actual

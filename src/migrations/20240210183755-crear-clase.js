@@ -29,7 +29,19 @@ module.exports = {
           model: 'Grupo',
           key: 'id'
         }
+      },      
+      //Timestamps
+      creadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        allowNull: false
       },
+      actualizadoEn: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+        onUpdate: Sequelize.fn('NOW'),
+        allowNull: false
+      }
     }, { 
       freezeTableName: true,
       indexes: [
@@ -37,9 +49,7 @@ module.exports = {
           unique: true,
           fields: ['asignatura_id', 'grupo_id']
         } 
-      ],
-      createdAt: 'creadoEn',
-      updatedAt: 'actualizadoEn'
+      ]
     });
 
   },

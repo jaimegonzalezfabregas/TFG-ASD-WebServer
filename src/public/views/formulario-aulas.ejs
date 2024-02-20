@@ -134,7 +134,7 @@
                                     <h3>Edificio <%= edificio.edificio %></h3>
                                     <% edificio.espacios.forEach(function(espacio) { %>
                                     <div class="row justify-content-center mt-4" id="formulario-feature">
-                                        <button class="btn btn-primary btn-feature" name="espacio" type="submit" value="<%= espacio %> <%= edificio.edificio %>"><%= espacio %></button>
+                                        <button class="btn btn-primary btn-feature" name="espacio" type="submit" value="<%= espacio.id %>"><%= espacio.nombre %></button>
                                     </div>
                                     <% }); %>
                                     </div>
