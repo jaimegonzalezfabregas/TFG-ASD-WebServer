@@ -126,9 +126,9 @@ app.get('/formulario-end', checkSesion, async (req, res) => {
   let esp = '';
   if (Object.keys(req.query).length != 0) {
     esp = req.query.espacio;
-    req.session.espacio_id = esp;
+    req.session.espacio_id = parseInt(esp);
   }
-  const currentHour = '16:30';//moment().format('HH:MM');
+  const currentHour = moment('16:30', 'HH:mm');//moment().format('hh:mm');
   const esp_data = (await messaging.getFromApi(`/espacios/${esp}`));
 
   // query a base de datos para conseguir asignatura y grupo que sería
@@ -157,16 +157,24 @@ app.get('/formulario-end', checkSesion, async (req, res) => {
     actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path))});
   }
 
+  req.session.actividades_ids = [];
+
   //Comprobamos que estén en la franja horaria actual
   let actividades_posibles = [];
   actividades_data.forEach((act) => {
-    if (act.tiempo_inicio <= currentHour && currentHour <= act.tiempo_fin) {
+    const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
+    const fin = moment(act.data.tiempo_fin, 'HH:mm');
+    console.log(inicio, fin, currentHour, inicio <= currentHour, fin >= currentHour);
+    if (inicio <= currentHour && currentHour <= fin) {
       actividades_posibles.push(act.data);
       req.session.actividades_ids.push(act.id);
+      console.log(act);
     }
   });
 
-  if (actividades_posibles.length != 0) {
+  console.log(req.session.actividades_ids, actividades_posibles.length, actividades_posibles);
+
+  if (actividades_posibles.length != 0) { 
 
     let clases_data = [];
     for (let i = 0; i < actividades_posibles.length; i++) {
@@ -178,38 +186,40 @@ app.get('/formulario-end', checkSesion, async (req, res) => {
       }
     }
 
-      let clases_info = [];
-      for (let i = 0; i < clases_data.length; i++) {
-        const id_asig = (clases_data[i].asignatura_id).toString();
-        const api_asig_path = `/asignaturas/${id_asig}`;
-        const id_gr = (clases_data[i].grupo_id).toString();
-        const api_gr_path = `/grupos/${id_gr}`;
-        clases_info.push({grupo: (await messaging.getFromApi(api_gr_path)), asignatura: (await messaging.getFromApi(api_asig_path)) });
-      }
+    let clases_info = [];
+    for (let i = 0; i < clases_data.length; i++) {
+      const id_asig = (clases_data[i].asignatura_id).toString();
+      const api_asig_path = `/asignaturas/${id_asig}`;
+      const id_gr = (clases_data[i].grupo_id).toString();
+      const api_gr_path = `/grupos/${id_gr}`;
+      clases_info.push({grupo: (await messaging.getFromApi(api_gr_path)), asignatura: (await messaging.getFromApi(api_asig_path)) });
+    }
 
-      let resultado = {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                       espacio: { id: esp, nombre: esp_data.nombre + " " + esp_data.edificio },
-                       hora: `${currentHour}`, clases: [], actividad_ids: actividades_ids 
-                       // clases = [ { asignatura: , grupo: } ]
-      };
+    let resultado = {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
+                     espacio: esp_data.nombre + " " + esp_data.edificio,
+                     hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] 
+                     // clases = [ { asignatura: , grupo: } ]
+    };
 
-      clases_info.forEach((clase) => {
-        const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
-        const str_grupo = clase.grupo.curso + "º" + clase.grupo.letra;
+    console.log(currentHour.toString(), moment(currentHour.toString()).format('HH:mm'));
 
-        resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
+    clases_info.forEach((clase) => {
+      const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
+      const str_grupo = clase.grupo.curso + "º" + clase.grupo.letra;
+
+      resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
         
-      });
+    });
       
-      console.log(resultado);
-      res.render('formulario-end', resultado);
-      return;
-    }
-    else {
-      res.render('formulario-end', {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                                    espacio: esp_data.nombre + " " + esp_data.edificio, 
-                                    hora: `${currentHour}`, clases: [] });
-    }
+    console.log(resultado);
+    res.render('formulario-end', resultado);
+    return;
+  }
+  else {
+    res.render('formulario-end', {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
+                                  espacio: esp_data.nombre + " " + esp_data.edificio, 
+                                  hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] });
+  }
 });
 
 app.post('/formulario-end', checkSesion, async (req, res) => {
@@ -220,28 +230,10 @@ app.post('/formulario-end', checkSesion, async (req, res) => {
 
     const actividades_ids = req.session.actividades_ids;
   
-    console.log(query_espacio);
-  
     let state = 'Asistida con Irregularidad';
   
     if (actividades_ids.length != 0) {
-  
-      console.log(actividades_ids);
-  
-        // //Si hay más de una, qué hacemos??
-        // console.log('Searching in Join_Actividad_Espacio for actividad_id');
-        // query_esp_act = await join_actividad_espacio.findOne({
-        //   attributes:['actividad_id'],
-        //   where: {
-        //     espacio_id: query_espacio.dataValues.id,
-        //     actividad_id: {
-        //       [Op.or]: actividades_posibles
-        //     }
-        //   }
-        // });
-  
-        // if (query_esp_act != null) 
-        state = 'Asistida'; 
+      state = 'Asistida'; 
     }
 
     const data = {
@@ -251,18 +243,9 @@ app.post('/formulario-end', checkSesion, async (req, res) => {
       estado: state
     }
 
-    messaging.sendToApiJSON('/seguimiento', data);
-  
-    //Intentamos crear y guardar la asistencia
-    const transaction = await sequelize.transaction();
-      
-    try {
-      await asistencia.create({espacio_id: query_espacio.id, docente_id: req.session.user.id, fecha: moment.now(), estado: state});
-    } catch (error) {
-        console.log('Error on asistencia creation: ', error);
-    }
-  
-    await transaction.commit();
+    console.log(data);
+
+    messaging.sendToApiJSON(data, '/seguimiento');
     
     res.redirect('/');
 

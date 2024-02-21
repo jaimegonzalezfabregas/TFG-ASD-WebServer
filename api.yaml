@@ -443,7 +443,7 @@ components:
       type: object
       properties:
         epoch:
-          type: integet
+          type: integer
           format: int64
           description: En formato epoch, el tiempo actual
           example: 1707416266705
@@ -595,15 +595,15 @@ components:
 
     RegistroSeguimientoFormulario:
       type: object
-        properties:
-          usuarioId:
-              type: integer
-              format: int64
-              description: Id del Usuario
-          espacioId:
-              type: integer
-              format: int64
-              description: Id del Espacio
+      properties:
+        usuarioId:
+          type: integer
+          format: int64
+          description: Id del Usuario
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del Espacio
         tipo_registro:
           type: string
           example: RegistroSeguimientoDocenteApp
