@@ -7,15 +7,15 @@
         <meta name="description" content="" />
         <meta name="author" content="" />
         <title>Main - ASD</title>
-        <link href="assets/css/styles.css" rel="stylesheet" />
-        <link href="assets/css/styles_tfg.css" rel="stylesheet" />
+        <link href="../assets/css/styles.css" rel="stylesheet" />
+        <link href="../assets/css/styles_tfg.css" rel="stylesheet" />
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-menu">
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <a class="navbar-brand ps-3" href="index.html"> Seguimiento Docente </a>
+            <a class="navbar-brand ps-3" href="/"> Seguimiento Docente </a>
             
             <!-- Navbar-->
             <ul class="d-md-inline-block navbar-nav ms-auto me-0 me-md-3 my-2 my-md-0">
@@ -43,8 +43,8 @@
                             </a>
                             <div class="collapse" id="collapseAsistencia" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="formulario-aulas.html">Registrar asistencia</a>
-                                    <a class="nav-link text-bg-menu" href="formulario-aulas-qr.html">QR</a>
+                                    <a class="nav-link text-bg-menu" href="/formulario-aulas">Registrar asistencia</a>
+                                    <a class="nav-link text-bg-menu" href="/formulario-aulas-qr">QR</a>
                                 </nav>
                             </div>
                             <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
@@ -54,9 +54,9 @@
                             </a>
                             <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="cambio-clase.html">Intercambiar Clase</a>
-                                    <a class="nav-link text-bg-menu" href="anular-clase.html">Cancelar Clase</a>
-                                    <a class="nav-link text-bg-menu" href="registro-motivo-falta.html">Registrar motivo de falta</a>
+                                    <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
+                                    <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
+                                    <a class="nav-link text-bg-menu" href="/registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
                             <div class="sb-sidenav-menu-heading text-bg-menu">Interface</div>
@@ -84,7 +84,7 @@
                                     </a>
                                     <div class="collapse" id="pagesCollapseAuth" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
                                         <nav class="sb-sidenav-menu-nested nav">
-                                            <a class="nav-link text-bg-menu" href="login.html">Login</a>
+                                            <a class="nav-link text-bg-menu" href="/login">Login</a>
                                             <a class="nav-link text-bg-menu" href="register.html">Register</a>
                                             <a class="nav-link text-bg-menu" href="password.html">Forgot Password</a>
                                         </nav>
@@ -120,60 +120,59 @@
                 </nav>
             </div>
         </div>
-            <div id="layoutSidenav_content">
-                <main>
-                    <div class="container-fluid below-navbar px-4">
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                Profesores con infracciones
-                            </div>
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid below-navbar px-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-table me-1"></i>
+                            Profesores con infracciones
+                        </div>
+                        <div class="card-body">
+                            <table id="datatablesSimple">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Faltas totales</th>
+                                        <th>Faltas en el último mes</th>
+                                        <th>Faltas justificadas</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Faltas totales</th>
+                                        <th>Faltas en el último mes</th>
+                                        <th>Faltas justificadas</th>
+                                    </tr>
+                                </tfoot>
+                                <tbody>
+                                    <% docentes.forEach(function(docente) { %>
                                         <tr>
-                                            <th>Nombre</th>
-                                            <th>Faltas totales</th>
-                                            <th>Faltas en el último mes</th>
-                                            <th>Faltas justificadas</th>
+                                            <td>docente.nombre</td>
+                                            <td>docente.totales</td>
+                                            <td>docente.mes</td>
+                                            <td>docente.justificadas</td>
                                         </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Faltas totales</th>
-                                            <th>Faltas en el último mes</th>
-                                            <th>Faltas justificadas</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <% docentes.forEach(function(docente) { %>
-                                            <tr>
-                                                <td>docente.nombre</td>
-                                                <td>docente.totales</td>
-                                                <td>docente.mes</td>
-                                                <td>docente.justificadas</td>
-                                            </tr>
-                                        <% }); %>
-                                    </tbody>
-                                </table>
-                            </div>
+                                    <% }); %>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </main>
-                <footer class="py-4 bg-light mt-auto">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                            <div>
-                                <a href="#">Privacy Policy</a>
-                                &middot;
-                                <a href="#">Terms &amp; Conditions</a>
-                            </div>
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
                         </div>
                     </div>
-                </footer>
-            </div>
+                </div>
+            </footer>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="./assets/js/scripts.js"></script>
