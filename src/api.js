@@ -179,29 +179,52 @@ app.post(api_path + '/dispositivos', async (req, res) => {
         security:
             - ApiKeyAuth: []
     */
-   
+    console.log("Recibido post dispositivos", req.body);
     if (req.body != null && Object.keys(req.body).length == 3 && req.body.nombre != null && req.body.espacioId != null && req.body.idExternoDispositivo != null) {
 
         if (!Number.isInteger(req.body.espacioId) || typeof req.body.nombre != 'string' || typeof req.body.idExternoDispositivo != 'string') {
             res.status(422).send('Datos no válidos');
             return;
         }
+        console.log("Post dispositivos con datos válidos");
         
         const transaction = await db.sequelize.transaction();
 
         try {   
             const endpointSeguimiento = 'http://' + api_config.host + ':' + api_config.port + api_path + '/seguimiento';
             const dispSecret = authenticator.generateSecret();
-            const disp = await db.sequelize.models.Dispositivo.create({ nombre: req.body.nombre, espacioId: req.body.espacioId, 
-                idExternoDispositivo: req.body.idExternoDispositivo, creadoPor: 1, actualizadoPor: 1, 
-                endpointSeguimiento: endpointSeguimiento , t0: 0, secret: dispSecret }); // Preguntar por creadoPor, actualizadoPor y t0 (calcular tiempo o siempre 0)
+            console.log(`Post dispositivos datos a pasar: ${endpointSeguimiento}, ${dispSecret}`);
 
+            let [disp, created] = await db.sequelize.models.Dispositivo.findOrCreate({
+                where: {
+                    nombre: req.body.nombre,
+                    espacioId: req.body.espacioId
+                },
+                defaults: { 
+                    nombre: req.body.nombre, 
+                    espacioId: req.body.espacioId, 
+                    idExternoDispositivo: req.body.idExternoDispositivo, 
+                    creadoPor: 1, actualizadoPor: 1, 
+                    endpointSeguimiento: endpointSeguimiento , 
+                    t0: 0, secret: dispSecret 
+                }
+            });
+
+            if (!created && req.body.idExternoDispositivo != disp.dataValues.idExternoDispositivo) {
+                console.log(`Nuevo idExternoDispositivo ${req.body.idExternoDispositivo} del dispositivo con id ${disp.dataValues.id}`);
+                await db.sequelize.models.Dispositivo.update({ idExternoDispositivo: req.body.idExternoDispositivo }, {
+                    where: {
+                        id: disp.dataValues.id
+                    }
+                });
+            }
+            
             const respuesta = {
                 id: disp.id,
                 nombre: req.body.nombre,
                 espacioId: req.body.espacioId,
                 idExternoDispositivo: req.body.idExternoDispositivo,
-                creadorEn: disp.creadoEn,
+                creadoEn: disp.creadoEn,
                 creadoPor: disp.creadoPor,
                 actualizadoEn: disp.actualizadoEn,
                 actualizadoPor: disp.actualizadoPor,
@@ -210,7 +233,7 @@ app.post(api_path + '/dispositivos', async (req, res) => {
                     t0: 0,
                     secret: dispSecret
                 },
-                timestamp: moment().format("YYYY-DD-MMThh:mm:ss.SSSZ")
+                epoch: moment.unix()
             }
 
             res.setHeader('Content-Type', 'application/json');
@@ -359,8 +382,8 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => {
 
 });
 
-// /time
-app.get(api_path + '/time', (req, res) => {
+// /ping
+app.get(api_path + '/ping', (req, res) => {
     /*
         tags:
             - dispositivos
@@ -373,8 +396,10 @@ app.get(api_path + '/time', (req, res) => {
     */
     
     const resultado = {
-        timestamp: moment.now()
+        epoch: moment.unix()
     }
+
+    console.log("Pong!", resultado);
 
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(resultado);
@@ -403,6 +428,42 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
     if (Object.keys(req.body).length != 0 && req.body.tipo_registro != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
 
         switch (req.body.tipo_registro) {
+            case "RegistroSeguimientoFormulario": 
+                if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
+
+                    const transaction = await db.sequelize.transaction();
+
+                    try {
+                        console.log('Searching in Docente for id');
+                        const query_user = await db.sequelize.models.Docente.findOne({
+                            attributes: ['id'],
+                            where: {
+                                id: req.body.usuarioId
+                            }
+                        })
+                        
+                        if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
+                            res.send(404, 'Usuario no encontrado');
+                            await transaction.rollback();
+                            return;
+                        }
+
+                        await db.sequelize.models.Asistencia.create({ docente_id: req.body.usuarioId, espacio_id: req.body.espacioId, fecha: moment().format("YYYY-DD-MMThh:mm:ss.SSSZ"), estado: req.body.estado});
+
+                        await transaction.commit();
+                    }
+                    catch (error) {
+                        console.log('Error while interacting with database:', error);
+                        res.status(500).send('Something went wrong');
+                        await transaction.rollback();
+                        return;
+                    }
+                }
+                else {
+                    res.status(422).send('Datos no válidos');
+                    return;
+                }
+            break;
             case "RegistroSeguimientoUsuario":
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
 
@@ -438,7 +499,7 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
                         }
                         
                         // Preguntar por window (totp.options = { window: 0 })
-                        totp.options = { epoch: req.body.totp.time, digits: 8, step: 30, window: [1, 0] };
+                        totp.options = { epoch: req.body.totp.time, digits: 6, step: 30, window: [1, 0] };
                         if (!totp.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
                             res.status(422).send('Datos no válidos');
                             await transaction.rollback();
@@ -474,7 +535,7 @@ app.post(api_path + '/seguimiento',  async (req, res) => {
 });
 
 // /ble
-app.get(api_path + '/ble', (req, res) => {
+app.get(api_path + '/ble', async (req, res) => {
     /*
         tags:
             - seguimiento
@@ -510,9 +571,96 @@ app.get(api_path + '/ble', (req, res) => {
                 description: Id suministrado no válido
             '404':
                 description: Espacio no encontrado
+            '422':
+                description: Datos no válidos
         security:
             - ApiKeyAuth: []
     */
+
+    if (Object.keys(req.body).length >= 0 && req.body.espacioId != null) {
+
+        if(Number.isInteger(req.body.espacioId)) {
+            const comienzo = (req.body.comienzo == null)? 30 : req.body.comienzo;
+            const fin = (req.body.fin == null)? 30 : req.body.fin;
+
+            const transaction = await db.sequelize.transaction();
+        
+            try {
+                const query_esp = await db.sequelize.models.Espacio.findOne({
+                    attributes:['id'],
+                    where: {
+                        id: req.params.idEspacio
+                    }
+                });
+
+                // Comprobamos que el espacio exista en la base de datos
+                if (Object.keys(query_esp.dataValues).length == 0) {
+                    res.status(404).send('Espacio no encontrado');
+                    await transaction.rollback();
+                    return;
+                }
+            
+                let respuesta = { actividades: [] };
+            
+                console.log('Searching in Actividad for id');
+                const query_act = await db.sequelize.models.Actividad.findAll({
+                    attributes:['id', 'tiempo_inicio', 'tiempo_fin'],
+                    include: {
+                        model: db.sequelize.models.Espacio,
+                        as: 'impartida_en',
+                        where: {
+                            id: req.params.idEspacio
+                        }
+                    }
+                });
+                    
+                //Si tiene actividades
+                if (query_act.length != 0) {
+                    query_act.forEach((act) => {
+                        if (act.dataValues.tiempo_inicio >= comienzo && act.dataValues.tiempo_fin <= fin) {
+                            respuesta.actividades.push({id: act.dataValues.id});
+                        }
+                    });
+
+                    const query_doc = await db.sequelize.model.Docente.findAll({
+                        attributes: ['id', 'mac'],
+                        include: {
+                            model: 'Actividad',
+                            as: 'imparte',
+                            where: {
+                                [Op.or]: respuesta.actividades
+                            }
+                        },
+                        include: {
+                            model: 'Macs',
+                            as: 'asociado_a'
+                        }
+                    });
+
+
+                }
+
+            
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200).send(respuesta);
+                    
+            }
+            catch (error) {
+                console.log('Error while interacting with database:', error);
+                res.status(500).send('Something went wrong');
+                await transaction.rollback();
+                return;
+            }
+            
+            await transaction.commit();
+        }
+        else {
+            res.status(400).send("Id suministrado no válido");
+        }
+    }
+    else {
+        res.status(422).send("Datos no válidos");
+    }
 });
 
 // /login
@@ -540,7 +688,7 @@ app.post(api_path + '/login', async(req, res) => {
         console.log('Searching in Docente for id, email, password, nombre, apellidos');
 
         const query = await db.sequelize.models.Docente.findOne({
-            attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol', 'secret'],
+            attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol'],
             where: {
                 email: req.body.email
             }

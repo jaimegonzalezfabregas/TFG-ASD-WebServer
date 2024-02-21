@@ -141,8 +141,7 @@
                                         <label for="clase">Asignatura y Grupo</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio.nombre %>" readonly/>
-                                        <input id="espacioId" name="espacioId" type="hidden" value="<%= espacio.id %>"/>
+                                        <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio %>" readonly/>
                                         <label for="espacio">Aula / Laboratorio</label>
                                     </div>
                                     <div class="form-floating mb-3">
@@ -159,7 +158,6 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
                                         <a class="btn btn-primary" href="../formulario-aulas">Atrás</a>
-                                        <input id="actividad_ids" name="actividad_ids" type="hidden" value="<%= JSON.stringify(actividad_ids) %>"/>
                                         <button class="btn btn-primary" type="submit">OK</a>
                                     </div>
                                 </form>

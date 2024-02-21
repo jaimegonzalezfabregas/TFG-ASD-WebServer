@@ -314,7 +314,7 @@ paths:
         '404':
           description: Grupo no encontrado
       
-  /time:
+  /ping:
     get:
       tags:
         - dispositivos
@@ -442,10 +442,11 @@ components:
     EpochActual:
       type: object
       properties:
-        timestamp:
-          type: string
+        epoch:
+          type: integet
+          format: int64
           description: En formato epoch, el tiempo actual
-          example: "1707416266705"
+          example: 1707416266705
 
     EspacioUpdateData:
       type: object
@@ -587,10 +588,28 @@ components:
         - $ref: '#/components/schemas/RegistroSeguimiento'
         - type: object
           properties:
-            idUsuario:
+            usuarioId:
               type: integer
               format: int64
               description: Id del Usuario
+
+    RegistroSeguimientoFormulario:
+      type: object
+        properties:
+          usuarioId:
+              type: integer
+              format: int64
+              description: Id del Usuario
+          espacioId:
+              type: integer
+              format: int64
+              description: Id del Espacio
+        tipo_registro:
+          type: string
+          example: RegistroSeguimientoDocenteApp
+      discriminator:
+        propertyName: tipo_registro
+            
 
     BaseRegistroSeguimientoDispositivo:
       type: object
@@ -632,6 +651,7 @@ components:
 
     SeguimientoNuevo:
       oneOf:
+        - $ref: '#/components/schemas/RegistroSeguimientoFormulario'
         - $ref: '#/components/schemas/RegistroSeguimientoUsuario'
         - $ref: '#/components/schemas/RegistroSeguimientoDispositivoBle'
         - $ref: '#/components/schemas/RegistroSeguimientoDispositivoQr'
@@ -863,13 +883,18 @@ components:
           schema:
             $ref: '#/components/schemas/SeguimientoNuevo'
           examples:
+            RegistroSeguimientoFormulario:
+              value: 
+                tipo_registro: RegistroSeguimientoFormulario
+                espacioId: 1
+                usuarioId: 1
             RegistroSeguimientoUsuario:
               value:
                 tipo_registro: RegistroSeguimientoUsuario
                 espacioId: 1
                 usuarioId: 1
                 totp:
-                  value: 94287082
+                  value: 942870
                   time: 59
             RegistroSeguimientoDispositivoBle:
               value:
@@ -878,7 +903,7 @@ components:
                 dispositivoId: 1
                 mac: '00:11:22:33:FF:EE'
                 totp:
-                  value: 07081804
+                  value: 070818
                   time: 1111111109
             RegistroSeguimientoDispositivoQr:
               value:
@@ -888,7 +913,7 @@ components:
                 qr: |
                   ZXlKaGJHY2lPaUpTVTBFdFQwRkZVQ0lzSW1WdVl5STZJa0V5TlRaRFFrTXRTRk0xTVRJaUxDSnJhV1FpT2lJeE9HSXhZMlkzTlRoak1XUTBaV00yWW1SaE5qVTRPVE0xTjJGaVpHUTROU0lzSW5SNWNDSTZJa3BYVkNJc0ltTjBlU0k2SWtwWFZDSjkuZ0NieFA3OG8zRGdwRFRVUWJ1SG5pdUdnWXBBVHFnR2tSR3k3cGFDNmhScno3TjdlSWE2c0FPV0RPOUZobmotYzhvY01sNGNGNEpiX212NXFSUENoOXI1N1BCcXg3ak9oTUlNUFR3SkdwamN5QmFxdEhsWmx1MXZ1cFk1dFEzWTJqR3oxVGk0Qm55d2FlRUhQeUlQUUp0TjdGN2hJQU9Semo3SVk0c0lLa1ZYdFFKWmdhS1c4cEVIcV9HQ3FqOGk1YWFpTTB1Sm5SRzNHT2gzbGl2cDlOcGp2OWRvcXAzZ3lQYTF6anJnMkgxUnNPR24wajJRTUd2dHVWZmt1TndGLVNvUEtGRUN5SE9xMFpLMW9IMnNUTzgtSnd2SGZsYklaUXI1eFdUcFM4cTdNYlVYRXVxVVJ0cmcwVGotMno2dGRhT0xUNGIzVWVEdWZLMmFyM2JCZlJENC1uUkFMdG9ZMGVrY015R0ZPUzdvMU14bDNoeTVzSUctRXlTeVdldUJWeTY4YURXRHBpOXFab1F1WTFUYnh4YWtqbmNDT0d1X0doMWwxbV9tSzJsX0lkeVhDVF9HQ2Z6RnE0WlRrUFo1ZXlkTkJBUFp1eEJMVWI0QnJNYjVpRGRaalQ3QWdHT2xScmVfd0lSSG1tS204VzluRGVRUVJtYklYTzIzSnVPdzkuQkRDYXJmcTJyX1VrOERITmZzTndTUS40RHVReDFjZkpYYWRIbnVkclZhQnNzNDV6eHlkNmlvdXVTelpVeU9lTTRpa0ZfN2hET2d3bWFDbWEtWjk3X1FaQko1RHpWbjlTSmhLVVRBcXBWUjNCUkdBeEpfSEFYVTVqYVRqWHFidlVheHNoN1o1VGdaOWVjazBGSW9lMWxrd3Y1MXhFdllxcVFfWG9qcjRNQUVtTHVNRV85QXJDSzltTmFNQURJek9qNFZvUXRhRFAxbDI2eXRvY2Mtb0VOaWZCUllHdTI4TGJKTGt5UUt6eVF5NkZ1QU90V2pMTTBXQ1hWNy1vX2R2ajZxZmVZSE5CRDdZQlN4eXFkZ0Q4ZGN4TUJOZDJzSzczWXNaUEhFYTBWMS04eno3aG0zYkgzdFplbHB3UFdTY3FMTFdfU1VINTg2YzBGVmVJNmdndnF6amZMWl9ZNmVRaWJWU2RYZk90SkJrMjJRckxzdUNYYlJLOEcxdzl0MjNQd3U4dWtVQXc0djBsN0hlYVdfMFNKeUtTUFFBTlJQODNNeUZiSzdmbXpUWWFXOVRZTjJKcktOLVBMcGQyZElGU20yR2FfRWZhQ3dOSkJtNFJETXpETnJm
                 totp:
-                  value: 14050471
+                  value: 140504
                   time: 1111111111
             RegistroSeguimientoDispositivoNFC:
               value:
@@ -897,7 +922,7 @@ components:
                 dispositivoId: 3
                 uid: 'y7w1T/D23w=='
                 totp:
-                  value: 89005924
+                  value: 890059
                   time: 1234567890
                 
     LoginUsuario:
