@@ -200,7 +200,7 @@ paths:
         - usuarios
       summary: Devuelve los parámetros de un usuario
       description: Dados un email y una contraseña válidas y en base de datos, devuelve los parámetros del usuario asociado.
-      operationId: loginUser
+      operationId: authenticateUser
       requestBody:
         $ref: '#/components/requestBodies/LoginUsuario'
       responses:
