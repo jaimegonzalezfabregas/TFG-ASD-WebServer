@@ -3,6 +3,8 @@ const path = require('path');
 const { Sequelize, DataTypes, Op } = require ('sequelize');
 const moment = require('moment');
 const session = require('express-session')
+const session_controller =  require('./controllers/app/session.controller.js');
+const form_controller =  require('./controllers/app/form.controller.js');
 require('dotenv').config();
 const db_config = require('./config/db.config.js');
 const { Docente, Actividad, Espacio, Asignatura, Grupo, Recurrencia, Excepcion, Plan, Titulacion, Asistencia } = require('./models');
@@ -16,9 +18,13 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: 'keyboard cat',
+  secret: 'keyboard cat', //TODO Poner algo un pelín más secreto
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  // Hacer la sesión expirable
+  cookie: {
+    maxAge: 30 * 60 * 1000 // 30 minutos en milisegundos
+  }
 }));
 
 // Página web
@@ -33,263 +39,37 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res) => {
   console.log(`Got a POST in login with ${JSON.stringify(req.body)}\n`);
-  const redirectTo = req.session.redirectTo || '/';
-  delete req.session.redirectTo;
+  await session_controller.login(req, res);
+});
 
-  let data = { 
-    email: req.body.usuario,
-    password: req.body.password
-  }
-  
-  let usuario = await (messaging.sendToApiJSON(data, '/login'));
-
-  if (usuario != null) {
-    const sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email };
-
-    req.session.regenerate(function (err) {
-      if (err) next(err)
-  
-      // Guardar info del usuario en session
-      req.session.user = sesion;
-  
-      // Guardar la sesión y luego redirigir
-      req.session.save(function (err) {
-        if (err) return next(err)
-    
-        console.log(req.session);
-
-        console.log(redirectTo);
-        res.redirect(redirectTo);
-      });
-    });
-  }
-  else {
-    res.render('login', {usuario: req.body.usuario});
-  }
-
+app.get('/logout', checkSesion, async (req, res) => {
+  console.log('Got a GET in logout');
+  await session_controller.logout(req, res);
 });
 
 app.get('/formulario-aulas', checkSesion, async (req, res) => {
   console.log('Got a GET in formulario-aulas');
-
-  let data = { 
-    opcion: (req.query.all != 'yes') ? "espacios_rutina" : "espacios_irregularidad"
-  }
-
-  const id_sesion = (req.session.user.id).toString();
-  const api_path = `/espacios/usuarios/${id_sesion}`;
-  let espacios_ids = (await messaging.sendToApiJSON(data, api_path)).espacios;
-
-  let espacios_data = [];
-  for (let i = 0; i < espacios_ids.length; i++) {
-    const id_esp = (espacios_ids[i].id).toString();
-    const api_esp_path = `/espacios/${id_esp}`;
-    console.log(api_esp_path);
-    espacios_data.push((await messaging.getFromApi(api_esp_path)));
-  }
-
-    //Sacamos un array separando los espacios por edificio ([{ edificio, espacios }, { edificio, espacios }, ...])
-  let espacios_doc = [];
-  let edif = null;
-  espacios_data.forEach((esp) => {
-    if (esp.edificio != edif) {
-      edif = esp.edificio;
-      espacios_doc.push({ edificio: edif, espacios: []});
-    }
-    espacios_doc[espacios_doc.length - 1].espacios.push({ id: esp.id, nombre: esp.nombre });
-  });
-
-  //Enseñamos únicamente los espacios que coincidan con las actividades
-  res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
-  return;
-
+  await form_controller.getEspaciosPosibles(req, res);
 });
 
 app.post('/formulario-aulas', checkSesion, (req, res) => {
   console.log(`Got a POST in formulario-aulas with ${JSON.stringify(req.body)}`);
-  if (req.body.espacio == "Otro") {
-    res.redirect('/formulario-aulas/?all=yes');
-  }
-  else {
-    res.redirect(`/formulario-end/?espacio=${req.body.espacio}`);
-  }
+  form_controller.confirmEspacioPosible(req, res);
 });
 
 app.get('/formulario-end', checkSesion, async (req, res) => {
-  console.log(req.query);
-  console.log(Object.keys(req.query).length > 0, Object.keys(req.query).length);
-  let redirection = null;
-  if (Object.keys(req.query).length > 0) { 
-    redirection = req.url;
-  } 
-
-  let esp = '';
-  if (Object.keys(req.query).length != 0) {
-    esp = req.query.espacio;
-    req.session.espacio_id = parseInt(esp);
-  }
-  const currentHour = moment('16:30', 'HH:mm');//moment().format('hh:mm');
-  const esp_data = (await messaging.getFromApi(`/espacios/${esp}`));
-
-  // query a base de datos para conseguir asignatura y grupo que sería
-  const id_sesion = (req.session.user.id).toString();
-  const api_path_act_us = `/actividades/usuarios/${id_sesion}`;
-  let actividades_ids_us = (await messaging.getFromApi(api_path_act_us)).actividades;
-  const api_path_act_esp = `/actividades/espacios/${esp}`;
-  let actividades_ids_esp = (await messaging.getFromApi(api_path_act_esp)).actividades;
-
-  let actividades_ids = actividades_ids_us.filter(x => {
-    for(let i = 0; i < actividades_ids_esp.length; i++) {
-      if (x.id == actividades_ids_esp[i].id) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  console.log(actividades_ids);
-
-  let actividades_data = [];
-  for (let i = 0; i < actividades_ids.length; i++) {
-    const id_act = (actividades_ids[i].id).toString();
-    const api_act_path = `/actividades/${id_act}`;
-    console.log(api_act_path);
-    actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path))});
-  }
-
-  req.session.actividades_ids = [];
-
-  //Comprobamos que estén en la franja horaria actual
-  let actividades_posibles = [];
-  actividades_data.forEach((act) => {
-    const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
-    const fin = moment(act.data.tiempo_fin, 'HH:mm');
-    console.log(inicio, fin, currentHour, inicio <= currentHour, fin >= currentHour);
-    if (inicio <= currentHour && currentHour <= fin) {
-      actividades_posibles.push(act.data);
-      req.session.actividades_ids.push(act.id);
-      console.log(act);
-    }
-  });
-
-  console.log(req.session.actividades_ids, actividades_posibles.length, actividades_posibles);
-
-  if (actividades_posibles.length != 0) { 
-
-    let clases_data = [];
-    for (let i = 0; i < actividades_posibles.length; i++) {
-      for (let j = 0; j < actividades_posibles[i].clase_ids.length; j++) {
-        const id_cl = (actividades_posibles[i].clase_ids[j].id).toString();
-        const api_cl_path = `/clases/${id_cl}`;
-        clases_data.push((await messaging.getFromApi(api_cl_path)));
-        console.log(clases_data[j]);
-      }
-    }
-
-    let clases_info = [];
-    for (let i = 0; i < clases_data.length; i++) {
-      const id_asig = (clases_data[i].asignatura_id).toString();
-      const api_asig_path = `/asignaturas/${id_asig}`;
-      const id_gr = (clases_data[i].grupo_id).toString();
-      const api_gr_path = `/grupos/${id_gr}`;
-      clases_info.push({grupo: (await messaging.getFromApi(api_gr_path)), asignatura: (await messaging.getFromApi(api_asig_path)) });
-    }
-
-    let resultado = {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                     espacio: esp_data.nombre + " " + esp_data.edificio,
-                     hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] 
-                     // clases = [ { asignatura: , grupo: } ]
-    };
-
-    console.log(currentHour.toString(), moment(currentHour.toString()).format('HH:mm'));
-
-    clases_info.forEach((clase) => {
-      const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
-      const str_grupo = clase.grupo.curso + "º" + clase.grupo.letra;
-
-      resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
-        
-    });
-      
-    console.log(resultado);
-    res.render('formulario-end', resultado);
-    return;
-  }
-  else {
-    res.render('formulario-end', {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                                  espacio: esp_data.nombre + " " + esp_data.edificio, 
-                                  hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] });
-  }
+  console.log(`Got a GET in formulario-end with ${JSON.stringify(req.body)}`);
+  await form_controller.getForm(req, res);
 });
 
 app.post('/formulario-end', checkSesion, async (req, res) => {
-    console.log(JSON.stringify(req.body));
-    // query a base de datos para conseguir asignatura y grupo que sería
-
-    const espacio_id = req.session.espacio_id;
-
-    const actividades_ids = req.session.actividades_ids;
-  
-    let state = 'Asistida con Irregularidad';
-  
-    if (actividades_ids.length != 0) {
-      state = 'Asistida'; 
-    }
-
-    const data = {
-      tipo_registro: "RegistroSeguimientoFormulario",
-      espacioId: espacio_id,
-      usuarioId: req.session.user.id,
-      estado: state
-    }
-
-    console.log(data);
-
-    messaging.sendToApiJSON(data, '/seguimiento');
-    
-    res.redirect('/');
-
+  console.log(`Got a POST in formulario-end with ${JSON.stringify(req.body)}`);
+  form_controller.postForm(req, res);
 });
 
 app.get('/formulario-aulas-qr', checkSesion, async (req, res) => {
   console.log('Got a GET in formulario-aulas-qr');
-  //Añadir comprobaciones (Sesión iniciada, tiene clases en ese periodo, etc.)
-  
-  const sequelize = new Sequelize(db_config.name, db_config.user, db_config.password, { dialect: db_config.dialect, host: db_config.host, port: db_config.port});
-
-  try {
-    await sequelize.authenticate();
-    console.log('Connection successful.');
-  }
-  catch (error) {
-    console.error('Unable to connect:', error);
-    res(500, "Something went wrong");
-    return;
-  }
-  
-  const espacio = Espacio.model(sequelize, DataTypes);
-
-  await espacio.sync();
-  
-  console.log('Searching in Espacio for numero, tipo, edificio');
-  const query_esp_all = await espacio.findAll({
-    attributes:['numero', 'tipo', 'edificio'],
-    order: [['edificio'], ['tipo'], ['numero']]
-  });
-
-  let espacios_todos = [];
-  let edifx = null;
-  query_esp_all.forEach((esp) => {
-    if (esp.dataValues.edificio != edifx) {
-      edifx = esp.dataValues.edificio;
-      espacios_todos.push({ edificio: edifx, espacios: []});
-    }
-    espacios_todos[espacios_todos.length - 1].espacios.push(esp.dataValues);
-  });
-
-  // Todos los espacios
-  res.render('formulario-aulas', { espacios: espacios_todos, all: true });
-
+  await form_controller.getAllEspacios(req, res);
 });
 
 app.post('/formulario-aulas-qr', checkSesion, (req, res) => {
@@ -420,4 +200,3 @@ function checkSesion(req, res, next) {
   }
 
 }
-
