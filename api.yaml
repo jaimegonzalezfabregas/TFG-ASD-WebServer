@@ -193,6 +193,19 @@ paths:
           description: Espacio no encontrado
       security:
         - ApiKeyAuth: []
+
+  /seguimiento/asistencias:
+    post:
+      tags:
+        - seguimiento
+      summary: Devuelve las asistencias del día
+      description: Devuelve una lista de asistencias con sus estados y motivos
+      operationId: getAsistencias
+      requestBody:
+        $ref : '#/components/requestBodies/FiltroAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
   
   /login:
     post:
@@ -208,7 +221,7 @@ paths:
           $ref: '#/components/responses/UsuarioData'
         '422':
           description: Datos no válidos
-        
+
   /actividades/usuarios/{idUsuario}:
     get:
       tags:
@@ -695,7 +708,69 @@ components:
             type: string
             format: binary
           example: ['00:11:22:33:FF:EE', '11:22:33:44:AA:BB']
-
+          
+    EstadoAsistencia:
+      type: object
+      properties:
+        estado:
+          type: string
+          enum: 
+          - Asistida
+          - Asistida con Irregularidad
+          - No Asistida
+          description: |
+            'Asistida': La actividad está asistida como planeado
+            'Asistida con Irregularidad': La actividad está asistida, pero no como programado
+            'No Asistida': La actividad no ha sido asistida durante su periodo
+          
+    Asistencia:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            espacioId:
+              type: integer
+              format: int64
+              example: 1
+              description: Id del espacio donde se ha asistido la actividad
+            docenteId:
+              type: integer
+              format: int64
+              example: 1
+              description: Id de la persona que ha asistido, o se encargaba de asistir a una actividad
+            fecha:
+              type: string
+              description: Fecha de registro de asistencia de la actividad
+              example: "2024-02-14T09:00:00.000Z"        
+            motivo:
+              type: string
+              description: Motivo por el que no se ha asistido a una actividad.
+              example: "Motivos médicos"
+            
+    FiltroAsistencia:
+      allOf:
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            motivo:
+              type: string
+              enum:
+              - Sí
+              - No
+              description: |
+                'Sí': Se buscarán las asistencias con motivos
+                'No': Se buscarán las asistencias sin motivos
+          
+    ListaAsistencia:
+      type: object
+      properties:
+        asistencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asistencia'
+          
     UsuarioBasicData:
       type: object
       properties:
@@ -924,6 +999,14 @@ components:
                 totp:
                   value: 890059
                   time: 1234567890
+                  
+    FiltroAsistencia:
+      required: false
+      description: Parámetro opcional para filtrar las Asistencias por un Estado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FiltroAsistencia'
                 
     LoginUsuario:
       required: true
@@ -988,6 +1071,20 @@ components:
           schema:
             $ref: '#/components/schemas/MACsUsuario'
             
+    Asistencia:
+      description: Datos de una asistencia mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Asistencia'
+            
+    ListaAsistencias:
+      description: Datos de varias asistencias, con sus ids
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListaAsistencia'
+            
     Actividad:
       description: Datos de una actividad mas su id
       content:
@@ -1041,7 +1138,7 @@ components:
             $ref: '#/components/schemas/GrupoData'
             
     EpochActual:
-      description: Timestamp en formato estándar del momento actual
+      description: Timestamp en formato epoch del momento actual
       content:
         application/json:
           schema:
