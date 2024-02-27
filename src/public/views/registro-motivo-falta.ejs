@@ -141,25 +141,23 @@
                                         <label for="asignaturaygrupo">Asignatura y Grupo</label>
                                     </div>
                                     <p>Motivo</p>
-                                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                                        <div class="form-check">
-                                            <input type="radio" name="olvido" class="btn-group btn-group-toggle form-check-input" id="olvido">
+                                    <div class="btn-group-toggle" data-toggle="buttons">
+                                        <div class="form-check radio-container">
+                                            <input type="radio" name="motivo" class="form-check-input" id="olvido">
                                             <label for="olvido">Olvidé firmar</label>
                                         </div>
-                                        <div class="form-check">
-                                            <input type="radio" name="medico" class="btn-group btn-group-toggle form-check-input" id="medico">
+                                        <div class="form-check radio-container">
+                                            <input type="radio" name="motivo" class="form-check-input" id="medico">
                                             <label for="medico">Indisposición médica</label>
                                         </div>
-                                        <div class="form-check">
-                                            <input type="radio" name="cuidado-familiar" class="btn-group btn-group-toggle form-check-input" id="cuidado-familiar">
+                                        <div class="form-check radio-container">
+                                            <input type="radio" name="motivo" class="form-check-input" id="cuidado-familiar">
                                             <label for="cuidado-familiar">Cuidado de un familiar</label>
                                         </div>
-                                        <div class="form-check">
-                                            <input type="radio" name="otro" class="btn-group btn-group-toggle form-check-input" id="otro">
+                                        <div class="form-check radio-container">
+                                            <input type="radio" name="motivo" class="form-check-input" id="otro">
                                             <label for="otro">Otro</label>
-                                        </div>
-                                        <div class="form-floating mb-3">
-                                            <input type="form-control" name="texto-otro" class="form-check-input" id="texto-otro">
+                                            <input class="form-control ms-2" type="text" name="texto-otro" id="texto-otro">
                                         </div>
                                     </div>
                                 </form>
@@ -176,5 +174,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="../assets/js/a.js"></script>
     </body>
 </html>

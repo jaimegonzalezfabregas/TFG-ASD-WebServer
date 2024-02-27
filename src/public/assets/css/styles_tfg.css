@@ -40,3 +40,47 @@
 .vh-75 {
     height: 75vh
 }
+
+.radio-container {
+    display: flex;
+    align-items: center;
+}
+
+.radio-container input[type="radio"] {
+    margin-right: 10px;
+}
+
+a {
+    text-decoration: none;
+    color: rgb(0, 0, 0);
+}
+
+a:hover {
+    color: rgb(0, 0, 0);
+}
+
+.form-floating .select2-container {
+    position: relative;
+}
+
+.form-floating .select2-container .select2-selection--single {
+    padding-top: calc(3.5rem + 2px); /* Adjust as needed */
+}
+
+.form-floating .select2-container .select2-selection__rendered {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1.6rem 0.75rem; /* Match Bootstrap input padding */
+    pointer-events: none; /* Ensure label doesn't interfere with Select2 functionality */
+    z-index: 1; /* Ensure label appears above Select2 dropdown */
+}
+
+.form-floating .select2-container .select2-selection--single .select2-selection__arrow {
+    top: 1rem; /* Adjust as needed */
+}
+
+.select2-container--default .select2-selection--single {
+    border: 1px solid #ced4da;
+}
