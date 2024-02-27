@@ -7,19 +7,6 @@ const api_config = require('./config/api.config');
 // Controladores de la API
 const api_controllers = require('./controllers/api');
 
-const spices = [
-    "inOPPh4IThFNhRF0",
-    "rYYzv9VdRixlne1k",
-    "j8XT8s3IsGqTNrYJ",
-    "2CkN3WNmw9ZtkZ0p",
-    "1EievW4P3Cn1dgvZ",
-    "EXQgyv6DYck0thU8",
-    "DHetHwn1uzphv0Gu",
-    "TGZbU4V6klXw8hHe",
-    "Oxi8DnH6KVXytWFB",
-    "Gfx7HYNlCLr5KEaQ"
-]
-
 app.use(express.json());
 
 /* /espacios
@@ -75,7 +62,7 @@ app.get(api_path + '/espacios/:idEspacio', async (req, res) => await api_control
         '422':
             description: Datos no válidos
 */
-app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await api_controllers.espacio.getEspacioOfUsuario(req, res, db));
+app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await api_controllers.espacio.getEspaciosOfUsuario(req, res, db));
 
 /* /dispositivos
 
@@ -90,7 +77,7 @@ app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await a
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivos.getDispositivos(req, res, db));
+app.get(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivo.getDispositivos(req, res, db));
 
 /* /dispositivos
 
@@ -109,7 +96,7 @@ app.get(api_path + '/dispositivos', async (req, res) => await api_controllers.di
     security:
         - ApiKeyAuth: []
 */
-app.post(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivos.creaDispositivo(req, res, db));
+app.post(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivo.creaDispositivo(req, res, db, api_config, api_path));
 
 /* /dispositivos/{idDispositivo}
 
@@ -130,7 +117,7 @@ app.post(api_path + '/dispositivos', async (req, res) => await api_controllers.d
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivos.getDispositivoById(req, res, db));
+app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivo.getDispositivoById(req, res, db));
 
 /* /dispositivos/{idDispositivo}
 
@@ -151,7 +138,7 @@ app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api
     security:
         - ApiKeyAuth: []
 */
-app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivos.deleteDispositivo(req, res, db));
+app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivo.deleteDispositivo(req, res, db));
 
 /* /ping
 
@@ -164,7 +151,7 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => await 
         '200':
             $ref: '#/components/responses/TimestampActual'
 */
-app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositivos.getLocalTime(req, res, db));
+app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositivo.getLocalTime(req, res, db));
 
 /* /seguimiento
 
@@ -184,6 +171,9 @@ app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositiv
         - ApiKeyAuth: []
 */
 app.post(api_path + '/seguimiento', async (req, res) => await api_controllers.seguimiento.registroAsistencia(req, res, db));
+
+
+app.post(api_path + '/seguimiento/asistencias', async (req, res) => await api_controllers.seguimiento.getAsistencias(req, res, db));
 
 /* /ble
 
@@ -265,7 +255,7 @@ app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.
         '404':
           description: Usuario no encontrado
     */
-app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => await api_controllers.actividades.getActividadesOfUsuario(req, res, db));
+app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => await api_controllers.actividad.getActividadesOfUsuario(req, res, db));
 
 /* /actividades/:idActividad
 
@@ -284,7 +274,7 @@ app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => await
         '404':
           description: Actividad no encontrada
     */
-app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_controllers.actividades.getActividadById(req, res, db));
+app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_controllers.actividad.getActividadById(req, res, db));
 
 /* /actividades/espacios/:idEspacio
 
@@ -304,7 +294,7 @@ app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_co
         '404':
           description: Espacio no encontrado
 */
-app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => api_controllers.actividades.getActividadesOfEspacio(req, res, db));
+app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => await api_controllers.actividad.getActividadesOfEspacio(req, res, db));
 
 /* /clases/:idClase
 

@@ -1,5 +1,5 @@
-const { Op } = require("sequelize");
 const moment = require('moment');
+const { authenticator } = require('otplib');
 
 async function getDispositivos(req, res, db) {
 
@@ -29,7 +29,7 @@ async function getDispositivos(req, res, db) {
     await transaction.commit();    
 }
 
-async function creaDispositivo(req, res, db) {
+async function creaDispositivo(req, res, db, api_config, api_path) {
     console.log("Recibido post dispositivos", req.body);
     if (req.body != null && Object.keys(req.body).length == 3 && req.body.nombre != null && req.body.espacioId != null && req.body.idExternoDispositivo != null) {
 
@@ -196,7 +196,7 @@ async function deleteDispositivo(req, res, db) {
 async function getLocalTime(req, res, db) {
     
     const resultado = {
-        epoch: moment.unix()
+        epoch: Math.floor(new Date().getTime() / 1000)
     }
 
     console.log("Pong!", resultado);
@@ -204,7 +204,6 @@ async function getLocalTime(req, res, db) {
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(resultado);    
 }
-
 
 module.exports = {
     getDispositivos, creaDispositivo, getDispositivoById, deleteDispositivo, getLocalTime

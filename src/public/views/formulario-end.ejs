@@ -130,12 +130,16 @@
                         <div class="mt-lg-5 mt-sm-2 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
                             <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
                             <div class="card-body">
+                                <% if (typeof error != 'undefined') { %>
+                                <p class="text-error"><%= error %></p>
+                                <% } %>
                                 <form method="post"> 
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="docente" id="docente" value="<%= usuario %>" readonly/>
                                         <label for="docente">Docente</label>
                                     </div>
                                     <div class="form-floating mb-3">
+                                        <input type="hidden" name="clases" value="<%= JSON.stringify(clases) %>">
                                         <% clases.forEach(function(clase) { %>
                                             <input type="text" class="select form-control" name="asignatura" id="clase" value="<%= clase.asignatura %> <%= clase.grupo %>" readonly/>
                                         <% }); %>
@@ -144,6 +148,10 @@
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="espacio" id="espacio" value="<%= espacio %>" readonly/>
                                         <label for="espacio">Aula / Laboratorio</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="number" maxlength="6" class="form-control" name="totp" id="totp" value="<%= totp %>"/>
+                                        <label for="totp">TOTP</label>
                                     </div>
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="hora" id="hora" value="<%= hora %>" readonly/>

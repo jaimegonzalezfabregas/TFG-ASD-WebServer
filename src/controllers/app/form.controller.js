@@ -1,87 +1,94 @@
 const messaging = require('../../messaging');
+const moment = require('moment');
 
 async function getEspaciosPosibles(req, res) {
-    let data = { 
-      opcion: (req.query.all != 'yes') ? "espacios_rutina" : "espacios_irregularidad"
+  let data = { 
+    opcion: (req.query.all != 'yes') ? "espacios_rutina" : "espacios_irregularidad"
+  }
+
+  let espacios_doc = [];
+
+  const id_sesion = (req.session.user.id).toString();
+  const api_path = `/espacios/usuarios/${id_sesion}`;
+  let espacios_ids = (await messaging.sendToApiJSON(data, api_path, res, false)).espacios;
+
+  if (espacios_ids.length > 0) {
+    let espacios_data = [];
+    for (let i = 0; i < espacios_ids.length; i++) {
+      const id_esp = (espacios_ids[i].id).toString();
+      const api_esp_path = `/espacios/${id_esp}`;
+      console.log(api_esp_path);
+      espacios_data.push((await messaging.getFromApi(api_esp_path, res, false)));
     }
-  
-    let espacios_doc = [];
-  
-    const id_sesion = (req.session.user.id).toString();
-    const api_path = `/espacios/usuarios/${id_sesion}`;
-    let espacios_ids = (await messaging.sendToApiJSON(data, api_path, res)).espacios;
-  
-    if (espacios_ids.length > 0) {
-      let espacios_data = [];
-      for (let i = 0; i < espacios_ids.length; i++) {
-        const id_esp = (espacios_ids[i].id).toString();
-        const api_esp_path = `/espacios/${id_esp}`;
-        console.log(api_esp_path);
-        espacios_data.push((await messaging.getFromApi(api_esp_path, res)));
+
+    //Sacamos un array separando los espacios por edificio ([{ edificio, espacios }, { edificio, espacios }, ...])
+    let edif = null;
+    espacios_data.forEach((esp) => {
+      if (esp.edificio != edif) {
+        edif = esp.edificio;
+        espacios_doc.push({ edificio: edif, espacios: []});
       }
-  
-      //Sacamos un array separando los espacios por edificio ([{ edificio, espacios }, { edificio, espacios }, ...])
-      let edif = null;
-      espacios_data.forEach((esp) => {
-        if (esp.edificio != edif) {
-          edif = esp.edificio;
-          espacios_doc.push({ edificio: edif, espacios: []});
-        }
-        espacios_doc[espacios_doc.length - 1].espacios.push({ id: esp.id, nombre: esp.nombre });
-      });
-    }
-    else {
-      res.redirect('/formulario-aulas/?all=yes');
-      return;
-    }
-  
-    //Enseñamos únicamente los espacios que coincidan con las actividades
-    res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
+      espacios_doc[espacios_doc.length - 1].espacios.push({ id: esp.id, nombre: esp.nombre });
+    });
+  }
+  else {
+    res.redirect('/formulario-aulas/?all=yes');
     return;
+  }
+
+  //Enseñamos únicamente los espacios que coincidan con las actividades
+  res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
+  return;
 }
 
 async function getAllEspacios(req, res) {
-    let query_esp_all = await messaging.getFromApi('/espacios', res);
+  let query_esp_all = await messaging.getFromApi('/espacios', res, true);
+
+  let espacios_todos = [];
+  let edifx = null;
+  query_esp_all.forEach((esp) => {
+    if (esp.dataValues.edificio != edifx) {
+      edifx = esp.dataValues.edificio;
+      espacios_todos.push({ edificio: edifx, espacios: []});
+    }
+    espacios_todos[espacios_todos.length - 1].espacios.push(esp.dataValues);
+  });
   
-    let espacios_todos = [];
-    let edifx = null;
-    query_esp_all.forEach((esp) => {
-      if (esp.dataValues.edificio != edifx) {
-        edifx = esp.dataValues.edificio;
-        espacios_todos.push({ edificio: edifx, espacios: []});
-      }
-      espacios_todos[espacios_todos.length - 1].espacios.push(esp.dataValues);
-    });
-  
-    // Todos los espacios
-    res.render('formulario-aulas', { espacios: espacios_todos, all: true });
-  }
+  // Todos los espacios
+  res.render('formulario-aulas', { espacios: espacios_todos, all: true });
+}
 
 function confirmEspacioPosible(req, res) {
-    if (req.body.espacio == "Otro") {
-        res.redirect('/formulario-aulas/?all=yes');
-    }
-    else {
-        res.redirect(`/formulario-end/?espacio=${req.body.espacio}`);
-    }
-    return;
+  if (req.body.espacio == "Otro") {
+      res.redirect('/formulario-aulas/?all=yes');
+  }
+  else {
+      res.redirect(`/formulario-end/?espacio=${req.body.espacio}`);
+  }
+  return;
 }
 
 async function getForm(req, res) {
   let esp = '';
+  let totp = '';
   if (Object.keys(req.query).length != 0) {
-    esp = req.query.espacio;
-    req.session.user.espacio_id = parseInt(esp);
+    if (req.query.espacioId) {
+      esp = req.query.espacioId;
+      req.session.user.espacio_id = parseInt(esp);
+    }
+    if (req.query.totp) totp = parseInt(req.query.totp);
+    req.session.save();
   }
+
   const currentHour = moment('16:30', 'HH:mm'); //moment().format('hh:mm');
-  const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res));
+  const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res, true));
 
   // query a base de datos para conseguir asignatura y grupo que sería
   const id_sesion = (req.session.user.id).toString();
   const api_path_act_us = `/actividades/usuarios/${id_sesion}`;
-  let actividades_ids_us = (await messaging.getFromApi(api_path_act_us, res)).actividades;
+  let actividades_ids_us = (await messaging.getFromApi(api_path_act_us, res, true)).actividades;
   const api_path_act_esp = `/actividades/espacios/${esp}`;
-  let actividades_ids_esp = (await messaging.getFromApi(api_path_act_esp, res)).actividades;
+  let actividades_ids_esp = (await messaging.getFromApi(api_path_act_esp, res, true)).actividades;
 
   let actividades_ids = actividades_ids_us.filter(x => {
     for(let i = 0; i < actividades_ids_esp.length; i++) {
@@ -99,7 +106,7 @@ async function getForm(req, res) {
     const id_act = (actividades_ids[i].id).toString();
     const api_act_path = `/actividades/${id_act}`;
     console.log(api_act_path);
-    actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path, res))});
+    actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path, res, true))});
   }
 
   req.session.user.actividades_ids = [];
@@ -126,7 +133,7 @@ async function getForm(req, res) {
       for (let j = 0; j < actividades_posibles[i].clase_ids.length; j++) {
         const id_cl = (actividades_posibles[i].clase_ids[j].id).toString();
         const api_cl_path = `/clases/${id_cl}`;
-        clases_data.push((await messaging.getFromApi(api_cl_path, res)));
+        clases_data.push((await messaging.getFromApi(api_cl_path, res, true)));
         console.log(clases_data[j]);
       }
     }
@@ -137,11 +144,11 @@ async function getForm(req, res) {
       const api_asig_path = `/asignaturas/${id_asig}`;
       const id_gr = (clases_data[i].grupo_id).toString();
       const api_gr_path = `/grupos/${id_gr}`;
-      clases_info.push({grupo: (await messaging.getFromApi(api_gr_path, res)), asignatura: (await messaging.getFromApi(api_asig_path, res)) });
+      clases_info.push({grupo: (await messaging.getFromApi(api_gr_path, res, true)), asignatura: (await messaging.getFromApi(api_asig_path, res, true)) });
     }
 
     let resultado = {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                     espacio: esp_data.nombre + " " + esp_data.edificio,
+                     espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp,
                      hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] 
                      // clases = [ { asignatura: , grupo: } ]
     };
@@ -162,34 +169,52 @@ async function getForm(req, res) {
   }
   else {
     res.render('formulario-end', {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                                  espacio: esp_data.nombre + " " + esp_data.edificio, 
+                                  espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
                                   hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] });
   }
 }
 
 async function postForm(req, res) {
-    const espacio_id = req.session.user.espacio_id;
-    const actividades_ids = req.session.user.actividades_ids;
-    let state = 'Asistida con Irregularidad';
+  const espacio_id = req.session.user.espacio_id;
+  const actividades_ids = req.session.user.actividades_ids;
+  let state = 'Asistida con Irregularidad';
+
+  if (actividades_ids.length != 0) {
+    state = 'Asistida'; 
+  }
+
+  let data = {
+    tipo_registro: "RegistroSeguimientoFormulario",
+    espacioId: espacio_id,
+    usuarioId: req.session.user.id,
+    estado: state
+  }
+
+  if (req.body.totp) {
+    data.tipo_registro = "RegistroSeguimientoUsuario";
+    data.totp = req.session.user.totp;
+    req.session.user.totp = "";
+  }
   
-    if (actividades_ids.length != 0) {
-      state = 'Asistida'; 
+  console.log(data);
+  try {
+    await messaging.sendToApiJSON(data, '/seguimiento', res, false);
+  }
+  catch(error) {
+    let redo = {
+    usuario: req.body.docente, 
+    espacio: req.body.espacio, totp: req.body.totp, 
+    hora: `${moment().format('HH:mm')}`, 
+    clases: JSON.parse(req.body.clases),
+    error: "Datos no válidos"
     }
-
-    const data = {
-      tipo_registro: "RegistroSeguimientoFormulario",
-      espacioId: espacio_id,
-      usuarioId: req.session.user.id,
-      estado: state
-    }
-
-    console.log(data);
-
-    messaging.sendToApiJSON(data, '/seguimiento', res);
-    
-    res.redirect('/');
+    res.render('formulario-end', redo);
+    return;
+  }
+  
+  res.redirect('/');
 }
 
 module.exports = {
-    getEspaciosPosibles, getAllEspacios, confirmEspacioPosible, getForm, postForm 
+  getEspaciosPosibles, getAllEspacios, confirmEspacioPosible, getForm, postForm 
 }

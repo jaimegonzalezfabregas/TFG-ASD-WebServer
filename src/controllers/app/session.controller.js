@@ -9,31 +9,34 @@ async function login(req, res) {
     password: req.body.password
   }
   
-  let usuario = await (messaging.sendToApiJSON(data, '/login', res));
-
-  if (usuario != null) {
-    const sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email };
-
-    req.session.regenerate(function (err) {
-      if (err) next(err)
-  
-      // Guardar info del usuario en session
-      req.session.user = sesion;
-  
-      // Guardar la sesión y luego redirigir
-      req.session.save(function (err) {
-        if (err) return next(err)
-    
-        console.log(req.session);
-
-        console.log(redirectTo);
-        res.redirect(redirectTo);
-      });
-    });
+  let usuario 
+  try {
+    usuario = await (messaging.sendToApiJSON(data, '/login', res, false));
   }
-  else {
+  catch (error) {
+    console.log('ERROR');
     res.render('login', { usuario: req.body.usuario });
+    return;
   }
+
+  const sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email, rol: usuario.rol };
+
+  req.session.regenerate(function (err) {
+    if (err) next(err)
+
+    // Guardar info del usuario en session
+    req.session.user = sesion;
+
+    // Guardar la sesión y luego redirigir
+    req.session.save(function (err) {
+      if (err) return next(err)
+  
+      console.log(req.session);
+
+      console.log(redirectTo);
+      res.redirect(redirectTo);
+    });
+  });
 }
 
 function logout(req, res) {

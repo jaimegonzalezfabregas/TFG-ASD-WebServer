@@ -5,7 +5,7 @@ async function registroAsistencia(req, res, db) {
 
     console.log(req.body);
 
-    if (Object.keys(req.body).length != 0 && req.body.tipo_registro != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
+    if (req.body && req.body.tipo_registro && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
 
         switch (req.body.tipo_registro) {
             case "RegistroSeguimientoFormulario": 
@@ -79,7 +79,7 @@ async function registroAsistencia(req, res, db) {
                         }
                         
                         // Preguntar por window (totp.options = { window: 0 })
-                        totp.options = { epoch: req.body.totp.time, digits: 6, step: 30, window: [1, 0] };
+                        totp.options = { epoch: req.body.totp.time, digits: 6, step: 60, window: [10, 0] };
                         if (!totp.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
                             res.status(422).send('Datos no válidos');
                             await transaction.rollback();
@@ -170,6 +170,7 @@ async function registroAsistencia(req, res, db) {
             case "RegistroSeguimientoDispositivoQr":
             break;
             case "RegistroSeguimientoDispositivoNFC":
+
         }
      
         res.setHeader('Content-Type', 'application/json');
@@ -192,7 +193,7 @@ async function getMacsBLE(req, res, db) {
             return;
         }
 
-        const comienzo = (req.query.comienzo == null)? 30 : req.query.comienzo;
+        const comienzo = (req.query.comienzo == null)? 30 : req.query.comienzo; //Cambiar 30 por algo válido
         const fin = (req.query.fin == null)? 30 : req.query.fin;
 
         const transaction = await db.sequelize.transaction();
@@ -283,6 +284,10 @@ async function getMacsBLE(req, res, db) {
     else {
         res.status(422).send("Datos no válidos");
     }
+}
+
+async function getAsistencias(req, res, db) {
+
 }
 
 module.exports = {

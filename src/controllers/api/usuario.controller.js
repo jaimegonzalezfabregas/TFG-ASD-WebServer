@@ -1,6 +1,19 @@
 const { Op } = require("sequelize");
 const bcrypt = require('bcrypt');
 
+const spices = [
+    "inOPPh4IThFNhRF0",
+    "rYYzv9VdRixlne1k",
+    "j8XT8s3IsGqTNrYJ",
+    "2CkN3WNmw9ZtkZ0p",
+    "1EievW4P3Cn1dgvZ",
+    "EXQgyv6DYck0thU8",
+    "DHetHwn1uzphv0Gu",
+    "TGZbU4V6klXw8hHe",
+    "Oxi8DnH6KVXytWFB",
+    "Gfx7HYNlCLr5KEaQ"
+]
+
 async function authenticateUser(req, res, db) {
     const transaction = await db.sequelize.transaction();
     

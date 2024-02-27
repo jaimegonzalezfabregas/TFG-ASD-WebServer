@@ -13,6 +13,9 @@ const app = express();
 const port = 5500;
 const staticname = __dirname + '/public';
 
+const valoresRol = ['Docente', 'Decanato', 'Admin'];
+const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
+
 app.set('views', path.join(staticname, '/views'));
 app.set('view engine', 'ejs');
 app.use(express.json());
@@ -30,7 +33,7 @@ app.use(session({
 // Página web
 app.get('/', checkSesion, (req, res) => {
   console.log('Get / detected');
-  res.sendFile(path.join(staticname, "/index.html"));
+  res.render('index', {usuario: req.session.user});
 });
 
 app.get('/login', (req, res) => {
@@ -183,7 +186,7 @@ app.listen(port, () => {
 });
 
 // Utiliza staticname como directorio para los ficheros, lo que permite que cargue el css de los archivos.
-// Importante que esté debajo de get '/', para que este rediriga a login (Si no, se dirige a /index.html)
+// Importante que esté debajo de get '/', para que este rediriga a login (Si no, se dirige a /index.ejs)
 app.use(express.static(staticname));
 
 // Funcion auxiliar para redirigir a /login si no hay sesión iniciada que guarda el valor de la página
@@ -198,5 +201,26 @@ function checkSesion(req, res, next) {
     req.session.save();
     res.redirect('/login');
   }
+}
 
+function checkClearanceDecanato(req, res, next) {
+  if (req.session.user.rol == valoresRol[1]) {
+    next();
+    return true;
+  }
+  else {
+    res.render('/error', {error: 'No tienes permisos para acceder a esta página'})
+    return false;
+  }
+}
+
+function checkClearanceAdministracion(req, res, next) {
+  if (req.session.user.rol == valoresRol[2]) {
+    next();
+    return true;
+  }
+  else {
+    res.render('/error', {error: 'No tienes permisos para acceder a esta página'})
+    return false;
+  }
 }
