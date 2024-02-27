@@ -31,6 +31,10 @@ function model(sequelize, DataTypes) {
             type: DataTypes.ENUM('Asistida', 'Asistida con Irregularidad', 'No Asistida'),
             allowNull: false,
             defaultValue: 'No Asistida'
+        },
+        motivo: {
+            type: DataTypes.STRING,
+            allowNull: true
         }
     }, {
         freezeTableName: true,
