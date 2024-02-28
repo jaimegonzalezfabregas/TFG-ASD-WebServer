@@ -76,7 +76,7 @@ async function getForm(req, res) {
       esp = req.query.espacioId;
       req.session.user.espacio_id = parseInt(esp);
     }
-    if (req.query.totp) totp = parseInt(req.query.totp);
+    if (req.query.totp) totp = req.query.totp;
     req.session.save();
   }
 
@@ -192,8 +192,7 @@ async function postForm(req, res) {
 
   if (req.body.totp) {
     data.tipo_registro = "RegistroSeguimientoUsuario";
-    data.totp = req.session.user.totp;
-    req.session.user.totp = "";
+    data.totp = req.body.totp;
   }
   
   console.log(data);

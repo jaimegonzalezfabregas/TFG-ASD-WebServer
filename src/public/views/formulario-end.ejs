@@ -150,7 +150,7 @@
                                         <label for="espacio">Aula / Laboratorio</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input type="number" maxlength="6" class="form-control" name="totp" id="totp" value="<%= totp %>"/>
+                                        <input type="text" pattern="[0-9]{6}" class="form-control" name="totp" id="totp" value="<%= totp %>"/>
                                         <label for="totp">TOTP</label>
                                     </div>
                                     <div class="form-floating mb-3">

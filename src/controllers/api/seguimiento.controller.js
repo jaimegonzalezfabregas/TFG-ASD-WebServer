@@ -1,11 +1,11 @@
 const { Op } = require("sequelize");
-const { authenticator, totp } = require('otplib');
+const { authenticator } = require('otplib');
 
 async function registroAsistencia(req, res, db) {
 
     console.log(req.body);
 
-    if (req.body && req.body.tipo_registro && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
+    if (Object.keys(req.body).length > 0 && req.body.tipo_registro != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
 
         switch (req.body.tipo_registro) {
             case "RegistroSeguimientoFormulario": 
@@ -45,20 +45,20 @@ async function registroAsistencia(req, res, db) {
                 }
             break;
             case "RegistroSeguimientoUsuario":
-                if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId) && req.body.dispositivoId != null && Number.isInteger(req.body.dispositivoId)) {
+                if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
 
                     const transaction = await db.sequelize.transaction();
 
                     try {
                         console.log('Searching in Dispositivo for id');
-                        const query_disp = await db.sequelize.models.Dispositivo.findOne({ // Si hay más de un dispositivo habría que comprobar todos
+                        const query_disp = await db.sequelize.models.Dispositivo.findAll({ // Si hay más de un dispositivo habría que comprobar todos
                             attributes: ['id', 'secret'],
                             where: {
                                 espacioId: req.body.espacioId
                             }
                         });
-                                
-                        if (query_disp == null || Object.keys(query_disp.dataValues).length == 0) {
+
+                        if (query_disp.length == 0) {
                             res.status(404).send('Dispositivo no encontrado');
                             await transaction.rollback();
                             return;
@@ -78,9 +78,15 @@ async function registroAsistencia(req, res, db) {
                             return;
                         }
                         
-                        // Preguntar por window (totp.options = { window: 0 })
-                        totp.options = { epoch: req.body.totp.time, digits: 6, step: 60, window: [10, 0] };
-                        if (!totp.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
+                        let valid = false;
+                        authenticator.options = { digits: 6, step: 60, window: [10, 0] };
+                        query_disp.forEach(async (disp) => {
+                            if (authenticator.verify({token: req.body.totp, secret: disp.dataValues.secret})) {
+                                valid = true;
+                            }
+                        });
+
+                        if (!valid) {
                             res.status(422).send('Datos no válidos');
                             await transaction.rollback();
                             return;
@@ -143,9 +149,8 @@ async function registroAsistencia(req, res, db) {
                         
                         // Comprobar que en la hora actual ese profesor tenga una asignatura en ese espacio para validar el estado
 
-                        // Preguntar por window (totp.options = { window: 0 })
-                        totp.options = { epoch: req.body.totp.time, digits: 6, step: 30, window: [1, 0] };
-                        if (!totp.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
+                        authenticator.options = { epoch: req.body.totp.time, digits: 6, step: 60, window: [10, 0] };
+                        if (!authenticator.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
                             res.status(422).send('Datos no válidos');
                             await transaction.rollback();
                             return;
