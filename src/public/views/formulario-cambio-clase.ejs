@@ -25,7 +25,7 @@
                         <li><a class="dropdown-item" href="#!">Settings</a></li>
                         <li><a class="dropdown-item" href="#!">Activity Log</a></li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item" href="#!">Logout</a></li>
+                        <li><a class="dropdown-item" href="/logout">Logout</a></li>
                     </ul>
                 </li>
             </ul>
@@ -122,91 +122,55 @@
         </div>
         <div id="layoutSidenav_content">
             <main>
-                <div class="container-fluid below-navbar px-4">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Docencias del día
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <div class="py-2">
+                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                <div class="container-fluid px-4">
+                    <h1 class="align-middle text-title"> Features </h1>
+                    <div class="row justify-content-center" id="feature-div">
+                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                        <div class="mt-lg-5 mt-sm-2 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
+                            <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
+                            <div class="card-body">
+                                <% if (typeof error != 'undefined') { %>
+                                <p class="text-error"><%= error %></p>
+                                <% } %>
+                                <form method="post"> 
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" name="docente" id="docente" value="<%= usuario %>" readonly/>
+                                        <label for="docente">Docente con el que cambiar</label>
+                                    </div>
+                                    <p>Sustituye</p>
                                     <label class="ms-2 me-1" for="date-filter">Fecha</label>
                                     <input class="datatable-selector" type="date" id="date-filter" name="date-filter" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
-                                    <label class="ms-2 me-1" for="espacio-filter">Espacio</label>
-                                    <select class="datatable-selector dt-status-filter" id="espacio-filter">
-                                        <% espacios.forEach(function(espacio) { %>
-                                            <option value="<%= espacio %>"><%= espacio %></option>
+                                    <div class="form-floating mb-3">
+                                        <input type="hidden" name="clases" value="<%= JSON.stringify(clases) %>">
+                                        <% clases.forEach(function(clase) { %>
+                                            <input type="text" class="select form-control" name="asignatura" id="clase" value="<%= clase.asignatura %> <%= clase.grupo %>" readonly/>
                                         <% }); %>
-                                    </select>
-                                </div>
-                                <thead>
-                                    <tr>
-                                        <th>Hora</th>
-                                        <th>Clase</th>
-                                        <th>Docente</th>
-                                        <th>Sustituto</th>
-                                        <th>Confirmar</th>
-                                    </tr>
-                                </thead>
-                                <tfoot>
-                                    <tr>
-                                        <th>Hora</th>
-                                        <th>Clase</th>
-                                        <th>Docente</th>
-                                        <th>Sustituto</th>
-                                        <th>Confirmar</th>
-                                    </tr>
-                                </tfoot>
-                                <tbody>
-                                    <% clases.forEach(function(clase) { %>
-                                        <tr>
-                                            <td>clase.hora</td>
-                                            <td>clase.clase</td>
-                                            <td>clase.docente</td>
-                                            <td>
-                                                <input class="form-check-input" type="checkbox" value="" id="checkSustituto">
-                                                <select class="select form-control" id="sustituto-filter">
-                                                    <% docentes.forEach(function(docente) { %>
-                                                        <option value="<%= docente.nombre %>"><%= docente.nombre %></option>
-                                                    <% }); %>
-                                                </select>                                            
-                                            </td>
-                                            <td>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" value="" id="registrar">
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <% }); %>                        
-                                </tbody>
-                            </table>
+                                        <label for="clase">Asignatura y Grupo</label>
+                                    </div>
+                                    <p>Por</p>
+                                    <label class="ms-2 me-1" for="date-filter">Fecha</label>
+                                    <input class="datatable-selector" type="date" id="date-filter" name="date-filter" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
+                                    <div class="form-floating mb-3">
+                                        <input type="hidden" name="clases" value="<%= JSON.stringify(clases) %>">
+                                        <% clases.forEach(function(clase) { %>
+                                            <input type="text" class="select form-control" name="asignatura" id="clase" value="<%= clase.asignatura %> <%= clase.grupo %>" readonly/>
+                                        <% }); %>
+                                        <label for="clase">Asignatura y Grupo</label>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                        <a class="btn btn-primary" href="../cambio-clase">Atrás</a>
+                                        <button class="btn btn-primary" type="submit">OK</a>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                                &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-        <script src="../assets/js/datatables-simple-demo.js"></script>
-        <script> 
-            $(document).ready(function() {
-                // Initialize Select2
-                var select2 = $('.select2').select2();
-            });
-        </script>
     </body>
 </html>
