@@ -20,7 +20,7 @@ module.exports = {
         allowNull: false
       },
       letra: {
-        type: Sequelize.DataTypes.STRING(1),
+        type: Sequelize.DataTypes.STRING(2),
         allowNull: false
       },      
       //Timestamps
