@@ -63,7 +63,7 @@ function confirmEspacioPosible(req, res) {
       res.redirect('/formulario-aulas/?all=yes');
   }
   else {
-      res.redirect(`/formulario-end/?espacio=${req.body.espacio}`);
+      res.redirect(`/formulario-end/?espacioId=${req.body.espacio}`);
   }
   return;
 }
@@ -201,17 +201,17 @@ async function postForm(req, res) {
   }
   catch(error) {
     let redo = {
-    usuario: req.body.docente, 
-    espacio: req.body.espacio, totp: req.body.totp, 
-    hora: `${moment().format('HH:mm')}`, 
-    clases: JSON.parse(req.body.clases),
-    error: "Datos no válidos"
+      usuario: req.body.docente, 
+      espacio: req.body.espacio, totp: req.body.totp, 
+      hora: `${moment().format('HH:mm')}`, 
+      clases: JSON.parse(req.body.clases),
+      error: "Datos no válidos"
     }
     res.render('formulario-end', redo);
     return;
   }
   
-  res.redirect('/');
+  res.render('exito', {mensaje: "Asistencia registrada con éxito"});
 }
 
 module.exports = {
