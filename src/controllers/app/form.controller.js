@@ -32,12 +32,12 @@ async function getEspaciosPosibles(req, res) {
     });
   }
   else {
-    res.redirect('/formulario-aulas/?all=yes');
+    res.render('formulario-aulas/?all=yes', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
 
   //Enseñamos únicamente los espacios que coincidan con las actividades
-  res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes') });
+  res.render('formulario-aulas', { espacios: espacios_doc, all: (req.query.all == 'yes'), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos} });
   return;
 }
 
@@ -55,7 +55,7 @@ async function getAllEspacios(req, res) {
   });
   
   // Todos los espacios
-  res.render('formulario-aulas', { espacios: espacios_todos, all: true });
+  res.render('formulario-aulas', { espacios: espacios_todos, all: true, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 }
 
 function confirmEspacioPosible(req, res) {
@@ -147,8 +147,7 @@ async function getForm(req, res) {
       clases_info.push({grupo: (await messaging.getFromApi(api_gr_path, res, true)), asignatura: (await messaging.getFromApi(api_asig_path, res, true)) });
     }
 
-    let resultado = {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                     espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp,
+    let resultado = {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp,
                      hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] 
                      // clases = [ { asignatura: , grupo: } ]
     };
@@ -164,13 +163,13 @@ async function getForm(req, res) {
     });
       
     console.log(resultado);
-    res.render('formulario-end', resultado);
+    res.render('formulario-end', { resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
   else {
-    res.render('formulario-end', {usuario: req.session.user.nombre + " " + req.session.user.apellidos, 
-                                  espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
-                                  hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] });
+    res.render('formulario-end', { resultado: {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
+                                  hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: []}, 
+                                  usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos} });
   }
 }
 
@@ -207,7 +206,7 @@ async function postForm(req, res) {
       clases: JSON.parse(req.body.clases),
       error: "Datos no válidos"
     }
-    res.render('formulario-end', redo);
+    res.render('formulario-end', {resultado: redo, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
   

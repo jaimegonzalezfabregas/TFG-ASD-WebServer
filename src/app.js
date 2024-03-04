@@ -37,7 +37,7 @@ app.get('/', checkSesion, (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(staticname, '/login.html'));
+  res.render('login', {usuario: ''}); 
 })
 
 app.post('/login', async (req, res) => {
@@ -77,17 +77,17 @@ app.get('/formulario-aulas-qr', checkSesion, async (req, res) => {
 
 app.post('/formulario-aulas-qr', checkSesion, (req, res) => {
   console.log(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
-  res.redirect(`/formulario-end-qr/?espacio=${req.body.espacio}`);
+  res.render(`formulario-end-qr/?espacio=${req.body.espacio}`, {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
 app.get('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
   console.log('Got a GET in formulario-end-qr');
-  res.sendFile(path.join(staticname, '/formulario-end-qr.html'));
+  res.render('formulario-end-qr', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
 app.post('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
   console.log(`Got a POST in formulario-end-qr with ${JSON.stringify(req.body)}`);
-  res.sendFile(path.join(staticname, '/formulario-end-qr.html'));
+  res.render('formulario-end-qr.html', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
 app.get('/lista-registro-motivo-falta', checkSesion, (req, res) => {
@@ -114,71 +114,7 @@ app.get('/anular-clase', checkSesion, (req, res) => {
 
 app.post('/anular-clase', checkSesion, async (req, res) => {
   console.log(`Got a POST in anular-clase with ${JSON.stringify(req.body)}`);
-
-  const excepcion = Excepcion.model(sequelize, DataTypes);
-  const grupo = Grupo.model(sequelize, DataTypes);
-  const asignatura = Asignatura.model(sequelize, DataTypes);
-  const actividad = Actividad.model(sequelize, DataTypes);
-  const clase = sequelize.define('Clase', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    }
-  }, { freezeTableName: true });
-
-  await sequelize.sync();
-
-  const sl_grupo = req.body.asignatura.slice(req.body.asignatura.length - 4);
-  const esp_grupo = el_grupo.split("º");
-
-  const query_grupo = grupo.findAll({
-    attributes: ['id'],
-    where: {
-      curso: esp_grupo[0],
-      letra: esp_grupo[1]
-    }
-  });
-
-  console.log('Asignatura');
-  console.log(req.body.asignatura);
-  const esp_asignatura = req.body.asignatura.split(" ");
-  let nombre_asignatura = esp_asignatura[0];
-  if (esp_asignatura.length > 3) {
-    for (let i = 1; i < esp_asignatura.length - 2; i++) {
-      nombre_asignatura = nombre_asignatura.join(nombre_asignatura[i]);
-    }
-  }
-
-  const query_asignatura = asignatura.findAll({
-    attributes: ['id'],
-    where: {
-      nombre: nombre_asignatura
-    }
-  });
-
-  const query_clase = clase.findAll({
-    attributes: ['id'],
-    where: {
-      grupo_id: query_grupo.dataValues.id,
-      asignatura_id: query_asignatura.dataValues.id
-    }
-  });
-
-  const query_actividad = actividad.findAll({
-    attributes: ['id', 'fecha_inicio', 'fecha_fin', 'tiempo_incio', 'tiempo_fin'],
-    where: {
-      clase_id: query_clase.dataValues.id
-    }
-  });
-
-  excepcion.create({actividad_id: query_actividad.dataValues.id, esta_reprogramado: 'No', esta_cancelado: 'Sí', 
-    fecha_inicio: query_actividad.dataValues.fecha_inicio, fecha_fin: query_actividad.dataValues.fecha_fin, 
-    tiempo_inicio: query_actividad.dataValues.tiempo_incio, tiempo_fin: query_actividad.dataValues.tiempo_fin, 
-    es_todo_el_día: 'No', creado_por: req.session.user.nombre
-  });
-
-  res.redirect('/');
+  //clase_controller.anularClase(req, res)
 });
 
 app.listen(port, () => {
@@ -209,7 +145,7 @@ function checkClearanceDecanato(req, res, next) {
     return true;
   }
   else {
-    res.render('/error', {error: 'No tienes permisos para acceder a esta página'})
+    res.render('error', {error: 'No tienes permisos para acceder a esta página'})
     return false;
   }
 }
@@ -220,7 +156,7 @@ function checkClearanceAdministracion(req, res, next) {
     return true;
   }
   else {
-    res.render('/error', {error: 'No tienes permisos para acceder a esta página'})
+    res.render('error', {error: 'No tienes permisos para acceder a esta página'})
     return false;
   }
 }

@@ -62,6 +62,60 @@ async function authenticateUser(req, res, db) {
     }
 }
 
+async function createUser(req, res, db) {
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        if (req.body.creador == null) {
+        }
+
+        const entidad_creador = await db.sequelize.models.Docente.findOne({
+            where: {
+                email: req.body.creador
+            }
+        });
+
+        if (!entidad_creador) {
+            res.status(404).send('Creador no encontrado');
+            await transaction.rollback();
+            return;
+        }
+        else if (entidad_creador.rol != 'Admin' && entidad_creador.rol != 'Decanato') {
+            res.status(422).send('Datos no válidos');
+            await transaction.rollback();
+            return;
+        }
+
+        //Contraseña con pimienta y sal autogenerada, codificada con bcrypt
+        let spicedPassword = bcrypt.hash(spices[Math.random() % spices.length] + req.body.password);
+
+        const [usuario, nuevo] = await db.sequelize.models.Docente.findOrCreate({
+            where: {
+                email: req.body.email
+            },
+            defaults: {
+                nombre: req.body.nombre,
+                apellidos: req.body.apellidos,
+                email: req.body.email,
+                password: spicedPassword,
+                rol: req.body.rol || 'Usuario'
+            }
+        });
+
+        if (!nuevo) {
+            throw `El docente con el email ${req.body.email} ya existe en la base de datos`;
+        }
+
+        transaction.commit();
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+}
+
 module.exports = {
-    authenticateUser
+    authenticateUser, createUser
 }

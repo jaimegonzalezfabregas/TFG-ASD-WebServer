@@ -82,7 +82,7 @@ async function creaDispositivo(req, res, db, api_config, api_path) {
                 endpointSeguimiento: endpointSeguimiento,
                 totpConfig: {
                     t0: 0,
-                    secret: dispSecret
+                    secret: disp.secret
                 },
                 epoch: moment.unix()
             }

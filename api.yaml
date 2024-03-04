@@ -222,6 +222,23 @@ paths:
         '422':
           description: Datos no válidos
 
+  /usuarios:
+    post:
+      tags:
+        - usuarios
+      summary: Crea un usuario en la base de datos
+      description: Dados los datos de un usuario, y el usuario que intenta crear a dicho usuario, crea a un usuario en la base de datos.
+      operationId: createUser
+      requestBody:
+        $ref: '#/components/requestBodies/CreateUsuario'
+      responses:
+        '200':
+          description: Usuario creado con éxito
+        '404':
+          description: Usuario creador no válido
+        '422':
+          description: Datos no válidos
+  
   /actividades/usuarios/{idUsuario}:
     get:
       tags:
@@ -786,18 +803,14 @@ components:
           properties:
             password:
               type: string
-              description: Contraseña del usuario (codificada ??)
-              example: "As34dnF5fsDlRPfdnsmRSDDFJAJ48274hfnkk7834bnfFayfajsEdjajsDjaJDRJEJaSD"
+              description: Contraseña del usuario
+              example: "As34dnF5fsDlRPfdnsmRSDDFJAJ4JDRJEJaSD"
 
     UsuarioData:
       allOf:
         - $ref: '#/components/schemas/UsuarioBasicData'
         - type: object
           properties:
-            email: 
-              type: string
-              description: Email del usuario
-              example: 'grhopper@gmail.com'
             nombre:
               type: string
               description: Nombre del Usuario
@@ -810,6 +823,17 @@ components:
               type: string
               description: Rol del Usuario
               example: Admin
+
+    UsuarioCreateData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioData'
+        - $ref: '#/components/schemas/UsuarioLoginData'
+        - type: object
+          properties:
+            creador:
+              type: string
+              description: Email del usuario
+              example: 'adminmail@gmail.com'
 
     Usuario:
       allOf:
@@ -1006,6 +1030,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/UsuarioLoginData'
+
+    CreateUsuario:
+      required: true
+      description: Datos necesarios para la creación de un usuario
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioCreateData'
           
     InfoUsuario:
       required: true

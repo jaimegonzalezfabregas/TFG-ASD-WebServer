@@ -237,6 +237,11 @@ app.get(api_path + '/ble', async (req, res) => await api_controllers.seguimiento
     */
 app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.authenticateUser(req, res, db));
 
+/* /usuarios
+
+*/
+app.post(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.createUser(req, res, db));
+
 /* /actividades/usuarios/:idUsuario
  
     tags:
