@@ -59,63 +59,33 @@
                                     <a class="nav-link text-bg-menu" href="/registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
-                            <div class="sb-sidenav-menu-heading text-bg-menu">Interface</div>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
-                                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                                Layouts
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="layout-static.html">Static Navigation</a>
-                                    <a class="nav-link text-bg-menu" href="layout-sidenav-light.html">Light Sidenav</a>
-                                </nav>
-                            </div>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
-                                <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                                Pages
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
-                                    <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseAuth" aria-expanded="false" aria-controls="pagesCollapseAuth">
-                                        Authentication
-                                        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                                    </a>
-                                    <div class="collapse" id="pagesCollapseAuth" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
-                                        <nav class="sb-sidenav-menu-nested nav">
-                                            <a class="nav-link text-bg-menu" href="/login">Login</a>
-                                            <a class="nav-link text-bg-menu" href="register.html">Register</a>
-                                            <a class="nav-link text-bg-menu" href="password.html">Forgot Password</a>
-                                        </nav>
-                                    </div>
-                                    <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseError" aria-expanded="false" aria-controls="pagesCollapseError">
-                                        Error
-                                        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                                    </a>
-                                    <div class="collapse" id="pagesCollapseError" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
-                                        <nav class="sb-sidenav-menu-nested nav">
-                                            <a class="nav-link text-bg-menu" href="401.html">401 Page</a>
-                                            <a class="nav-link text-bg-menu" href="404.html">404 Page</a>
-                                            <a class="nav-link text-bg-menu" href="500.html">500 Page</a>
-                                        </nav>
-                                    </div>
-                                </nav>
-                            </div>
-                            <div class="sb-sidenav-menu-heading text-bg-menu">Addons</div>
-                            <a class="nav-link text-bg-menu" href="charts.html">
-                                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
-                                Charts
-                            </a>
-                            <a class="nav-link text-bg-menu" href="tables.html">
-                                <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
-                                Tables
-                            </a>
+                            <% if (usuario.rol == 'Decanato') { %>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
+                                <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
+                                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                    Lista de 'delincuentes'
+                                </a>
+                            <% } %>
+                            <% if (usuario.rol == 'Admin') { %>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
+                                <a class="nav-link text-bg-menu" href="/registrar-firmas">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Registrar firmas
+                                </a>
+                                <a class="nav-link text-bg-menu" href="/verificar-docencias">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                                    Ver docencias
+                                </a>
+                                <a class="nav-link text-bg-menu" href="/enviar-avisos">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Enviar avisos
+                                </a>
+                            <% } %>
                         </div>
                     </div>
                     <div class="sb-sidenav-footer bg-menu">
                         <div class="small">Logged in as:</div>
-                        Start Bootstrap
+                        <%= usuario.nombre %> <%= usuario.apellidos %>
                     </div>
                 </nav>
             </div>
