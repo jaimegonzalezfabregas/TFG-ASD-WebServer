@@ -77,7 +77,7 @@ app.get('/formulario-aulas-qr', checkSesion, async (req, res) => {
 
 app.post('/formulario-aulas-qr', checkSesion, (req, res) => {
   console.log(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
-  res.render(`formulario-end-qr/?espacio=${req.body.espacio}`, {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+  res.redirect(`formulario-end-qr/?espacio=${req.body.espacio}`);
 });
 
 app.get('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
@@ -97,19 +97,19 @@ app.get('/lista-registro-motivo-falta', checkSesion, (req, res) => {
   // clases = array con json de cada clase
   clases = [{fechayhora:"12/12/2023 12:00", asignaturaygrupo:"ASOR A" }, {fechayhora:"2/12/2023 11:00", asignaturaygrupo:"AC A" }];
 
-  res.render('lista-registro-motivo-falta', clases );
+  res.render('lista-registro-motivo-falta', {clases: clases, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}} );
 });
 
 app.post('/lista-registro-motivo-falta', checkSesion, (req, res) => {
   console.log(`Got a POST in lista-registro-motivo-falta with ${JSON.stringify(req.body)}`);
 
-  res.render('registro-motivo-falta', req.body );
+  res.render('registro-motivo-falta', {resultado: req.body, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
 app.get('/anular-clase', checkSesion, (req, res) => {
   console.log(req.query);
   
-  res.render('anular-clase', {fecha: moment().format('YYYY-MM-DDTHH:MM')} );
+  res.render('anular-clase', {fecha: moment().format('YYYY-MM-DDTHH:MM'), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}} );
 });
 
 app.post('/anular-clase', checkSesion, async (req, res) => {
