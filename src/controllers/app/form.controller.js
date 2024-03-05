@@ -47,11 +47,11 @@ async function getAllEspacios(req, res) {
   let espacios_todos = [];
   let edifx = null;
   query_esp_all.forEach((esp) => {
-    if (esp.dataValues.edificio != edifx) {
-      edifx = esp.dataValues.edificio;
+    if (esp.edificio != edifx) {
+      edifx = esp.edificio;
       espacios_todos.push({ edificio: edifx, espacios: []});
     }
-    espacios_todos[espacios_todos.length - 1].espacios.push(esp.dataValues);
+    espacios_todos[espacios_todos.length - 1].espacios.push(esp);
   });
   
   // Todos los espacios
