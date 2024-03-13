@@ -172,8 +172,55 @@ app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositiv
 */
 app.post(api_path + '/seguimiento', async (req, res) => await api_controllers.seguimiento.registroAsistencia(req, res, db));
 
-
+/* /seguimiento/asistencias
+    tags:
+        - seguimiento
+      summary: Devuelve las asistencias del día
+      description: Devuelve una lista de asistencias con sus estados y motivos
+      operationId: getAsistencias
+      requestBody:
+        $ref : '#/components/requestBodies/FiltroAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+*/
 app.post(api_path + '/seguimiento/asistencias', async (req, res) => await api_controllers.seguimiento.getAsistencias(req, res, db));
+
+/* /seguimiento/asistencias/{idAsistencia}
+    tags:
+        - seguimiento
+      summary: Devuelve la información asociada a una asistencia
+      description: Devuelve la información asociada a la asistencia con id = {idAsistencia}
+      operationId: getAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+*/
+app.get(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) => await api_controllers.seguimiento.getAsistenciaById(req, res, db));
+
+/* /seguimiento/asistencias/{idAsistencia}
+    tags:
+        - seguimiento
+      summary: Modifica la información asociada a una asistencia
+      description: Devuelve la información modificada asociada a la asistencia con id = {idAsistencia}
+      operationId: updateAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+*/
+app.post(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) => await api_controllers.seguimiento.updateAsistenciaById(req, res, db));
 
 /* /ble
 
@@ -216,7 +263,7 @@ app.post(api_path + '/seguimiento/asistencias', async (req, res) => await api_co
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/ble', async (req, res) => await api_controllers.seguimiento.getMacsBLE(req, res, db));
+app.post(api_path + '/ble', async (req, res) => await api_controllers.seguimiento.getMacsBLE(req, res, db));
 
 /* /login
 
@@ -238,7 +285,22 @@ app.get(api_path + '/ble', async (req, res) => await api_controllers.seguimiento
 app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.authenticateUser(req, res, db));
 
 /* /usuarios
-
+      tags:
+        - usuarios
+      summary: Crea un usuario en la base de datos
+      description: Dados los datos de un usuario, y el usuario que intenta crear a dicho usuario, crea a un usuario en la base de datos.
+      operationId: createUser
+      requestBody:
+        $ref: '#/components/requestBodies/CreateUsuario'
+      responses:
+        '201':
+          description: Usuario creado con éxito
+        '404':
+          description: Usuario creador no válido
+        '409':
+          description: Usuario ya creado
+        '422':
+          description: Datos no válidos
 */
 app.post(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.createUser(req, res, db));
 
@@ -301,6 +363,43 @@ app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_co
 */
 app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => await api_controllers.actividad.getActividadesOfEspacio(req, res, db));
 
+/* /actividades/clases/:idClase
+    tags:
+        - actividades
+        - clases
+      summary: Devuelve una lista de actividades de una clase por su id
+      description: Devuelve una lista de las actividades de la clase con id = {idClase}.  
+      operationId: getActividadesOfClase
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+*/
+app.get(api_path + '/actividades/clases/:idClase', async (req, res) => await api_controllers.actividad.getActividadesOfClase(req, res, db));
+
+/* /excepciones
+    tags:
+        - excepciones
+      summary: Crea una nueva excepción en la base de datos
+      description: Dados los parámetros, genera una excepción para una actividad en la base de datos
+      operationId: createExcepcion
+      requestBody:
+        $ref: '#/components/requestBodies/CreateExcepcion'
+      responses:
+        '200':
+          description: Excepción creada con éxito
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+*/
+app.post(api_path + '/excepciones', async (req, res) => await api_controllers.excepcion.createExcepcion(req, res, db));
+
 /* /clases/:idClase
 
     tags:
@@ -319,6 +418,26 @@ app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => await
           description: Clase no encontrada      
 */
 app.get(api_path + '/clases/:idClase', async (req, res) => api_controllers.clase.getClaseById(req, res, db));
+
+/* /clases/compose
+    tags:
+        - clases
+        - asignaturas
+        - grupos
+      summary: Devuelve el id de la clase asociada a una asignatura y un grupo
+      description: Devuelve la clase a la que hacen referencia una tupla (idAsignatura, idGrupo)
+      operationId: getClaseByAsignaturaGrupo
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseId'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+*/
+app.post(api_path + '/clases/compose', async (req, res) => api_controllers.clase.getClaseOfAsignaturaGrupo(req, res, db));
 
 /* /asignaturas/:idAsignatura
 
@@ -357,6 +476,61 @@ app.get(api_path + '/asignaturas/:idAsignatura',  async (req, res) => api_contro
             description: Grupo no encontrado      
 */
 app.get(api_path + '/grupos/:idGrupo', async (req, res) => api_controllers.grupo.getGrupoById(req, res, db));
+
+/* /grupos/compose
+    tags:
+        - grupos
+      summary: Devulve el id del grupo asociado a un curso y una letra
+      description: Devuelve el grupo al que hacen referencia una tupla (curso, letra)
+      operationId: getGrupoByCursoLetra
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoId'
+        '400':
+          description: Datos suministrados no válidos
+        '404':
+          description: Grupo no encontrado
+*/
+app.post(api_path + '/grupos/compose', async (req, res) => api_controllers.grupo.getGrupoByCursoLetra(req, res, db));
+
+/* /recurrencias/:idRecurrencias
+    tags:
+        - recurrencias
+      summary: Devuelve información de una recurrencia por su id
+      description: Devuelve información de la recurrencia con id = {idRecurrencia}
+      operationId: getRecurrenciaById
+      parameters:
+        - $ref: '#/components/parameters/idRecurrencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+*/
+app.get(api_path + '/recurrencias/:idRecurrencia', async (req, res) => api_controllers.recurrencia.getRecurrenciaById(req, res, db));
+
+/* /recurrencias/actividades/:idActividad
+    tags:
+        - recurrencias
+        - actividades
+      summary: Devuelve la lista de recurrencias asociadas a una actividad
+      description: Devuelve la lista de recurrencias de la actividad con id = {idActividad}.
+      operationId: getRecurrenciaByActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+*/
+app.get(api_path + '/recurrencias/actividades/:idActividad', async (req, res) => api_controllers.recurrencia.getRecurrenciaByActividad(req, res, db));
 
 app.listen(api_config.port, () => {
     console.log(`Api listening on port ${api_config.port}`)

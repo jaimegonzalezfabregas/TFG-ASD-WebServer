@@ -20,6 +20,17 @@ tags:
     description: Gestión de logins
   - name: actividades
     description: Gestión de actividades disponibles
+  - name: grupos
+    description: Gestión de grupos
+  - name: asignaturas
+    description: Gestión de asignaturas
+  - name: clases
+    description: Gestión de clases
+  - name: excepciones
+    description: Gestión de excepciones
+  - name: recurrencias
+    description: Gestión de recurrrencias
+    
 
 paths:
   /espacios:
@@ -64,7 +75,7 @@ paths:
         $ref: '#/components/requestBodies/InfoUsuario'
       responses:
         '200':
-          $ref: '#/components/responses/EspacioUsuarioInfoData'
+          $ref: '#/components/responses/EspacioListaData'
         '400':
           description: Id suministrado no válido
         '404':
@@ -205,7 +216,41 @@ paths:
         $ref : '#/components/requestBodies/FiltroAsistencia'
       responses:
         '200':
+          $ref: '#/components/responses/ListaAsistencias'
+
+  /seguimiento/asistencias/{idAsistencia}:
+    get:
+      tags:
+        - seguimiento
+      summary: Devuelve la información asociada a una asistencia
+      description: Devuelve la información asociada a la asistencia con id = {idAsistencia}
+      operationId: getAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      responses:
+        '200':
           $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+          
+    post:
+      tags:
+        - seguimiento
+      summary: Modifica la información asociada a una asistencia
+      description: Devuelve la información modificada asociada a la asistencia con id = {idAsistencia}
+      operationId: updateAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+      
   
   /login:
     post:
@@ -251,7 +296,7 @@ paths:
         - $ref: '#/components/parameters/idUsuario'
       responses:
         '200':
-          $ref: '#/components/responses/ActividadUsuarioInfoData'
+          $ref: '#/components/responses/ActividadListaData'
         '400':
           description: Id suministrado no válido
         '404':
@@ -263,18 +308,35 @@ paths:
         - actividades
         - espacios
       summary: Devuelve una lista de las actividades de un espacio por su id
-      description: Devuelve una lista de las actividades del usuario con id = {idEspacio}.
+      description: Devuelve una lista de las actividades del espacio con id = {idEspacio}.
       operationId: getActividadesOfEspacio
       parameters:
         - $ref: '#/components/parameters/idEspacio'
       responses:
         '200':
-          $ref: '#/components/responses/ActividadUsuarioInfoData'
+          $ref: '#/components/responses/ActividadListaData'
         '400':
           description: Id suministrado no válido
         '404':
           description: Espacio no encontrado
-        
+
+  /actividades/clases/{idClase}:
+    get:
+      tags:
+        - actividades
+        - clases
+      summary: Devuelve una lista de actividades de una clase por su id
+      description: Devuelve una lista de las actividades de la clase con id = {idClase}.  
+      operationId: getActividadesOfClase
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
 
   /actividades/{idActividad}:
     get:
@@ -305,6 +367,25 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ClaseData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+
+  /clases/compose:
+    post:
+      tags:
+        - clases
+        - asignaturas
+        - grupos
+      summary: Devuelve el id de la clase asociada a una asignatura y un grupo
+      description: Devuelve la clase a la que hacen referencia una tupla (idAsignatura, idGrupo)
+      operationId: getClaseByAsignaturaGrupo
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseId'
         '400':
           description: Id suministrado no válido
         '404':
@@ -343,6 +424,75 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Grupo no encontrado
+          
+  /grupos/compose:
+    post:
+      tags:
+        - grupos
+      summary: Devulve el id del grupo asociado a un curso y una letra
+      description: Devuelve el grupo al que hacen referencia una tupla (curso, letra)
+      operationId: getGrupoByCursoLetra
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoId'
+        '400':
+          description: Datos suministrados no válidos
+        '404':
+          description: Grupo no encontrado
+      
+  /excepciones:
+    post:
+      tags:
+        - excepciones
+      summary: Crea una nueva excepción en la base de datos
+      description: Dados los parámetros, genera una excepción para una actividad en la base de datos
+      operationId: createExcepcion
+      requestBody:
+        $ref: '#/components/requestBodies/CreateExcepcion'
+      responses:
+        '200':
+          description: Excepción creada con éxito
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+          
+  /recurrencias/{idRecurrencia}:
+    get:
+      tags:
+        - recurrencias
+      summary: Devuelve información de una recurrencia por su id
+      description: Devuelve información de la recurrencia con id = {idRecurrencia}
+      operationId: getRecurrenciaById
+      parameters:
+        - $ref: '#/components/parameters/idRecurrencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+      
+  /recurrencias/actividades/{idActividad}:
+    get:
+      tags:
+        - recurrencias
+        - actividades
+      summary: Devuelve la lista de recurrencias asociadas a una actividad
+      description: Devuelve la lista de recurrencias de la actividad con id = {idActividad}.
+      operationId: getRecurrenciaByActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
       
   /ping:
     get:
@@ -427,7 +577,26 @@ components:
         type: integer
         format: int64
       example: 1
-
+  
+    idAsistencia:
+      name: idAsistencia
+      in: path
+      description: ID de la asistencia
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idRecurrencia:
+      name: idRecurrencia
+      in: path
+      description: ID de la recurrencia
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
 
 
   schemas:
@@ -786,7 +955,9 @@ components:
         asistencias:
           type: array
           items:
-            $ref: '#/components/schemas/Asistencia'
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de asistencias válidos
+          example: [ { "id": 1 } ]
           
     UsuarioBasicData:
       type: object
@@ -875,16 +1046,16 @@ components:
           description: Array con ids de actividades válidas
           example: [ { "id": 1 } ]
           
-    ActividadData:
+    ActividadTimeData:
       type: object
-      properties:
+      properties: 
         fecha_inicio:
           type: string
-          description: Fecha de inicio de la actividad
+          description: Fecha de inicio de la actividad y su recursión
           example: "2024-02-14T09:00:00.000Z"
         fecha_fin:
           type: string
-          description: Fecha de inicio de la actividad
+          description: Fecha de fin de la actividad y su recursión
           example: "2024-06-30T18:40:00.000Z"
         tiempo_inicio:
           type: string
@@ -892,37 +1063,72 @@ components:
         tiempo_fin:
           type: string
           description: Hora del dia a la que finaliza la actividad
-        es_recurrente:
-          type: string
-          enum:
-            - Si
-            - No
-          description: Si es o no recurrente la actividad
         es_todo_el_dia:
           type: string
           enum:
             - Si
             - No
           description: Si es todo el día o no la actividad. Si no lo es se ignoran los campos de tiempo_inicio y tiempo_fin
-        clase_ids:
-            type: array
-            items:
-              $ref: '#/components/schemas/conId'
-            description: Array con ids de clases válidas, para las cuales se realiza la actividad
-            example: [ { "id": 1 }, { "id": 3 } ]
+          
+    ActividadData:
+      allOf:
+      - $ref: '#/components/schemas/ActividadTimeData'
+      - type: object
+        properties:
+          es_recurrente:
+            type: string
+            enum:
+              - Si
+              - No
+            description: Si es o no recurrente la actividad
+          clase_ids:
+              type: array
+              items:
+                $ref: '#/components/schemas/conId'
+              description: Array con ids de clases válidas, para las cuales se realiza la actividad
+              example: [ { "id": 1 }, { "id": 3 } ]
         
     Actividad:
       allOf:
         - $ref: '#/components/schemas/conId'
         - $ref: '#/components/schemas/ActividadData'
         
+    ExcepcionData:
+      allOf:
+      - $ref: '#/components/schemas/ActividadTimeData'
+      - type: object
+        properties:
+          esta_reprogramado:
+            type: string
+            enum:
+              - Si
+              - No
+            description: Si está o no reprogramada la actividad
+          esta_cancelado:
+            type: string
+            enum:
+              - Si
+              - No
+            description: Si está o no cancelada la actividad (aunque esté reprogramada, se puede cancelar)
+          actividad_id:
+            type: integer
+            format: int64
+            description: Id de la actividad a la que se asocia la excepción
+            example: 1
+        
     ClaseData:
       type: object
       properties:
         asignatura_id:
-          $ref: '#/components/schemas/conId'
+          type: integer
+          format: int64
+          description: Id de una asignatura
+          example: 1
         grupo_id:
-          $ref: '#/components/schemas/conId'
+          type: integer
+          format: int64
+          description: Id de un grupo
+          example: 1
     
     AsignaturaData:
       type: object
@@ -956,6 +1162,48 @@ components:
           type: string
           description: Letra asociada al grupo
           example: "A"
+          
+    ListaRecurrencias:
+      type: object
+      properties:
+        recurrencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de recurrencias válidos
+          example: [ { "id": 1 } ]
+          
+    RecurrenciaData:
+      type: object
+      properties:
+        tipo_recurrencia:
+          type: string
+          description: Tipo de recurrencia
+          example: "mensual"
+        separacion:
+          type: integer
+          description: Separación en la medida del tipo de recurrencia
+          example: 1
+        maximo:
+          type: integer
+          description: Maximo de veces que se repite la recurrencia
+          example: 5
+        dia_semana:
+          type: integer
+          description: Dia de la semana en el que ocurre la recurrencia, usado en _semanal
+          example: 4
+        semana_mes:
+          type: integer
+          description: Semana del mes en el que ocurre la recurrencia, usado en _mensual
+          example: 2
+        dia_mes:
+          type: integer
+          description: Dia del mes en el que ocurre la recurrencia, usado en _mensual
+          example: 12
+        mes_anio:
+          type: integer
+          description: Mes del año en el que ocurre la recurrencia, usado en _mensual o _anual
+          example: 10
  
   requestBodies:
     EspacioNuevo:
@@ -1046,6 +1294,30 @@ components:
         application/json:
           schema:
               $ref: '#/components/schemas/EspacioUsuarioQuery'
+              
+    CreateExcepcion:
+      required: true
+      description: Datos necesarios para la creación de una excepción
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ExcepcionData'
+
+    ComposeClase:
+      required: true
+      description: Datos necesarios para obtener el id de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ClaseData'
+            
+    ComposeGrupo:
+      required: true
+      description: Datos necesarios para obtener el id de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GrupoData'
 
   responses:
     Espacio:
@@ -1122,14 +1394,14 @@ components:
           schema:
             $ref: '#/components/schemas/UsuarioData'
             
-    EspacioUsuarioInfoData:
+    EspacioListaData:
       description: Datos de un usuario sobre espacios a devolver a petición de una query
       content:
         application/json:
           schema:
              $ref: '#/components/schemas/ListaEspacios'
              
-    ActividadUsuarioInfoData:
+    ActividadListaData:
       description: Datos de un usuario sobre actividades a devolver a petición de una query
       content:
         application/json:
@@ -1145,6 +1417,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ClaseData'
+
+    ClaseId:
+      description: Id de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/conId'
                 
     AsignaturaData:
       description: Datos de una asignatura
@@ -1159,6 +1438,27 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/GrupoData'
+            
+    GrupoId:
+      description: Id de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/conId'
+            
+    RecurrenciaListaData:
+      description: Datos de un usuario sobre recurrencias a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaRecurrencias'
+             
+    RecurrenciaData:
+      description: Datos de una recurrencia
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RecurrenciaData'
             
     EpochActual:
       description: Timestamp en formato epoch del momento actual

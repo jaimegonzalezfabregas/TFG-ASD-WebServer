@@ -49,8 +49,8 @@ async function authenticateUser(req, res, db) {
 
         await transaction.commit();
 
-        let resultado = JSON.stringify({id: query.dataValues.id, nombre: query.dataValues.nombre, apellidos: query.dataValues.apellidos, email: query.dataValues.email, rol: query.dataValues.rol});
-        console.log('resultado:', resultado);
+        let resultado = {id: query.dataValues.id, nombre: query.dataValues.nombre, apellidos: query.dataValues.apellidos, email: query.dataValues.email, rol: query.dataValues.rol};
+        res.setHeader('Content-Type', 'application/json');
         res.status(200).send(resultado);
 
     }
@@ -67,11 +67,14 @@ async function createUser(req, res, db) {
 
     try {
         if (req.body.creador == null) {
+            res.status(422).send('Datos no válidos');
+            await transaction.rollback();
+            return;
         }
 
         const entidad_creador = await db.sequelize.models.Docente.findOne({
             where: {
-                email: req.body.creador
+                id: req.body.creador
             }
         });
 
@@ -87,7 +90,7 @@ async function createUser(req, res, db) {
         }
 
         //Contraseña con pimienta y sal autogenerada, codificada con bcrypt
-        let spicedPassword = bcrypt.hash(spices[Math.random() % spices.length] + req.body.password);
+        let spicedPassword = await bcrypt.hash(spices[Math.random() % spices.length] + req.body.password, 4);
 
         const [usuario, nuevo] = await db.sequelize.models.Docente.findOrCreate({
             where: {
@@ -103,10 +106,13 @@ async function createUser(req, res, db) {
         });
 
         if (!nuevo) {
-            throw `El docente con el email ${req.body.email} ya existe en la base de datos`;
+            console.log(`El docente con el email ${req.body.email} ya existe en la base de datos`);
+            res.status(409).send(`El docente con el email ${req.body.email} ya existe en la base de datos`);
         }
 
+        res.status(201).send('Usuario creado con éxito');
         transaction.commit();
+        return;
     }
     catch (error) {
         console.log('Error while interacting with database:', error);

@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 
 async function getActividadesOfUsuario(req, res, db) {
+    let idUsuario = null;
     try{
         idUsuario = Number(req.params.idUsuario);
     }
@@ -16,7 +17,7 @@ async function getActividadesOfUsuario(req, res, db) {
         const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id'],
             where: {
-                id: req.params.idUsuario
+                id: idUsuario
             }
         });
     
@@ -36,9 +37,17 @@ async function getActividadesOfUsuario(req, res, db) {
                 model: db.sequelize.models.Docente,
                 as: 'impartida_por',
                 where: {
-                    id: req.params.idUsuario 
+                    id: idUsuario 
                 }
             },
+            include: {
+                model: db.sequelize.models.Excepcion,
+                as: 'con_excepcion',
+                where: {
+                    esta_cancelado: 'No'
+                },
+                required: false
+            }
         });
                     
         //Si tiene actividades
@@ -64,6 +73,7 @@ async function getActividadesOfUsuario(req, res, db) {
 }
 
 async function getActividadesOfEspacio(req, res, db) {
+    let idEspacio = null;
     try {
         idEspacio = Number(req.params.idEspacio);
     }
@@ -78,7 +88,7 @@ async function getActividadesOfEspacio(req, res, db) {
         const query_esp = await db.sequelize.models.Espacio.findOne({
             attributes:['id'],
             where: {
-                id: req.params.idEspacio
+                id: idEspacio
             }
         });
 
@@ -98,8 +108,86 @@ async function getActividadesOfEspacio(req, res, db) {
                 model: db.sequelize.models.Espacio,
                 as: 'impartida_en',
                 where: {
-                    id: req.params.idEspacio
+                    id: idEspacio
                 }
+            },
+            include: {
+                model: db.sequelize.models.Excepcion,
+                as: 'con_excepcion',
+                where: {
+                    esta_cancelado: 'No'
+                },
+                required: false
+            }
+        });
+               
+        //Si tiene actividades
+        if (query_act.length != 0) {
+            query_act.forEach((act) => {
+                respuesta.actividades.push({id: act.dataValues.id});
+            });
+        }
+    
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(respuesta);
+            
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+    
+    await transaction.commit();
+}
+
+async function getActividadesOfClase(req, res, db) {
+    let idClase = null;
+    try {
+        idClase = Number(req.params.idClase);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        const query_cla = await db.sequelize.models.Clase.findOne({
+            attributes:['id'],
+            where: {
+                id: idClase
+            }
+        });
+
+        // Comprobamos que el espacio exista en la base de datos
+        if (Object.keys(query_cla.dataValues).length == 0) {
+            res.status(404).send('Clase no encontrada');
+            await transaction.rollback();
+            return;
+        }
+    
+        let respuesta = { actividades: [] };
+    
+        console.log('Searching in Actividad for id');
+        const query_act = await db.sequelize.models.Actividad.findAll({
+            attributes:['id'],
+            include: {
+                model: db.sequelize.models.Clase,
+                as: 'sesion_de',
+                where: {
+                    id: idClase
+                }
+            },
+            include: {
+                model: db.sequelize.models.Excepcion,
+                as: 'con_excepcion',
+                where: {
+                    esta_cancelado: 'No'
+                },
+                required: false
             }
         });
                
@@ -125,6 +213,7 @@ async function getActividadesOfEspacio(req, res, db) {
 }
 
 async function getActividadById(req, res, db) {
+    let idActividad = null;
     try {
         idActividad = Number(req.params.idActividad);
     }
@@ -140,7 +229,7 @@ async function getActividadById(req, res, db) {
         const query_act = await db.sequelize.models.Actividad.findOne({
             attributes:['id', 'fecha_inicio', 'fecha_fin', 'tiempo_inicio', 'tiempo_fin', 'es_todo_el_dia', 'es_recurrente'],
             where: {
-                id: req.params.idActividad
+                id: idActividad
             },
             include: {
                 model: db.sequelize.models.Clase,
@@ -182,5 +271,5 @@ async function getActividadById(req, res, db) {
 }
 
 module.exports = {
-    getActividadesOfUsuario, getActividadesOfEspacio, getActividadById
+    getActividadesOfUsuario, getActividadesOfEspacio, getActividadesOfClase, getActividadById
 }
