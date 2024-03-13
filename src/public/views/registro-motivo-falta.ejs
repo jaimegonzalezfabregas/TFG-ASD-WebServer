@@ -100,28 +100,28 @@
                         <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
                             <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
                             <div class="card-body">
-                                <form> 
+                                <form method="post"> 
                                     <p>Datos clase a cancelar</p>
                                     <div class="form-floating mb-3">
                                         <input class="form-control" id="fechayhora" type="fechayhora" value="<%= resultado.fechayhora %>" readonly/>
                                         <label for="fechayhora">Fecha y Hora</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" id="asignaturaygrupo" type="asignaturaygrupo" value="<%= resultado.asignaturaygrupo %>" readonly/>
-                                        <label for="asignaturaygrupo">Asignatura y Grupo</label>
+                                        <input class="form-control" id="clase" type="clase" value="<%= resultado.clase %>" readonly/>
+                                        <label for="clase">Asignatura y Grupo</label>
                                     </div>
                                     <p>Motivo</p>
                                     <div class="btn-group-toggle" data-toggle="buttons">
                                         <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="olvido">
+                                            <input type="radio" name="motivo" class="form-check-input" id="olvido" value="olvido">
                                             <label for="olvido">Olvidé firmar</label>
                                         </div>
                                         <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="medico">
+                                            <input type="radio" name="motivo" class="form-check-input" id="medico" value="medico">
                                             <label for="medico">Indisposición médica</label>
                                         </div>
                                         <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="cuidado-familiar">
+                                            <input type="radio" name="motivo" class="form-check-input" id="cuidado-familiar" value="cuidado-familiar">
                                             <label for="cuidado-familiar">Cuidado de un familiar</label>
                                         </div>
                                         <div class="form-check radio-container">
@@ -130,11 +130,11 @@
                                             <input class="form-control ms-2" type="text" name="texto-otro" id="texto-otro">
                                         </div>
                                     </div>
+                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                        <a class="btn btn-primary" href="/">Atrás</a>
+                                        <button class="btn btn-primary" type="submit">Solicitar</button>
+                                    </div>
                                 </form>
-                                <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                    <a class="btn btn-primary" href="/">Atrás</a>
-                                    <a class="btn btn-primary" href="/">Solicitar</a>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -143,6 +143,5 @@
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
     </body>
 </html>

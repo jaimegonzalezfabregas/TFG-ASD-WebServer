@@ -8,7 +8,7 @@
         <meta name="author" content="" />
         <title>Main - ASD</title>
         <link href="../assets/css/styles.min.css" rel="stylesheet" />
-        <link href="../assets/css/stylest-tfg.min.css" rel="stylesheet" />
+        <link href="../assets/css/styles-tfg.min.css" rel="stylesheet" />
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous" async></script>
     </head>
     <body class="sb-nav-fixed">
@@ -99,10 +99,12 @@
                         <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6 my-auto">
                      <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
                             <% clases.forEach(function(clase) { %>
-                                <a href="/confirmar-cambio">
+                                <a href="/registro-motivo-falta/?fecha=<%=clase.fechayhora %>&clase=<%=clase.clase%>&i=<%=clase.pos%>">
                                     <div class="card mt-3">
                                         <div class="card-body">
-                                            <p class="text-center"><%= clase.fechayhora %><br><%= clase.asignaturaygrupo %></p>
+                                            <% clase.forEach(function(cl) { %>
+                                                <p class="text-center"><%= clase.fechayhora %><br><%= cl %></p>
+                                            <% }); %>
                                         </div>
                                     </div>
                                 </a>
