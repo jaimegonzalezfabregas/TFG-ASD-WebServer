@@ -28,11 +28,11 @@ module.exports = {
         allowNull: true
       },
       periodo: {
-        type: Sequelize.DataTypes.ENUM('1', '2'),
+        type: Sequelize.DataTypes.ENUM('1', '2', 'Anual'),
         allowNull: false
       },
       plan_id: {
-        type: Sequelize.DataTypes.STRING,
+        type: Sequelize.DataTypes.INTEGER,
         references: {
           model: 'Plan',
           key: 'id'

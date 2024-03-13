@@ -11,12 +11,16 @@ module.exports = {
      */
     return await queryInterface.createTable('Plan', {
       id: {
-        type: Sequelize.DataTypes.STRING,
-        allowNull: false,
+        type: Sequelize.DataTypes.INTEGER,
+        autoIncrement: true,
         primaryKey: true
+      }, 
+      año: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
       },
       titulacion_id: {
-        type: Sequelize.DataTypes.STRING,
+        type: Sequelize.DataTypes.INTEGER,
         references: {
           model: 'Titulacion',
           key: 'id'

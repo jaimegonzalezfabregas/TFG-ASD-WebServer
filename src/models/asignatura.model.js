@@ -21,7 +21,7 @@ function model(sequelize, DataTypes) {
             allowNull: true
         },
         periodo: {
-            type: DataTypes.ENUM('1', '2'),
+            type: DataTypes.ENUM('1', '2', 'Anual'),
             allowNull: false
         }
     }, {

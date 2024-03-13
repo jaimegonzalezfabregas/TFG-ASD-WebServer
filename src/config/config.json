@@ -5,7 +5,8 @@
     "database": "database",
     "host": "localhost",
     "port": 7052,
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "timezone": "Europe/Madrid"
   },
   "test": {
     "username": "root",
@@ -13,7 +14,8 @@
     "database": "database_test",
     "host": "localhost",
     "port": 7053,
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "timezone": "Europe/Madrid"
   },
   "production": {
     "username": "root",
@@ -21,6 +23,7 @@
     "database": "database_production",
     "host": "localhost",
     "port": 7054,
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "timezone": "Europe/Madrid"
   }
 }

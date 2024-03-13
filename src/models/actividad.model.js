@@ -6,7 +6,6 @@ function model(sequelize, DataTypes) {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false,
             autoIncrement: true
         },
         fecha_inicio: {
@@ -61,15 +60,15 @@ function model(sequelize, DataTypes) {
         ); 
         //Una actividad puede seguir varios tipos de recurrencia (sigue)
         models.Actividad.hasMany(models.Recurrencia, 
-            { as: 'con_recurrencia'}
+            { as: 'con_recurrencia', foreignKey: { name: 'actividad_id', allowNull: false } }
         ); 
         //Una actividad puede tener varias excepciones (altera)
         models.Actividad.hasMany(models.Excepcion, 
-            { as: 'con_excepcion' }
+            { as: 'con_excepcion', foreignKey: { name: 'actividad_id', allowNull: false } }
         ); 
         models.Actividad.belongsToMany(models.Docente, 
             { as: 'impartida_por', 
-            through: { model: models.Join_Actividad_Docentes, foreignKey: 'actividad_id', allowNull: false }, 
+            through: { model: models.Join_Actividad_Docentes, allowNull: false }, 
             foreignKey: 'actividad_id' }
         ); //Una actividad tiene uno o más docentes asignados (imparte)
         models.Actividad.belongsTo(models.Docente, 
@@ -78,12 +77,12 @@ function model(sequelize, DataTypes) {
         ); //Una actividad tiene un docente responsable (responsable)
         models.Actividad.belongsToMany(models.Espacio, 
             { as: 'impartida_en', 
-            through: { model: models.Join_Actividad_Espacio, foreignKey: 'actividad_id', allowNull: false },
+            through: { model: models.Join_Actividad_Espacio, allowNull: false },
             foreignKey: 'actividad_id' }
         ); //Una actividad ocupa uno o más espacios (en)
         models.Actividad.belongsToMany(models.Clase, 
             { as: 'sesion_de', 
-            through: { model: models.Join_Actividad_Clase, foreignKey: 'actividad_id', allowNull: false }, 
+            through: { model: models.Join_Actividad_Clase, allowNull: false }, 
             foreignKey: 'actividad_id' }
         ); //Una actividad puede ser de una o más clases (asiste)    
     };

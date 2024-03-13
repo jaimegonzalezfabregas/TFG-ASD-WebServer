@@ -4,10 +4,20 @@ function model(sequelize, DataTypes) {
 
     const Titulacion = sequelize.define('Titulacion', {
         id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true
+        },      
+        nombre: {
             type: DataTypes.STRING,
             allowNull: false,
-            primaryKey: true
+            unique: true
         },
+        siglas: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true
+        }
     }, {
         freezeTableName: true,
         createdAt: 'creadoEn',
@@ -15,7 +25,7 @@ function model(sequelize, DataTypes) {
     });
 
     Titulacion.associate = function (models) {
-        models.Titulacion.hasMany(models.Plan, { as: 'con_planes'}); //Una titulación ofrece uno o más planes
+        models.Titulacion.hasMany(models.Plan, { as: 'con_planes', foreignKey: 'titulacion_id'}); //Una titulación ofrece uno o más planes
     };
 
     return Titulacion;

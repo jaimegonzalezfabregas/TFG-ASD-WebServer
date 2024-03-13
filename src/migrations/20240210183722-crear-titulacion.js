@@ -11,10 +11,20 @@ module.exports = {
      */
     return await queryInterface.createTable('Titulacion', {
       id: {
-        type: Sequelize.DataTypes.STRING,
-        allowNull: false,
+        type: Sequelize.DataTypes.INTEGER,
+        autoIncrement: true,
         primaryKey: true
       },      
+      nombre: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
+      siglas: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
       //Timestamps
       creadoEn: {
         type: Sequelize.DataTypes.DATE,

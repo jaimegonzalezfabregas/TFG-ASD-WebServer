@@ -15,7 +15,7 @@ function model(sequelize, DataTypes) {
     ); //Tabla de la agrupación asignatura y grupo
 
     Clase.associate = function(models) {
-        models.Clase.belongsToMany(models.Actividad, { as: 'con_sesiones', through: { model: models.Join_Actividad_Clase, foreignKey: 'clase_id' }, foreignKey: 'clase_id' }); //Una clase tiene varias actividades 
+        models.Clase.belongsToMany(models.Actividad, { as: 'con_sesiones', through: { model: models.Join_Actividad_Clase }, foreignKey: 'clase_id'}); //Una clase tiene varias actividades 
     };
 
     return Clase;

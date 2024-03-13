@@ -13,7 +13,7 @@ module.exports = {
       id: {
         type: Sequelize.DataTypes.INTEGER,
         primaryKey: true,
-        allowNull: false
+        autoIncrement: true
       },
       tipo_recurrencia: {
         type: Sequelize.DataTypes.STRING,
@@ -31,7 +31,7 @@ module.exports = {
         type: Sequelize.DataTypes.INTEGER,
         allowNull: true
       },
-      semanaMes: {
+      semana_mes: {
         type: Sequelize.DataTypes.INTEGER,
         allowNull: true
       },

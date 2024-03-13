@@ -14,8 +14,8 @@ module.exports = {
     */
 
     return await queryInterface.bulkInsert('Clase', [
-      { asignatura_id: 802239, grupo_id: 1},
-      { asignatura_id: 805315, grupo_id: 1}
+      {id: 1, asignatura_id: 803275, grupo_id: 1},
+      {id: 2, asignatura_id: 805348, grupo_id: 1}
     ]);
     
   },

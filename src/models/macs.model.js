@@ -4,7 +4,7 @@ function model(sequelize, DataTypes) {
     
     const Macs = sequelize.define('Macs', {
         mac: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             primaryKey: true,
             validate : {
                 is: "^([0-9A-F]{2}[:]){5}([0-9A-F]){2}$"

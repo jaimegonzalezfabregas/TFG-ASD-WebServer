@@ -13,7 +13,7 @@ module.exports = {
      * }], {});
     */
     return await queryInterface.bulkInsert('Grupo', [
-      {curso: 3, letra: 'A'}
+      {id: 1, curso: 3, letra: 'A'}
     ]);
     
   },

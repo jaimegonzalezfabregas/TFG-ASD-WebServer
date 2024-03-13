@@ -13,7 +13,6 @@ module.exports = {
       id: {
         type: Sequelize.DataTypes.INTEGER,
         primaryKey: true,
-        allowNull: false,
         autoIncrement: true
       }, //Las foreign keys se crean al relacionar.
       esta_reprogramado: {

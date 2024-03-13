@@ -6,7 +6,7 @@ function model(sequelize, DataTypes) {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false
+            autoIncrement: true
         },
         tipo_recurrencia: {
             type: DataTypes.STRING,
@@ -24,7 +24,7 @@ function model(sequelize, DataTypes) {
             type: DataTypes.INTEGER,
             allowNull: true
         },
-        semanaMes: {
+        semana_mes: {
             type: DataTypes.INTEGER,
             allowNull: true
         },

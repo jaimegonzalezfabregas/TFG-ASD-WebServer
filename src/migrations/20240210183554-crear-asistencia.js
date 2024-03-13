@@ -13,7 +13,6 @@ module.exports = {
       id: {
           type: Sequelize.DataTypes.INTEGER,
           primaryKey: true,
-          allowNull: false,
           autoIncrement: true
       },
       docente_id: {
