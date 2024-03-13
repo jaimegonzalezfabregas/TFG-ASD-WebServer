@@ -17,7 +17,7 @@ async function getFromApi(req_path, server_response, omit_error) {
             return null;
         }
     }).res(async response => { 
-        return response.json();
+        return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
     });
     console.log(`${JSON.stringify(getResult)}`);
     return getResult;
@@ -32,11 +32,11 @@ async function sendToApiJSON(json, req_path, server_response, omit_error) {
         }
         else {
             server_response.status(500).send("Something went wrong");
-            console.log(`Received status code ${response.status} on a get to ${req_path}`);
+            console.log(`Received status code ${response.status} on a post to ${req_path}`);
             return null;
         }
     }).res(async response => { 
-        return response.json();
+        return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
     });
     console.log(`${JSON.stringify(postResult)}`);
     return postResult;
