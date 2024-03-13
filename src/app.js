@@ -1,19 +1,14 @@
 const express = require('express');
 const path = require('path');
-const { Sequelize, DataTypes, Op } = require ('sequelize');
 const moment = require('moment');
 const session = require('express-session')
-const session_controller =  require('./controllers/app/session.controller.js');
-const form_controller =  require('./controllers/app/form.controller.js');
+const app_controllers =  require('./controllers/app/');
 require('dotenv').config();
-const db_config = require('./config/db.config.js');
-const { Docente, Actividad, Espacio, Asignatura, Grupo, Recurrencia, Excepcion, Plan, Titulacion, Asistencia } = require('./models');
-const messaging = require('./messaging.js');
 const app = express();
 const port = 5500;
 const staticname = __dirname + '/public';
 
-const valoresRol = ['Docente', 'Decanato', 'Admin'];
+const valoresRol = ['Usuario', 'Decanato', 'Admin'];
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 app.set('views', path.join(staticname, '/views'));
@@ -42,37 +37,37 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res) => {
   console.log(`Got a POST in login with ${JSON.stringify(req.body)}\n`);
-  await session_controller.login(req, res);
+  await app_controllers.session.login(req, res);
 });
 
 app.get('/logout', checkSesion, async (req, res) => {
   console.log('Got a GET in logout');
-  await session_controller.logout(req, res);
+  await app_controllers.session.logout(req, res);
 });
 
 app.get('/formulario-aulas', checkSesion, async (req, res) => {
   console.log('Got a GET in formulario-aulas');
-  await form_controller.getEspaciosPosibles(req, res);
+  await app_controllers.form.getEspaciosPosibles(req, res);
 });
 
 app.post('/formulario-aulas', checkSesion, (req, res) => {
   console.log(`Got a POST in formulario-aulas with ${JSON.stringify(req.body)}`);
-  form_controller.confirmEspacioPosible(req, res);
+  app_controllers.form.confirmEspacioPosible(req, res);
 });
 
 app.get('/formulario-end', checkSesion, async (req, res) => {
   console.log(`Got a GET in formulario-end with ${JSON.stringify(req.body)}`);
-  await form_controller.getForm(req, res);
+  await app_controllers.form.getForm(req, res);
 });
 
 app.post('/formulario-end', checkSesion, async (req, res) => {
   console.log(`Got a POST in formulario-end with ${JSON.stringify(req.body)}`);
-  form_controller.postForm(req, res);
+  app_controllers.form.postForm(req, res);
 });
 
 app.get('/formulario-aulas-qr', checkSesion, async (req, res) => {
   console.log('Got a GET in formulario-aulas-qr');
-  await form_controller.getAllEspacios(req, res);
+  await app_controllers.form.getAllEspacios(req, res);
 });
 
 app.post('/formulario-aulas-qr', checkSesion, (req, res) => {
@@ -92,29 +87,72 @@ app.post('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
 
 app.get('/lista-registro-motivo-falta', checkSesion, (req, res) => {
   console.log(req.query);
-
-  // query a base de datos para conseguir asignaturas sin asistir, sin motivo del docente
-  // clases = array con json de cada clase
-  clases = [{fechayhora:"12/12/2023 12:00", asignaturaygrupo:"ASOR A" }, {fechayhora:"2/12/2023 11:00", asignaturaygrupo:"AC A" }];
-
-  res.render('lista-registro-motivo-falta', {clases: clases, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}} );
+  //const resultado = app_controllers.asistencia.getAJustificar(req, res);
+  const resultado = [{fechayhora: 'dddddddd', clase: 'AAAAAAAAAAAA' , pos: 0}, {fechayhora: 'ddddddddddd' , clase: 'ffffffff', pos: 1}];
+  res.render('lista-registro-motivo-falta', {clases: resultado, 
+    usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}
+  });
 });
 
-app.post('/lista-registro-motivo-falta', checkSesion, (req, res) => {
-  console.log(`Got a POST in lista-registro-motivo-falta with ${JSON.stringify(req.body)}`);
+app.get('/registro-motivo-falta', checkSesion, (req, res) => {
+  console.log(`Got a GET in registro-motivo-falta`);
+  res.render('registro-motivo-falta', { resultado: {fechayhora: req.params.fecha, clase: req.params.clase}, 
+    usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}
+  });
+});
 
-  res.render('registro-motivo-falta', {resultado: req.body, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+app.post('/registro-motivo-falta', checkSesion, (req, res) => {
+  console.log(`Got a POST in registro-motivo-falta with ${JSON.stringify(req.body)}`);
+  app_controllers.asistencia.justificar(req, res);
 });
 
 app.get('/anular-clase', checkSesion, (req, res) => {
   console.log(req.query);
-  
-  res.render('anular-clase', {fecha: moment().format('YYYY-MM-DDTHH:MM'), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}} );
+  app_controllers.clase.getClases(req, res);
 });
 
 app.post('/anular-clase', checkSesion, async (req, res) => {
   console.log(`Got a POST in anular-clase with ${JSON.stringify(req.body)}`);
-  //clase_controller.anularClase(req, res)
+  app_controllers.clase.anularClase(req, res)
+});
+
+app.get('/verificar-docencias', checkSesion, async (req, res) => {
+  console.log(`Got a GET in verificar-docencias`);
+  res.render('verificar-docencias', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos},
+    fecha: moment().format('YYYY-MM-DD'), asistencias: [{hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
+    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
+    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
+    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''} ]
+  });
+});
+
+app.get('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato], async (req, res) => {
+  console.log(`Got a GET in crear-usuario`);
+  let resultado = {
+    email: '',
+    nombre: '',
+    apellidos: '',
+    password: ''
+  }
+  res.render('crear-usuario', {resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, roles: valoresRol});
+});
+
+app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato], async (req, res) => {
+  console.log(`Got a POST in crear-usuario with ${JSON.stringify(req.body)}`);
+  
+  try {
+    await app_controllers.session.createUser(req, res);
+  }
+  catch (error) {
+    let redo = {
+      email: req.body.email,
+      nombre: req.body.nombre,
+      apellidos: req.body.apellidos,
+      password: req.body.password
+    }
+    res.render('crear-usuario', {resultado: redo, error: error, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, roles: valoresRol});
+    return;
+  }
 });
 
 app.listen(port, () => {

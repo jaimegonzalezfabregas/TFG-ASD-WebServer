@@ -14,7 +14,7 @@ async function login(req, res) {
     usuario = await (messaging.sendToApiJSON(data, '/login', res, false));
   }
   catch (error) {
-    console.log('ERROR');
+    console.log('ERROR: ', error);
     res.render('login', { usuario: req.body.usuario, error: 'Usuario o contraseña incorrectos' });
     return;
   }
@@ -47,11 +47,26 @@ function logout(req, res) {
       
     req.session.regenerate(function (err) {
       if (err) next(err)
-      res.render('index', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+      res.redirect('/');
     });
   });
 }
 
+async function createUser(req, res) {
+  let resultado = {
+    email: req.body.email,
+    nombre: req.body.nombre,
+    apellidos: req.body.apellidos,
+    password: req.body.password,
+    rol: req.body.rol,
+    creador: req.session.user.id
+  }
+
+  await messaging.sendToApiJSON(resultado, '/usuarios', res, false);
+  res.render('exito', {mensaje: 'Usuario creado con éxito'});
+
+}
+
 module.exports = {
-  login, logout
+  login, logout, createUser
 }
