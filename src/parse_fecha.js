@@ -6,7 +6,7 @@ const recTypeParser = {
     Anual: 'years'
 }
 
-function getInicioDiferencia(act, rec) {
+function getInicioDiferencia(act) {
     // Parseamos los tiempos de inicio y fin (en horas)
     let hora_inicio, minuto_inicio, diferencia_horas, diferencia_minutos;
     if (act.es_todo_el_dia == 'Sí') {
@@ -37,7 +37,7 @@ function getInicioDiferencia(act, rec) {
 }
 
 function primeraRecurrencia(act, rec) {
-    let [hora_inicio, minuto_inicio] = getInicioDiferencia(act, rec);
+    let [hora_inicio, minuto_inicio] = getInicioDiferencia(act);
 
     // Encontrar el primer evento
     let inicio = moment(act.fecha_inicio, 'YYYY-MM-DDTHH:mm');
@@ -92,7 +92,7 @@ function fechaFromActividadRecurrencia(act, rec) {
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
     let max_veces = act.maximo || 32; 
     let separacion = rec.separacion || 0;
-    let [,, diferencia_horas, diferencia_minutos] = getInicioDiferencia(act, rec);
+    let [,, diferencia_horas, diferencia_minutos] = getInicioDiferencia(act);
 
     // Aplicar la recurrencia para sacar el resto de eventos
     let eventos_resultantes = [];
@@ -127,6 +127,54 @@ function isInRecurrencia(act, rec, fecha) {
     return (inicio.diff(a_comparar, tipo_rec) % separacion == 0);
 }
 
+function getLastEventOfRecurrencia(act, rec) {
+    let inicio = primeraRecurrencia(act, rec);
+    let separacion = rec.separacion;
+    let tipo_rec = recTypeParser[rec.tipo_recurrencia];
+    let ahora = moment.now();
+
+    let last_event = 'Event not yet occurred';
+    while (inicio.diff(ahora) < 0) {
+        last_event = inicio.clone();
+        inicio.add(separacion + 1, tipo_rec);
+    }
+
+    return last_event;
+};
+
+function getLastEventOfActividad(act, rec_list) {
+    // Quedarse con la recurrencia que menos cerca esté de repetirse
+
+    let next_rec;
+    let next_left = null;
+    let current = moment.now();
+
+    rec_list.forEach(rec => {
+        let event = getLastEventOfRecurrencia(act, rec);
+
+        if (moment(event).isValid()) {  
+            let left = moment(current).diff(moment(event));
+            // No consideramos las iguales porque su tiempo restante es igual, así que darán lugar al mismo evento en tiempo
+            console.log(left, left >= 0, next_left == null, left < next_left);
+            if (left >= 0 && (next_left == null || left < next_left)) {
+                next_left = left;
+                next_rec = rec;
+            }
+        } 
+    });
+
+    console.log(next_rec);
+    return (next_left == null) ? "Event not yet occurred" : getLastEventOfRecurrencia(act, next_rec);
+}
+
+function getFinActividad(act_instance, t_fin) {
+    let t_inicio = act_instance.format('HH:mm');
+    let [,, dif_horas, dif_mins] = getInicioDiferencia({ tiempo_inicio: t_inicio, tiempo_fin: t_fin, es_todo_el_dia: "No" });
+
+    let act_end = act_instance.clone().add(dif_horas, 'hours').add(dif_mins, 'minutes');
+    return act_end;
+}
+
 fechaFromActividadRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
 tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
 {tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1});
@@ -135,6 +183,12 @@ isInRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22
 tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
 {tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1}, "2024-06-22T16:45:11.647");
 
+getLastEventOfRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
+tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
+{tipo_recurrencia: 'Mensual', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1});
+
+
+
 module.exports = {
-    fechaFromActividadRecurrencia, isInRecurrencia
+    fechaFromActividadRecurrencia, isInRecurrencia, getLastEventOfRecurrencia, getLastEventOfActividad, getFinActividad
 }
