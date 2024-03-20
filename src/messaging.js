@@ -19,7 +19,6 @@ async function getFromApi(req_path, server_response, omit_error) {
     }).res(async response => { 
         return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
     });
-    console.log(`${JSON.stringify(getResult)}`);
     return getResult;
 }
 
@@ -38,7 +37,6 @@ async function sendToApiJSON(json, req_path, server_response, omit_error) {
     }).res(async response => { 
         return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
     });
-    console.log(`${JSON.stringify(postResult)}`);
     return postResult;
 }
 
