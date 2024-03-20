@@ -81,6 +81,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -90,46 +94,46 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                <div class="container-fluid px-4">
-                    <h1 class="align-middle text-title"> Features </h1>
-                    <div class="row justify-content-center" id="feature-div">
-                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
-                        <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
-                            <div class="card-body">
-                                <form method="post"> 
-                                    <p>Datos clase a cancelar</p>
-                                    <div class="form-floating mb-3">
-                                        <input type="datetime-local" class="form-control" id="meeting_time" name="meeting_time" value="<%= fecha %>" min="2023-09-11T00:00" max="2030-07-31T23:59" />
-                                        <label for="meeting-time">Fecha y Hora</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <select class="select form-control" id="clase_filter">
-                                            <% clases.forEach(function(clase) { %>
-                                                <option value="<%= clase.id %>"><%= clase.nombre %></option>
-                                            <% }); %>
-                                        </select>
-                                        <label for="clase-filter">Asignatura y Grupo</label>
-                                    </div>
-                                    <p>Motivo</p>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="motivo" type="motivo" name="motivo" value=""/>
-                                        <label for="motivo">Motivo</label>
-                                    </div>
-                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                        <a class="btn btn-primary" href="/">Atrás</a>
-                                        <button class="btn btn-primary" type="submit">Solicitar</button>
-                                    </div>
-                                </form>
+            <div id="layoutSidenav_content">
+                <main>
+                    <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                    <div class="container-fluid px-4">
+                        <h1 class="align-middle text-title"> Features </h1>
+                        <div class="row justify-content-center" id="feature-div">
+                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                            <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
+                                <div class="card-body">
+                                    <form method="post"> 
+                                        <p>Datos clase a cancelar</p>
+                                        <div class="form-floating mb-3">
+                                            <input type="datetime-local" class="form-control" id="meeting_time" name="meeting_time" value="<%= fecha %>" min="2023-09-11T00:00" max="2030-07-31T23:59" />
+                                            <label for="meeting-time">Fecha y Hora</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="select form-control" id="clase_filter">
+                                                <% clases.forEach(function(clase) { %>
+                                                    <option value="<%= clase.id %>"><%= clase.nombre %></option>
+                                                <% }); %>
+                                            </select>
+                                            <label for="clase-filter">Asignatura y Grupo</label>
+                                        </div>
+                                        <p>Motivo</p>
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" id="motivo" type="motivo" name="motivo" value=""/>
+                                            <label for="motivo">Motivo</label>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <a class="btn btn-primary" href="/">Atrás</a>
+                                            <button class="btn btn-primary" type="submit">Solicitar</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>

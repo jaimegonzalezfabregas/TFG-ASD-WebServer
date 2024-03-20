@@ -11,6 +11,30 @@
     width: 300px;
 }
 
+.link-icon {
+    height: 30px;
+    width: 30px;
+}
+
+.btn-text {
+    font-size: medium;
+}
+
+/*! 768px = md */
+@media (min-width: 768px) { 
+    .btn-feature {
+        height: 180px;
+        width: 300px;
+    }
+    .link-icon {
+        height: 130px;
+        width: 130px;
+    }
+    .btn-text {
+        font-size: large;
+    }
+}
+
 .bg-menu {
     --bs-bg-opacity: 1;
     background-color: RGBA(69, 69, 69, var(--bs-bg-opacity)) !important;
@@ -23,10 +47,6 @@
 
 .text-title {
     color: #990033;
-}
-
-.below-navbar {
-    padding-top: 56px;
 }
 
 .text-error {

@@ -25,7 +25,7 @@
                         <li><a class="dropdown-item" href="#!">Settings</a></li>
                         <li><a class="dropdown-item" href="#!">Activity Log</a></li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item" href="#!">Logout</a></li>
+                        <li><a class="dropdown-item" href="/logout">Logout</a></li>
                     </ul>
                 </li>
             </ul>
@@ -80,6 +80,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -89,67 +93,127 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid below-navbar px-4">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <table id="datatable">
-                                <div class="py-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <div class="justify-content-between">
-                                            <label class="ms-2 me-1" for="date-filter-desde">Desde</label>
-                                            <input class="datatable-selector" type="date" id="date-filter-desde" name="date-filter-desde" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
-                                            <label class="ms-2 me-1" for="date-filter-hasta">Hasta</label>
-                                            <input class="datatable-selector" type="date" id="date-filter-hasta" name="date-filter-hasta" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
-                                        </div>
-                                        <a class="btn btn-primary" href="/generar-avisos">Avisar</a>
-                                    </div>
+            <div id="layoutSidenav">
+                <div id="layoutSidenav_nav">
+                    <nav class="sb-sidenav accordion sb-sidenav-dark bg-menu" id="sidenavAccordion">
+                        <div class="sb-sidenav-menu">
+                            <div class="nav">
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAsistencia" aria-expanded="false" aria-controls="collapseAsistencia">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                    Registrar asistencia
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseAsistencia" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <a class="nav-link text-bg-menu" href="/formulario-aulas">Registrar asistencia</a>
+                                        <a class="nav-link text-bg-menu" href="/formulario-aulas-qr">QR</a>
+                                    </nav>
                                 </div>
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Clase</th>
-                                        <th>Docente</th>
-                                    </tr>
-                                </thead>
-                                <tfoot>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Clase</th>
-                                        <th>Docente</th>
-                                    </tr>
-                                </tfoot>
-                                <tbody>
-                                    <% clases.forEach(function(clase) { %>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                    Gestión
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
+                                        <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
+                                        <a class="nav-link text-bg-menu" href="/registro-motivo-falta">Registrar motivo de falta</a>
+                                    </nav>
+                                </div>
+                                <% if (usuario.rol == 'Decanato') { %>
+                                    <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
+                                    <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
+                                        <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                        Lista de 'delincuentes'
+                                    </a>
+                                <% } %>
+                                <% if (usuario.rol == 'Admin') { %>
+                                    <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
+                                    <a class="nav-link text-bg-menu" href="/registrar-firmas">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                        Registrar firmas
+                                    </a>
+                                    <a class="nav-link text-bg-menu" href="/verificar-docencias">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                                        Ver docencias
+                                    </a>
+                                    <a class="nav-link text-bg-menu" href="/enviar-avisos">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                        Enviar avisos
+                                    </a>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="sb-sidenav-footer bg-menu">
+                            <div class="small">Logged in as:</div>
+                            <%= usuario.nombre %> <%= usuario.apellidos %>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid below-navbar px-4">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <table id="datatable">
+                                    <div class="py-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="justify-content-between">
+                                                <label class="ms-2 me-1" for="date-filter-desde">Desde</label>
+                                                <input class="datatable-selector" type="date" id="date-filter-desde" name="date-filter-desde" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
+                                                <label class="ms-2 me-1" for="date-filter-hasta">Hasta</label>
+                                                <input class="datatable-selector" type="date" id="date-filter-hasta" name="date-filter-hasta" value="dd/mm/aaaa" min="2023-09-11" max="2030-07-31" />
+                                            </div>
+                                            <a class="btn btn-primary" href="/generar-avisos">Avisar</a>
+                                        </div>
+                                    </div>
+                                    <thead>
                                         <tr>
-                                            <td>clase.fecha</td>
-                                            <td>clase.hora</td>
-                                            <td>clase.clase</td>
-                                            <td>clase.docente</td>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Clase</th>
+                                            <th>Docente</th>
                                         </tr>
-                                    <% }); %>                        
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Clase</th>
+                                            <th>Docente</th>
+                                        </tr>
+                                    </tfoot>
+                                    <tbody>
+                                        <% clases.forEach(function(clase) { %>
+                                            <tr>
+                                                <td>clase.fecha</td>
+                                                <td>clase.hora</td>
+                                                <td>clase.clase</td>
+                                                <td>clase.docente</td>
+                                            </tr>
+                                        <% }); %>                        
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                                &middot;
-                            <a href="#">Terms &amp; Conditions</a>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                            <div>
+                                <a href="#">Privacy Policy</a>
+                                    &middot;
+                                <a href="#">Terms &amp; Conditions</a>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>

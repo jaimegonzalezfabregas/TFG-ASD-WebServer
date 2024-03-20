@@ -8,7 +8,7 @@
         <meta name="author" content="" />
         <title>Main - ASD</title>
         <link href="../assets/css/styles.min.css" rel="stylesheet" />
-        <link href="../assets/css/styles-tfg.min.css" rel="stylesheet" />
+        <link href="../assets/css/styles-tfg.css" rel="stylesheet" />
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous" async></script>
     </head>
     <body class="sb-nav-fixed">
@@ -80,6 +80,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -89,34 +93,65 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                <div class="container-fluid below-navbar px-5">
-                    <h1 class="text-title py-4">Features</h1>
-                    <div class="row justify-content-center" id="feature-div">
-                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
-                        <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6">
-                            <div class="row justify-content-center" id="formulario-feature">
-                                <a class="btn btn-primary btn-feature" href="formulario-aulas">Formulario</a>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid mx-auto">
+                        <h1 class="text-title py-4">Features</h1>
+                        <div class="row justify-content-center">
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-feature" href="formulario-aulas">
+                                    <div class="row justify-content-center"> 
+                                        <img src="../assets/Cross.svg" class="link-icon d-none d-md-block">
+                                    </div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Formulario </p>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="row justify-content-center mt-4" id="formulario-feature">
-                                <a class="btn btn-primary btn-feature" href="formulario-aulas-qr">Mostrar QR</a>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-feature" href="formulario-aulas-qr">
+                                    <div class="row justify-content-center"> 
+                                        <img src="../assets/Cross.svg" class="link-icon d-none d-md-block">
+                                    </div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Mostrar QR </p>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="row justify-content-center mt-4" id="formulario-feature">
-                                <a class="btn btn-primary btn-feature" href="cambio-clase">Cambios de clase</a>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-feature" href="cambio-clase">
+                                    <div class="row justify-content-center"> 
+                                        <img src="../assets/Cross.svg" class="link-icon d-none d-md-block">
+                                    </div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Cambios de clase </p>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="row justify-content-center mt-4" id="formulario-feature">
-                                <a class="btn btn-primary btn-feature" href="anular-clase">Cancelar clase</a>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-feature" href="anular-clase">
+                                    <div class="row justify-content-center"> 
+                                        <img src="../assets/Cross.svg" class="link-icon d-none d-md-block">
+                                    </div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Cancelar clase </p>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="row justify-content-center mt-4" id="formulario-feature">
-                                <a class="btn btn-primary btn-feature" href="lista-registro-motivo-falta">Registrar motivo de falta</a>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-feature" href="lista-registro-motivo-falta">
+                                    <div class="row justify-content-center"> 
+                                        <img src="../assets/Cross.svg" class="link-icon d-none d-md-block">
+                                    </div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Registrar motivo de falta </p>
+                                    </div>
+                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>

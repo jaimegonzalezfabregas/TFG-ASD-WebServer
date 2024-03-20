@@ -80,6 +80,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -89,57 +93,57 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                <div class="container-fluid px-4">
-                    <h1 class="align-middle text-title"> Features </h1>
-                    <div class="row justify-content-center" id="feature-div">
-                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
-                        <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
-                            <div class="card-body">
-                                <form method="post"> 
-                                    <p>Datos clase a cancelar</p>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="fechayhora" type="fechayhora" value="<%= resultado.fechayhora %>" readonly/>
-                                        <label for="fechayhora">Fecha y Hora</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="clase" type="clase" value="<%= resultado.clase %>" readonly/>
-                                        <label for="clase">Asignatura y Grupo</label>
-                                    </div>
-                                    <p>Motivo</p>
-                                    <div class="btn-group-toggle" data-toggle="buttons">
-                                        <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="olvido" value="olvido">
-                                            <label for="olvido">Olvidé firmar</label>
+            <div id="layoutSidenav_content">
+                <main>
+                    <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                    <div class="container-fluid px-4">
+                        <h1 class="align-middle text-title"> Features </h1>
+                        <div class="row justify-content-center" id="feature-div">
+                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                            <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
+                                <div class="card-body">
+                                    <form method="post"> 
+                                        <p>Datos clase a cancelar</p>
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" id="fechayhora" type="fechayhora" value="<%= resultado.fechayhora %>" readonly/>
+                                            <label for="fechayhora">Fecha y Hora</label>
                                         </div>
-                                        <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="medico" value="medico">
-                                            <label for="medico">Indisposición médica</label>
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" id="clase" type="clase" value="<%= resultado.clase %>" readonly/>
+                                            <label for="clase">Asignatura y Grupo</label>
                                         </div>
-                                        <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="cuidado-familiar" value="cuidado-familiar">
-                                            <label for="cuidado-familiar">Cuidado de un familiar</label>
+                                        <p>Motivo</p>
+                                        <div class="btn-group-toggle" data-toggle="buttons">
+                                            <div class="form-check radio-container">
+                                                <input type="radio" name="motivo" class="form-check-input" id="olvido" value="olvido">
+                                                <label for="olvido">Olvidé firmar</label>
+                                            </div>
+                                            <div class="form-check radio-container">
+                                                <input type="radio" name="motivo" class="form-check-input" id="medico" value="medico">
+                                                <label for="medico">Indisposición médica</label>
+                                            </div>
+                                            <div class="form-check radio-container">
+                                                <input type="radio" name="motivo" class="form-check-input" id="cuidado-familiar" value="cuidado-familiar">
+                                                <label for="cuidado-familiar">Cuidado de un familiar</label>
+                                            </div>
+                                            <div class="form-check radio-container">
+                                                <input type="radio" name="motivo" class="form-check-input" id="otro">
+                                                <label for="otro">Otro</label>
+                                                <input class="form-control ms-2" type="text" name="texto-otro" id="texto-otro">
+                                            </div>
                                         </div>
-                                        <div class="form-check radio-container">
-                                            <input type="radio" name="motivo" class="form-check-input" id="otro">
-                                            <label for="otro">Otro</label>
-                                            <input class="form-control ms-2" type="text" name="texto-otro" id="texto-otro">
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <a class="btn btn-primary" href="/">Atrás</a>
+                                            <button class="btn btn-primary" type="submit">Solicitar</button>
                                         </div>
-                                    </div>
-                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                        <a class="btn btn-primary" href="/">Atrás</a>
-                                        <button class="btn btn-primary" type="submit">Solicitar</button>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>

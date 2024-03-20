@@ -80,6 +80,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -89,30 +93,30 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                <div class="container-fluid below-navbar px-5">
-                    <h1 class="text-title py-4">Features</h1>
-                    <div class="row justify-content-center" id="feature-div">
-                        <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6 my-auto">
-                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
-                            <% clases.forEach(function(clase) { %>
-                                <a href="/registro-motivo-falta/?fecha=<%=clase.fechayhora %>&clase=<%=clase.clase%>&i=<%=clase.pos%>">
-                                    <div class="card mt-3">
-                                        <div class="card-body">
-                                            <% clase.forEach(function(cl) { %>
-                                                <p class="text-center"><%= clase.fechayhora %><br><%= cl %></p>
-                                            <% }); %>
+            <div id="layoutSidenav_content">
+                <main>
+                    <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                    <div class="container-fluid below-navbar px-5">
+                        <h1 class="text-title py-4">Features</h1>
+                        <div class="row justify-content-center" id="feature-div">
+                            <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6 my-auto">
+                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                                <% clases.forEach(function(clase) { %>
+                                    <a href="/registro-motivo-falta/?fecha=<%=clase.fechayhora %>&clase=<%=clase.clase%>&i=<%=clase.pos%>">
+                                        <div class="card mt-3">
+                                            <div class="card-body">
+                                                <% clase.clase.forEach(function(cl) { %>
+                                                    <p class="text-center"><%= clase.fechayhora %><br><%= cl %></p>
+                                                <% }); %>
+                                            </div>
                                         </div>
-                                    </div>
-                                </a>
-                            <% }); %>
+                                    </a>
+                                <% }); %>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>

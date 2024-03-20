@@ -80,6 +80,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -89,60 +93,60 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid below-navbar px-4">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Profesores con infracciones
-                        </div>
-                        <div class="card-body">
-                            <table id="datatable">
-                                <thead>
-                                    <tr>
-                                        <th>Docente</th>
-                                        <th>Faltas totales</th>
-                                        <th>Faltas en el último mes</th>
-                                        <th>Faltas justificadas</th>
-                                    </tr>
-                                </thead>
-                                <tfoot>
-                                    <tr>
-                                        <th>Docente</th>
-                                        <th>Faltas totales</th>
-                                        <th>Faltas en el último mes</th>
-                                        <th>Faltas justificadas</th>
-                                    </tr>
-                                </tfoot>
-                                <tbody>
-                                    <% docentes.forEach(function(docente) { %>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid below-navbar px-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i>
+                                Profesores con infracciones
+                            </div>
+                            <div class="card-body">
+                                <table id="datatable">
+                                    <thead>
                                         <tr>
-                                            <td>docente.nombre</td>
-                                            <td>docente.totales</td>
-                                            <td>docente.mes</td>
-                                            <td>docente.justificadas</td>
+                                            <th>Docente</th>
+                                            <th>Faltas totales</th>
+                                            <th>Faltas en el último mes</th>
+                                            <th>Faltas justificadas</th>
                                         </tr>
-                                    <% }); %>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Docente</th>
+                                            <th>Faltas totales</th>
+                                            <th>Faltas en el último mes</th>
+                                            <th>Faltas justificadas</th>
+                                        </tr>
+                                    </tfoot>
+                                    <tbody>
+                                        <% docentes.forEach(function(docente) { %>
+                                            <tr>
+                                                <td>docente.nombre</td>
+                                                <td>docente.totales</td>
+                                                <td>docente.mes</td>
+                                                <td>docente.justificadas</td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                            <div>
+                                <a href="#">Privacy Policy</a>
+                                &middot;
+                                <a href="#">Terms &amp; Conditions</a>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../assets/js/scripts.min.js"></script>

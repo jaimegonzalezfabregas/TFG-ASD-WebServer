@@ -81,6 +81,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                     Enviar avisos
                                 </a>
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    Crear un usuario
+                                </a>
                             <% } %>
                         </div>
                     </div>
@@ -90,55 +94,55 @@
                     </div>
                 </nav>
             </div>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                <div class="container-fluid px-4">
-                    <h1 class="align-middle text-title"> Features </h1>
-                    <div class="row justify-content-center" id="feature-div">
-                     <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
-                        <div class="mt-lg-5 mt-sm-2 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
-                            <div class="card-body">
-                                <% if (typeof error != 'undefined') { %>
-                                <p class="text-error"><%= error %></p>
-                                <% } %>
-                                <form method="post"> 
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="nombre" id="nombre" value="<%= resultado.nombre %>"/>
-                                        <label for="nombre">Nombre</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="apellidos" id="apellidos" value="<%= resultado.apellidos %>"/>
-                                        <label for="apellidos">Apellidos</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="email" id="email" value="<%= resultado.email %>"/>
-                                        <label for="email">Email</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <select class="select form-control" name="rol" id="rol">
-                                            <% roles.forEach(function(rol) { %>
-                                                <option value="<%= rol %>"><%= rol %></option>
-                                            <% }); %>
-                                        </select>
-                                        <label for="rol">Rol</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" name="password" id="password" value="<%= resultado.password %>"/>
-                                        <label for="password">Contraseña</label>
-                                    </div>
-                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                        <a class="btn btn-primary" href="/">Atrás</a>
-                                        <button class="btn btn-primary" type="submit">OK</a>
-                                    </div>
-                                </form>
+            <div id="layoutSidenav_content">
+                <main>
+                    <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                    <div class="container-fluid px-4">
+                        <h1 class="align-middle text-title"> Features </h1>
+                        <div class="row justify-content-center" id="feature-div">
+                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                            <div class="mt-lg-5 mt-sm-2 col-11 col-sm-10 col-md-8 col-lg-6"><div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
+                                <div class="card-body">
+                                    <% if (typeof error != 'undefined') { %>
+                                    <p class="text-error"><%= error %></p>
+                                    <% } %>
+                                    <form method="post"> 
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="nombre" id="nombre" value="<%= resultado.nombre %>"/>
+                                            <label for="nombre">Nombre</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="apellidos" id="apellidos" value="<%= resultado.apellidos %>"/>
+                                            <label for="apellidos">Apellidos</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="email" id="email" value="<%= resultado.email %>"/>
+                                            <label for="email">Email</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="select form-control" name="rol" id="rol">
+                                                <% roles.forEach(function(rol) { %>
+                                                    <option value="<%= rol %>"><%= rol %></option>
+                                                <% }); %>
+                                            </select>
+                                            <label for="rol">Rol</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="password" id="password" value="<%= resultado.password %>"/>
+                                            <label for="password">Contraseña</label>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <a class="btn btn-primary" href="/">Atrás</a>
+                                            <button class="btn btn-primary" type="submit">OK</a>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
