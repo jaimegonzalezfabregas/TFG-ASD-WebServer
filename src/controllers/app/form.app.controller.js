@@ -1,5 +1,6 @@
 const messaging = require('../../messaging');
 const moment = require('moment');
+const recurrence_tool = require('../../parse_fecha.js');
 
 async function getEspaciosPosibles(req, res) {
   let data = { 
@@ -32,7 +33,7 @@ async function getEspaciosPosibles(req, res) {
     });
   }
   else {
-    res.render('formulario-aulas/?all=yes', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+    res.redirect('/formulario-aulas/?all=yes');
     return;
   }
 
@@ -80,7 +81,7 @@ async function getForm(req, res) {
     req.session.save();
   }
 
-  const currentHour = moment('16:30', 'HH:mm'); //moment().format('hh:mm');
+  const currentHour = moment('16:30', 'HH:mm'); //moment().format('HH:mm');
   const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res, true));
 
   // query a base de datos para conseguir asignatura y grupo que sería
@@ -99,13 +100,13 @@ async function getForm(req, res) {
     return false;
   });
 
+  console.log(actividades_ids_us);
   console.log(actividades_ids);
 
   let actividades_data = [];
   for (let i = 0; i < actividades_ids.length; i++) {
     const id_act = (actividades_ids[i].id).toString();
     const api_act_path = `/actividades/${id_act}`;
-    console.log(api_act_path);
     actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path, res, true))});
   }
 
@@ -113,18 +114,26 @@ async function getForm(req, res) {
 
   //Comprobamos que estén en la franja horaria actual
   let actividades_posibles = [];
-  actividades_data.forEach((act) => {
+  for (let i = 0; i <actividades_data.length; i++) {
+    let act = actividades_data[i];
     const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
     const fin = moment(act.data.tiempo_fin, 'HH:mm');
-    console.log(inicio, fin, currentHour, inicio <= currentHour, fin >= currentHour);
     if (inicio <= currentHour && currentHour <= fin) {
-      actividades_posibles.push(act.data);
-      req.session.user.actividades_ids.push(act.id);
-      console.log(act);
-    }
-  });
+      let act_rec = (await messaging.getFromApi(`/recurrencias/actividades/${act.id}`, res, true)).recurrencias;
+      
+      for (let j = 0; j < act_rec.length; j++) {
+        let rec_data = await messaging.getFromApi(`/recurrencias/${act_rec[j].id}`, res, true);
 
-  console.log(req.session.user.actividades_ids, actividades_posibles.length, actividades_posibles);
+        if (recurrence_tool.isInRecurrencia(act.data, rec_data, moment(moment.now()).hours(inicio.hours()).minutes(inicio.minutes()))) {
+          actividades_posibles.push(act.data);
+          req.session.user.actividades_ids.push(act.id);
+          console.log(act);
+          break;
+        }
+      }
+
+    }
+  }
 
   if (actividades_posibles.length != 0) { 
 
@@ -134,7 +143,6 @@ async function getForm(req, res) {
         const id_cl = (actividades_posibles[i].clase_ids[j].id).toString();
         const api_cl_path = `/clases/${id_cl}`;
         clases_data.push((await messaging.getFromApi(api_cl_path, res, true)));
-        console.log(clases_data[j]);
       }
     }
 
@@ -148,11 +156,9 @@ async function getForm(req, res) {
     }
 
     let resultado = {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp,
-                     hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: [] 
+                     hora: `${moment(currentHour, 'HH:mm').format('HH:mm')}`, clases: [] 
                      // clases = [ { asignatura: , grupo: } ]
     };
-
-    console.log(currentHour.toString(), moment(currentHour.toString()).format('HH:mm'));
 
     clases_info.forEach((clase) => {
       const str_asig = clase.asignatura.nombre + " (" + clase.asignatura.siglas + ")";
@@ -162,13 +168,13 @@ async function getForm(req, res) {
         
     });
       
-    console.log(resultado);
+    //console.log(resultado);
     res.render('formulario-end', { resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
   else {
     res.render('formulario-end', { resultado: {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
-                                  hora: `${moment(currentHour.toString()).format('HH:mm')}`, clases: []}, 
+                                  hora: `${moment(currentHour, 'HH:mm').format('HH:mm')}`, clases: []}, 
                                   usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos} });
   }
 }

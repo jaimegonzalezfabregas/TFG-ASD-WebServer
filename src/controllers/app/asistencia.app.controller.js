@@ -58,6 +58,8 @@ async function getAJustificar(req, res) {
         }
     }
 
+    console.log(JSON.stringify(resultado));
+
     return resultado;
 }
 

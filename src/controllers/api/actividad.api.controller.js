@@ -29,17 +29,10 @@ async function getActividadesOfUsuario(req, res, db) {
         }
     
         let respuesta = { actividades: [] };
-    
+
         console.log('Searching in Actividad impartida por Docente for actividad_id');
         const query_r = await db.sequelize.models.Actividad.findAll({
             attributes: ['id'], 
-            include: {
-                model: db.sequelize.models.Docente,
-                as: 'impartida_por',
-                where: {
-                    id: idUsuario 
-                }
-            },
             include: {
                 model: db.sequelize.models.Excepcion,
                 as: 'con_excepcion',
@@ -47,6 +40,13 @@ async function getActividadesOfUsuario(req, res, db) {
                     esta_cancelado: 'No'
                 },
                 required: false
+            },
+            include: {
+                model: db.sequelize.models.Docente,
+                as: 'impartida_por',
+                where: {
+                    id: idUsuario 
+                }
             }
         });
                     
@@ -57,6 +57,7 @@ async function getActividadesOfUsuario(req, res, db) {
                 respuesta.actividades.push({id: act.dataValues.id});
             });
         }
+        console.log(respuesta);
     
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(respuesta);
