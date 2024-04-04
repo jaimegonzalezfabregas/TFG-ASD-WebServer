@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-    dev: {
+    development: {
         dialect: process.env.DB_DIALECT,
         host: process.env.DB_DEV_HOST,
         port: process.env.DB_DEV_PORT,
@@ -37,7 +37,7 @@ module.exports = {
         },
         timezone: process.env.DB_TIMEZONE
     },
-    prod: {
+    production: {
         dialect: process.env.DB_DIALECT,
         host: process.env.DB_PROD_HOST,
         port: process.env.DB_PROD_PORT,
