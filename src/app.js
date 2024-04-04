@@ -6,7 +6,7 @@ const app_controllers =  require('./controllers/app/');
 const middleware = require("./middleware/");
 require('dotenv').config();
 const app = express();
-const port = 5500;
+const port = process.env.SERVER_PORT;
 const staticname = __dirname + '/public';
 
 const valoresRol = ['Usuario', 'Decanato', 'Admin'];
