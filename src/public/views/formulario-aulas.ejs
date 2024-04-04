@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Main - ASD</title>
+        <title>Aulas - ASD</title>
         <link href="../assets/css/styles.min.css" rel="stylesheet" />
         <link href="../assets/css/styles-tfg.min.css" rel="stylesheet" />
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous" async></script>
@@ -36,19 +36,12 @@
                     <div class="sb-sidenav-menu">
                         <div class="nav">
                             <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAsistencia" aria-expanded="false" aria-controls="collapseAsistencia">
-                                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                            <a class="nav-link text-bg-menu" href="/formulario-aulas">
+                                <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
                                 Registrar asistencia
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse" id="collapseAsistencia" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="/formulario-aulas">Registrar asistencia</a>
-                                    <a class="nav-link text-bg-menu" href="/formulario-aulas-qr">QR</a>
-                                </nav>
-                            </div>
                             <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
-                                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                                <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
                                 Gestión
                                 <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
@@ -56,20 +49,20 @@
                                 <nav class="sb-sidenav-menu-nested nav">
                                     <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
                                     <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
-                                    <a class="nav-link text-bg-menu" href="/registro-motivo-falta">Registrar motivo de falta</a>
+                                    <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
                             <% if (usuario.rol == 'Decanato') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
-                                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                                    Lista de 'delincuentes'
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div> <!-- triangle-exclamation -->
+                                    Resumen de faltas
                                 </a>
                             <% } %>
                             <% if (usuario.rol == 'Admin') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
                                 <a class="nav-link text-bg-menu" href="/registrar-firmas">
-                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-signature"></i></div>
                                     Registrar firmas
                                 </a>
                                 <a class="nav-link text-bg-menu" href="/verificar-docencias">
@@ -77,11 +70,11 @@
                                     Ver docencias
                                 </a>
                                 <a class="nav-link text-bg-menu" href="/enviar-avisos">
-                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    <div class="sb-nav-link-icon"><i class="fas fa-envelope"></i></div>
                                     Enviar avisos
                                 </a>
                                 <a class="nav-link text-bg-menu" href="/crear-usuario">
-                                    <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                                    <div class="sb-nav-link-icon"><i class="fas fa-user-plus"></i></div>
                                     Crear un usuario
                                 </a>
                             <% } %>
@@ -96,8 +89,7 @@
             <div id="layoutSidenav_content">
                 <main>
                     <!-- espacio necesario para que el navbar no se coma parte de los datos -->
-                    <div class="container-fluid px-4">
-                        <h1 class="align-middle text-title"> Features </h1>
+                    <div class="container-fluid px-4"> 
                         <div class="row justify-content-center" id="feature-div">
                         <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
                             <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6">

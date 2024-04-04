@@ -9,7 +9,7 @@ $(document).ready(function() {
             "sInfoEmpty":     "No hay entradas disponibles",
             "sInfoFiltered":  "(filtrado de un total de _MAX_ entradas)",
             "sInfoPostFix":   "",
-            "sSearch":        "Buscar:",
+            "sSearch":        "Buscar: ",
             "sUrl":           "",
             "sInfoThousands":  ",",
             "sLoadingRecords": "Cargando...",
