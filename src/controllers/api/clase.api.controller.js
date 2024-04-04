@@ -42,9 +42,11 @@ async function getClaseById(req, res, db) {
 }
 
 async function getClaseOfAsignaturaGrupo(req, res, db) {
+    let asignatura_id = req.body.asignatura_id;
+    let grupo_id = req.body.grupo_id;
     try {
-        Number(req.body.asignatura_id);
-        Number(req.body.grupo_id);
+        asignatura_id = Number(req.body.asignatura_id);
+        grupo_id = Number(req.body.grupo_id);
     }
     catch (error) {
         res.status(400).send('Id suministrado no válido');
@@ -57,14 +59,14 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
         const query_asig = await db.sequelize.models.Asignatura.findOne({
             attributes:['id'],
             where: {
-                id: req.body.asignatura_id
+                id: asignatura_id
             }
         });
 
         const query_gr = await db.sequelize.models.Grupo.findOne({
             attributes:['id'],
             where: {
-                id: req.body.grupo_id
+                id: grupo_id
             }
         });
 
@@ -79,8 +81,8 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
         const query_cla = await db.sequelize.models.Clase.findOne({
             attributes:['id'],
             where: {
-                asignatura_id: req.body.asignatura_id,
-                grupo_id: req.body.grupo_id
+                asignatura_id: asignatura_id,
+                grupo_id: grupo_id
             }
         });
                

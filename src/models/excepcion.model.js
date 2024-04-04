@@ -1,5 +1,15 @@
 //IMPORTANTE: Hacer await Excepcion.sync() o sequelize.sync() tras llamar a la siguiente función
 
+/* Sobre el uso de Excepción:
+    fecha_inicio_act y fecha_fin_act contienen el inicio y fin de la actividad cancelada o reprogramada
+    fecha_inicio_ex y fecha_fin_ex contienen el inicio y fin de la reprogramación de una actividad (pueden ser nulos si esta_reprogramado == 'No')
+    esta_cancelado == 'Sí' && esta_reprogramado == 'No => Actividad cancelada
+    esta_cancelado == 'No' && esta_reprogramado == 'Sí => Actividad reprogramada
+    esta_cancelado == 'Sí' && esta_reprogramado == 'Sí => Actividad reprogramada, que luego ha sido cancelada
+    La reprogramación de una reprogramación se contempla con el caso de que fecha_inicio_act y fecha_fin_act coincidan con algún
+    par fecha_inicio_ex y fecha_fin_ex
+*/
+
 function model(sequelize, DataTypes) {
 
     const Excepcion = sequelize.define('Excepcion', {
@@ -14,27 +24,29 @@ function model(sequelize, DataTypes) {
         },
         esta_cancelado: {
             type: DataTypes.ENUM('Sí', 'No'),
-            allowNull: false
+            allowNull: false,
+            defaultValue: 'No'
         },
-        fecha_inicio: {
+        fecha_inicio_act: {
             type: DataTypes.DATE,
             allowNull: false
         },
-        fecha_fin: {
+        fecha_fin_act: {
             type: DataTypes.DATE,
             allowNull: true
         },
-        tiempo_inicio: { //Tipo timestamp
+        fecha_inicio_ex: {
             type: DataTypes.DATE,
             allowNull: true
         },
-        tiempo_fin: { //Tipo timestamp
+        fecha_fin_ex: { 
             type: DataTypes.DATE,
             allowNull: true
         },
         es_todo_el_día: {
             type: DataTypes.ENUM('Sí', 'No'),
-            allowNull: false
+            allowNull: false,
+            defaultValue: 'No'
         },
         creado_por: {
             type: DataTypes.STRING

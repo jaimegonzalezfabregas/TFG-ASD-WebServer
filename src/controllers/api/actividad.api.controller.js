@@ -34,14 +34,6 @@ async function getActividadesOfUsuario(req, res, db) {
         const query_r = await db.sequelize.models.Actividad.findAll({
             attributes: ['id'], 
             include: {
-                model: db.sequelize.models.Excepcion,
-                as: 'con_excepcion',
-                where: {
-                    esta_cancelado: 'No'
-                },
-                required: false
-            },
-            include: {
                 model: db.sequelize.models.Docente,
                 as: 'impartida_por',
                 where: {
@@ -52,9 +44,8 @@ async function getActividadesOfUsuario(req, res, db) {
                     
         //Si tiene actividades
         if (query_r.length != 0) {
-    
             query_r.forEach((act) => {
-                respuesta.actividades.push({id: act.dataValues.id});
+                respuesta.actividades.push(act.dataValues);
             });
         }
         console.log(respuesta);
@@ -111,21 +102,13 @@ async function getActividadesOfEspacio(req, res, db) {
                 where: {
                     id: idEspacio
                 }
-            },
-            include: {
-                model: db.sequelize.models.Excepcion,
-                as: 'con_excepcion',
-                where: {
-                    esta_cancelado: 'No'
-                },
-                required: false
             }
         });
-               
+        
         //Si tiene actividades
         if (query_act.length != 0) {
             query_act.forEach((act) => {
-                respuesta.actividades.push({id: act.dataValues.id});
+                respuesta.actividades.push(act.dataValues);
             });
         }
     
@@ -173,7 +156,7 @@ async function getActividadesOfClase(req, res, db) {
         let respuesta = { actividades: [] };
     
         console.log('Searching in Actividad for id');
-        const query_act = await db.sequelize.models.Actividad.findAll({
+        const query_act_cla = await db.sequelize.models.Actividad.findAll({
             attributes:['id'],
             include: {
                 model: db.sequelize.models.Clase,
@@ -181,21 +164,13 @@ async function getActividadesOfClase(req, res, db) {
                 where: {
                     id: idClase
                 }
-            },
-            include: {
-                model: db.sequelize.models.Excepcion,
-                as: 'con_excepcion',
-                where: {
-                    esta_cancelado: 'No'
-                },
-                required: false
             }
         });
                
         //Si tiene actividades
-        if (query_act.length != 0) {
-            query_act.forEach((act) => {
-                respuesta.actividades.push({id: act.dataValues.id});
+        if (query_act_cla.length != 0) {
+            query_act_cla.forEach((act) => {
+                respuesta.actividades.push(act.dataValues);
             });
         }
     

@@ -122,6 +122,75 @@ async function createUser(req, res, db) {
     }
 }
 
+async function getUsuarios(req, res, db) {
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        const query_usuarios = await db.sequelize.models.Docente.findAll({
+            attributes: ['id']
+        });
+
+        let resultado = [];
+        query_usuarios.forEach(user => {
+            resultado.push(user.dataValues);
+        });
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+
+    transaction.commit();
+}
+
+async function getUsuarioById(req, res, db) {
+    let idUsuario;
+
+    try {
+        idUsuario = Number(req.params.idUsuario);
+    }
+    catch (error) {
+        res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    const transaction = await db.sequelize.transaction();
+        
+    try {
+        console.log('Searching in Docentes for id, nombre, apellidos, email');
+        const query_doc = await db.sequelize.models.Docente.findOne({
+            attributes:['id', 'nombre', 'apellidos', 'email', 'rol'],
+            where: {
+                id: idUsuario
+            }
+        });
+
+        if (Object.keys(query_doc.dataValues).length == 0) {
+            res.status(404).send('Usuario no encontrado');
+            await transaction.rollback();
+            return;
+        }
+
+        const resultado = query_doc.dataValues;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(resultado);
+    }
+    catch (error) {
+        console.log('Error while interacting with database:', error);
+        res.status(500).send('Something went wrong');
+        await transaction.rollback();
+        return;
+    }
+      
+    await transaction.commit();
+}
+
 module.exports = {
-    authenticateUser, createUser
+    authenticateUser, createUser, getUsuarios, getUsuarioById
 }

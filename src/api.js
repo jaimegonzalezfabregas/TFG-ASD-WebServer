@@ -64,6 +64,25 @@ app.get(api_path + '/espacios/:idEspacio', async (req, res) => await api_control
 */
 app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await api_controllers.espacio.getEspaciosOfUsuario(req, res, db));
 
+/* /espacios/actividad/{idActividad}
+      tags:
+        - espacios
+        - actividades
+      summary: Devuelve una lista de los espacios asociados a una actividad
+      description: Devuelve una lista de espacios relacionados a la actividad con id = {idActividad}
+      operationId: getEspaciosOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/EspacioListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+*/
+app.get(api_path + '/espacios/actividad/:idActividad', async (req, res) => await api_controllers.espacio.getEspacioOfActividad(req, res, db));
+
 /* /dispositivos
 
     tags:
@@ -284,6 +303,18 @@ app.post(api_path + '/ble', async (req, res) => await api_controllers.seguimient
     */
 app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.authenticateUser(req, res, db));
 
+/*  /usuarios
+      tags:
+        - usuarios
+      summary: Devuelve una lista de usuarios
+      description: Devuelve la lista de los usuarios de la base de datos
+      operationId: getUsuarios
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaUsuarios'
+*/
+app.get(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.getUsuarios(req, res, db));
+
 /* /usuarios
       tags:
         - usuarios
@@ -303,6 +334,25 @@ app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.
           description: Datos no válidos
 */
 app.post(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.createUser(req, res, db));
+
+/* /usuarios/:idUsuario
+
+    tags:
+      - usuarios
+    summary: Devuelve los datos de un usuario por su id
+    description: Devuelve los datos del usuario con id = {idUsuario}
+    operationId: getUsuarioById
+    parameters:
+      - $ref: '#/components/parameters/idUsuario'
+    responses:
+      '200':
+        $ref: '#/components/responses/Usuario'
+      '400':
+        description: Id suministrado no válido
+      '404':
+        description: Usuario no encontrado
+*/
+app.get(api_path + '/usuarios/:idUsuario', async (req, res) => await api_controllers.usuario.getUsuarioById(req, res, db));
 
 /* /actividades/usuarios/:idUsuario
  
@@ -400,6 +450,45 @@ app.get(api_path + '/actividades/clases/:idClase', async (req, res) => await api
 */
 app.post(api_path + '/excepciones', async (req, res) => await api_controllers.excepcion.createExcepcion(req, res, db));
 
+/* /excepciones/{idExcepcion}:
+
+      tags:
+        - excepciones
+      summary: Devuelve información de una excepción por su id
+      description: Devuelve información sobre la excepción con id = {idExcepcion}
+      operationId: getExcepcionById
+      parameters:
+        - $ref: '#/components/parameters/idExcepcion'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Excepción no encontrada
+*/
+app.get(api_path + '/excepciones/:idExcepcion', async (req, res) => api_controllers.excepcion.gerExcepcionById(req, res, db));
+
+/* /excepciones/actividades/{idActividad}:
+
+      tags:
+        - excepciones
+        - actividades
+      summary: Devuelve una lista de excepciones de una actividad por su id
+      description: Devuelve la lista de excepciones asociadas a la actividad con id = {idActividad}
+      operationId: getExcepcionesOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+*/
+app.get(api_path + '/excepciones/actividades/:idActividad', async (req, res) => api_controllers.excepcion.getExcepcionesOfActividad(req, res, db));
+
 /* /clases/:idClase
 
     tags:
@@ -495,7 +584,7 @@ app.get(api_path + '/grupos/:idGrupo', async (req, res) => api_controllers.grupo
 */
 app.post(api_path + '/grupos/compose', async (req, res) => api_controllers.grupo.getGrupoByCursoLetra(req, res, db));
 
-/* /recurrencias/:idRecurrencias
+/* /recurrencias/:idRecurrencia
     tags:
         - recurrencias
       summary: Devuelve información de una recurrencia por su id

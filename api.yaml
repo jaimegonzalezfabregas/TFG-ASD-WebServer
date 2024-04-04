@@ -51,7 +51,7 @@ paths:
       tags:
         - espacios
       summary: Devuelve los detalles de un espacio
-      description: Devuelve un espacio.
+      description: Devuelve un espacio
       operationId: getEspacioById
       parameters:
         - $ref: '#/components/parameters/idEspacio'
@@ -82,6 +82,24 @@ paths:
           description: Usuario no encontrado
         '422':
           description: Datos no válidos
+          
+  /espacios/actividades/{idActividad}:
+    get:
+      tags:
+        - espacios
+        - actividades
+      summary: Devuelve una lista de los espacios asociados a una actividad
+      description: Devuelve una lista de espacios relacionados a la actividad con id = {idActividad}
+      operationId: getEspaciosOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/EspacioListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
 
   /dispositivos:
     get:
@@ -209,7 +227,7 @@ paths:
     post:
       tags:
         - seguimiento
-      summary: Devuelve las asistencias del día
+      summary: Devuelve las asistencias de un día
       description: Devuelve una lista de asistencias con sus estados y motivos
       operationId: getAsistencias
       requestBody:
@@ -268,6 +286,16 @@ paths:
           description: Datos no válidos
 
   /usuarios:
+    get:
+      tags:
+        - usuarios
+      summary: Devuelve una lista de usuarios
+      description: Devuelve la lista de los usuarios de la base de datos
+      operationId: getUsuarios
+      responses:
+        '200':
+          $ref: '#/components/responses/UsuarioListaData'
+
     post:
       tags:
         - usuarios
@@ -277,12 +305,29 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CreateUsuario'
       responses:
-        '200':
+        '201':
           description: Usuario creado con éxito
         '404':
           description: Usuario creador no válido
         '422':
           description: Datos no válidos
+
+  /usuarios/{idUsuario}:
+    get:
+      tags:
+        - usuarios
+      summary: Devuelve los datos de un usuario por su id
+      description: Devuelve los datos del usuario con id = {idUsuario}
+      operationId: getUsuarioById
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/Usuario'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
   
   /actividades/usuarios/{idUsuario}:
     get:
@@ -459,6 +504,41 @@ paths:
         '404':
           description: Actividad no encontrada
           
+  /excepciones/{idExcepcion}:
+    get:
+      tags:
+        - excepciones
+      summary: Devuelve información de una excepción por su id
+      description: Devuelve información sobre la excepción con id = {idExcepcion}
+      operationId: getExcepcionById
+      parameters:
+        - $ref: '#/components/parameters/idExcepcion'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Excepcion no encontrada
+          
+  /excepciones/actividades/{idActividad}:
+    get:
+      tags:
+        - excepciones
+        - actividades
+      summary: Devuelve una lista de excepciones de una actividad por su id
+      description: Devuelve la lista de excepciones asociadas a la actividad con id = {idActividad}
+      operationId: getExcepcionesOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+          
   /recurrencias/{idRecurrencia}:
     get:
       tags:
@@ -582,6 +662,16 @@ components:
       name: idAsistencia
       in: path
       description: ID de la asistencia
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idExcepcion:
+      name: idExcepcion
+      in: path
+      description: ID de la excepcion
       required: true
       schema:
         type: integer
@@ -803,11 +893,28 @@ components:
           type: integer
           format: int64
           description: Id del Espacio
+        fecha: 
+          type: string
+          description: fecha de la asistencia, o inicio de la hora de la actividad no asistida para una no asistida
+        motivo:
+          type: string
+          description: Motivo de una no asistencia (opcional)
+        estado:
+          type: string
+          enum: 
+            - 'Asistida'
+            - 'Asistida con Irregularidad'
+            - 'No Asistida'
+          description: Estado de la asistencia
         tipo_registro:
           type: string
           example: RegistroSeguimientoDocenteApp
       discriminator:
         propertyName: tipo_registro
+      required:
+        - usuarioId
+        - espacioId
+        - estado
             
 
     BaseRegistroSeguimientoDispositivo:
@@ -929,7 +1036,7 @@ components:
             fecha:
               type: string
               description: Fecha de registro de asistencia de la actividad
-              example: "2024-02-14T09:00:00.000Z"        
+              example: "2024-02-14T09:00:00.000"        
             motivo:
               type: string
               description: Motivo por el que no se ha asistido a una actividad.
@@ -948,6 +1055,15 @@ components:
               description: |
                 'Sí': Se buscarán las asistencias con motivos
                 'No': Se buscarán las asistencias sin motivos
+            fecha:
+              type: string
+              description: 'Fecha en DD/MM/YYYY, se buscarán las asistencias de ese día'
+              example: '10/04/2024'
+            espacioId:
+              type: integer
+              format: int64
+              description: Id del Espacio
+              example: 1
           
     ListaAsistencia:
       type: object
@@ -1012,6 +1128,15 @@ components:
         - $ref: '#/components/schemas/conId'
         - $ref: '#/components/schemas/conMod'
         
+    ListaUsuarios:
+      type: object
+      properties:
+        usuarios:
+          type: array
+          items: 
+            $ref: '#/components/schemas/conId'
+          
+        
     EspacioUsuarioQuery:
       type: object
       properties:
@@ -1052,11 +1177,11 @@ components:
         fecha_inicio:
           type: string
           description: Fecha de inicio de la actividad y su recursión
-          example: "2024-02-14T09:00:00.000Z"
+          example: "2024-02-14T09:00:00.000"
         fecha_fin:
           type: string
           description: Fecha de fin de la actividad y su recursión
-          example: "2024-06-30T18:40:00.000Z"
+          example: "2024-06-30T18:40:00.000"
         tiempo_inicio:
           type: string
           description: Hora del dia a la que comienza la actividad
@@ -1094,27 +1219,51 @@ components:
         - $ref: '#/components/schemas/ActividadData'
         
     ExcepcionData:
-      allOf:
-      - $ref: '#/components/schemas/ActividadTimeData'
-      - type: object
-        properties:
-          esta_reprogramado:
-            type: string
-            enum:
-              - Si
-              - No
-            description: Si está o no reprogramada la actividad
-          esta_cancelado:
-            type: string
-            enum:
-              - Si
-              - No
-            description: Si está o no cancelada la actividad (aunque esté reprogramada, se puede cancelar)
-          actividad_id:
-            type: integer
-            format: int64
-            description: Id de la actividad a la que se asocia la excepción
-            example: 1
+      type: object
+      properties:
+        esta_reprogramado:
+          type: string
+          enum:
+            - Sí
+            - No
+          description: Si está o no reprogramada la actividad
+        esta_cancelado:
+          type: string
+          enum:
+            - Sí
+            - No
+          description: Si está o no cancelada la actividad (aunque esté reprogramada, se puede cancelar)
+        actividad_id:
+          type: integer
+          format: int64
+          description: Id de la actividad a la que se asocia la excepción
+          example: 1
+        tiempo_inicio_act:
+          type: string
+          description: fecha de inicio de la actividad (o instancia de actividad) cancelada/reprogramada
+          example: '2022-03-01 10:00:00.000'
+        tiempo_fin_act:
+          type: string
+          description: fecha de fin de la actividad (o instancia de actividad) cancelada/reprogramada
+          example: '2022-03-01 11:40:00.000'
+        tiempo_inicio_ex:
+          type: string
+          description: fecha de inicio de la reprogramación de la actividad (o instancia de actividad) reprogramada
+          example: '2022-03-05 13:00:00.000'
+        tiempo_fin_ex:
+          type: string
+          description: fecha de fin de la reprogramación de la actividad (o instancia de actividad) reprogramada
+          example: '2022-03-05 14:40:00.000'
+          
+    ListaExcepciones:
+      type: object
+      properties:
+        excepciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de excepciones válidas
+          example: [ { "id": 1 } ]
         
     ClaseData:
       type: object
@@ -1235,6 +1384,8 @@ components:
                 tipo_registro: RegistroSeguimientoFormulario
                 espacioId: 1
                 usuarioId: 1
+                estado: 'No Asistida'
+                motivo: 'Movida al siguiente viernes por motivos médicos'
             RegistroSeguimientoUsuario:
               value:
                 tipo_registro: RegistroSeguimientoUsuario
@@ -1394,23 +1545,34 @@ components:
           schema:
             $ref: '#/components/schemas/UsuarioData'
             
+    Usuario:
+      description: Datos de un usuario mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Usuario'
+            
+    UsuarioListaData:
+      description: Lista de ids de usuarios a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListaUsuarios'
+            
     EspacioListaData:
-      description: Datos de un usuario sobre espacios a devolver a petición de una query
+      description: Lista de ids de espacios a devolver a petición de una query
       content:
         application/json:
           schema:
              $ref: '#/components/schemas/ListaEspacios'
              
     ActividadListaData:
-      description: Datos de un usuario sobre actividades a devolver a petición de una query
+      description: Lista de ids de actividades a devolver a petición de una query
       content:
         application/json:
           schema:
              $ref: '#/components/schemas/ListaActividades'
-             
-    ActividadEspacioInfoData:
-      description: Datos de un espacio sobre actividades a devolver a petición de una query
-             
+      
     ClaseData:
       description: Datos de una clase
       content:
@@ -1446,8 +1608,22 @@ components:
           schema:
             $ref: '#/components/schemas/conId'
             
+    ExcepcionData:
+      description: Datos de una excepcion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ExcepcionData'
+            
+    ExcepcionListaData:
+      description: Lista de ids de excepciones a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaExcepciones'
+            
     RecurrenciaListaData:
-      description: Datos de un usuario sobre recurrencias a devolver a petición de una query
+      description: Lista de ids de recurrencias a devolver a petición de una query
       content:
         application/json:
           schema:

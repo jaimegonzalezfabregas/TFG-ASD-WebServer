@@ -17,31 +17,34 @@ module.exports = {
       }, //Las foreign keys se crean al relacionar.
       esta_reprogramado: {
         type: Sequelize.DataTypes.ENUM('Sí', 'No'),
-        allowNull: false
+        allowNull: false,
+        defaultValue: 'No'
       },
       esta_cancelado: {
         type: Sequelize.DataTypes.ENUM('Sí', 'No'),
-        allowNull: false
+        allowNull: false,
+        defaultValue: 'No'
       },
-      fecha_inicio: {
+      fecha_inicio_act: {
         type: Sequelize.DataTypes.DATE,
         allowNull: false
       },
-      fecha_fin: {
+      fecha_fin_act: {
         type: Sequelize.DataTypes.DATE,
         allowNull: true
       },
-      tiempo_inicio: { //Tipo timestamp
+      fecha_inicio_ex: {
         type: Sequelize.DataTypes.DATE,
         allowNull: true
       },
-      tiempo_fin: { //Tipo timestamp
+      fecha_fin_ex: {
         type: Sequelize.DataTypes.DATE,
         allowNull: true
       },
       es_todo_el_día: {
         type: Sequelize.DataTypes.ENUM('Sí', 'No'),
-        allowNull: false
+        allowNull: false,
+        defaultValue: 'No'
       },
       creado_por: {
         type: Sequelize.DataTypes.STRING
