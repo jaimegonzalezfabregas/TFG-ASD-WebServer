@@ -57,7 +57,7 @@ function primeraRecurrencia(act, rec) {
     let dia_partida, mes_partida, offset_dias, offset_meses;
     switch (rec.tipo_recurrencia) { // Si la recurrencia es diaria, se puede omitir
         case 'Semanal':
-            dia_partida = inicio.isoWeekday();
+            dia_partida = (inicio.isoWeekday() - 1); // -1 para que cuadre con el guardado en bd
             dias_semana = 7;
             offset_dias = (rec.dia_semana < dia_partida) ?  dias_semana - (dia_partida - rec.dia_semana) : rec.dia_semana - dia_partida;
             inicio.add(offset_dias, 'days');
@@ -77,7 +77,7 @@ function primeraRecurrencia(act, rec) {
             mes_partida = inicio.month();
             meses_anio = 12;
             let mes_anio_moment = rec.mes_anio - 1; // Para moment, el mes 5 es en realidad Junio, así pues, el 4 será Mayo. Esto se aplica a todos los meses
-            offset_meses = (mes_anio_moment < mes_partida) ? meses_anio - (mes_partida - mes_anio_moment) : mes_anio_moment - mes_partida;
+            offset_meses = (mes_anio_moment <= mes_partida) ? meses_anio - (mes_partida - mes_anio_moment) : mes_anio_moment - mes_partida;
             inicio.add(offset_meses, 'months')
             break;
         default:
@@ -90,7 +90,6 @@ function primeraRecurrencia(act, rec) {
 function fechaFromActividadRecurrencia(act, rec) {
     let punto_fin = (act.fecha_fin) ? moment(act.fecha_fin) : null;
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
-    let max_veces = act.maximo || 32; 
     let separacion = rec.separacion || 0;
     let [,, diferencia_horas, diferencia_minutos] = getInicioDiferencia(act);
 
@@ -99,6 +98,8 @@ function fechaFromActividadRecurrencia(act, rec) {
     let a_evento = primeraRecurrencia(act, rec);
     // Si no hay final, 32 veces. Si lo hay, todas las posibles (separado para que no compruebe siempre la misma condición)
     if (punto_fin == null){
+         
+        let max_veces = act.maximo || 32; 
         for (let i = 0; i < max_veces; i++) {
             let clon = a_evento.clone().add({hours: diferencia_horas, minutes: diferencia_minutos});
             eventos_resultantes.push({ inicio: a_evento.toISOString(true), fin: clon.toISOString(true)});
@@ -119,12 +120,33 @@ function fechaFromActividadRecurrencia(act, rec) {
 
 function isInRecurrencia(act, rec, fecha) {
     let inicio = primeraRecurrencia(act, rec);
-    let separacion = rec.separacion;
+    let separacion = rec.separacion + 1; // Se añade uno para no hacer módulo 0 (da NaN)
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
     let a_comparar = moment(fecha, 'YYYY-MM-DDTHH:mm');
     // Para que esté en la recurrencia, la diferencia entre la primera actividad y esta debe, en la unidad de separación,
     // debe ser divisible por la separación entre actividades impuesta por la recurrencia
-    return (inicio.diff(a_comparar, tipo_rec) % separacion == 0);
+
+    let aux = false;
+    switch (rec.tipo_recurrencia) {
+        case "Diaria":
+            // No hace falta comprobar nada auxiliar
+            aux = true;
+        break;
+        case "Semanal":
+            // Comprobar que está en el día de la semana correcto 
+            aux = inicio.isoWeekday() == a_comparar.isoWeekday();
+        break;
+        case "Mensual":
+            // Comprobar que está en el día del mes correcto
+            aux = inicio.date() == a_comparar.date();
+        break;
+        case "Anual": 
+            // Comprobar que está en el día y en el mes correctos
+            aux = inicio.date() == a_comparar.date() && inicio.month() == a_comparar.month();
+        break;
+    }
+    // Nos aseguramos de que se cumpla la separación
+    return (inicio.diff(a_comparar, tipo_rec) % separacion == 0) && aux;
 }
 
 function getLastEventOfRecurrencia(act, rec) {
@@ -155,7 +177,6 @@ function getLastEventOfActividad(act, rec_list) {
         if (moment(event).isValid()) {  
             let left = moment(current).diff(moment(event));
             // No consideramos las iguales porque su tiempo restante es igual, así que darán lugar al mismo evento en tiempo
-            console.log(left, left >= 0, next_left == null, left < next_left);
             if (left >= 0 && (next_left == null || left < next_left)) {
                 next_left = left;
                 next_rec = rec;
@@ -163,7 +184,6 @@ function getLastEventOfActividad(act, rec_list) {
         } 
     });
 
-    console.log(next_rec);
     return (next_left == null) ? "Event not yet occurred" : getLastEventOfRecurrencia(act, next_rec);
 }
 
