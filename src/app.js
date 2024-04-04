@@ -10,7 +10,6 @@ const port = 5500;
 const staticname = __dirname + '/public';
 
 const valoresRol = ['Usuario', 'Decanato', 'Admin'];
-const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 app.set('views', path.join(staticname, '/views'));
 app.set('view engine', 'ejs');
@@ -55,20 +54,20 @@ app.get('/formulario-aulas', checkSesion, async (req, res) => {
 });
 
 app.post('/formulario-aulas', checkSesion, (req, res) => {
-  middleware.cookie_mantainer.keepCookies(req, res, ['actividades']);
+  middleware.cookie_mantainer.keepCookies(req, res, ['estado']);
   middleware.request_security.escapeRequest(req);
   console.log(`Got a POST in formulario-aulas with ${JSON.stringify(req.body)}`);
   app_controllers.form.confirmEspacioPosible(req, res);
 });
 
 app.get('/formulario-end', checkSesion, async (req, res) => {
-  middleware.cookie_mantainer.keepCookies(req, res, ['actividades'])
+  middleware.cookie_mantainer.keepCookies(req, res, ['estado']);
   console.log(`Got a GET in formulario-end with ${JSON.stringify(req.body)}`);
   await app_controllers.form.getForm(req, res);
 });
 
 app.post('/formulario-end', checkSesion, async (req, res) => {
-  middleware.cookie_mantainer.keepCookies(req, res, []);
+  middleware.cookie_mantainer.keepCookies(req, res, ['actividades_ids', 'espacio_id', 'estado']);
   middleware.request_security.escapeRequest(req);
   console.log(`Got a POST in formulario-end with ${JSON.stringify(req.body)}`);
   app_controllers.form.postForm(req, res);
@@ -85,27 +84,27 @@ app.post('/formulario-aulas-qr', checkSesion, (req, res) => {
   res.redirect(`formulario-end-qr/?espacio=${req.body.espacio}`);
 });
 
-app.get('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
+app.get('/formulario-end-qr', checkSesion, (req, res) => {
   console.log('Got a GET in formulario-end-qr');
   res.render('formulario-end-qr', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
-app.post('/formulario-end-qr', checkSesion, (req, res) => { //NO CARGA EL QR
+app.post('/formulario-end-qr', checkSesion, (req, res) => {
   middleware.request_security.escapeRequest(req);
   console.log(`Got a POST in formulario-end-qr with ${JSON.stringify(req.body)}`);
   res.render('formulario-end-qr', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
-app.get('/lista-registro-motivo-falta', checkSesion, (req, res) => {
-  console.log(req.query);
-  const resultado = app_controllers.asistencia.getAJustificar(req, res);
-  //const resultado = [{fechayhora: 'dddddddd', clase: 'AAAAAAAAAAAA' , pos: 0}, {fechayhora: 'ddddddddddd' , clase: 'ffffffff', pos: 1}];
+app.get('/lista-registro-motivo-falta', checkSesion, async (req, res) => {
+  console.log(`Got a GET in lista-registro-motivo-falta`);
+  const resultado = await app_controllers.asistencia.getAJustificar(req, res);
   res.render('lista-registro-motivo-falta', {clases: resultado, 
     usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}
   });
 });
 
 app.get('/registro-motivo-falta', checkSesion, (req, res) => {
+  middleware.cookie_mantainer.keepCookies(req, res, ['no_justificadas']);
   console.log(`Got a GET in registro-motivo-falta`);
   res.render('registro-motivo-falta', { resultado: {fechayhora: req.params.fecha, clase: req.params.clase}, 
     usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}
@@ -113,6 +112,7 @@ app.get('/registro-motivo-falta', checkSesion, (req, res) => {
 });
 
 app.post('/registro-motivo-falta', checkSesion, (req, res) => {
+  middleware.cookie_mantainer.keepCookies(req, res, ['no_justificadas']);
   middleware.request_security.escapeRequest(req);
   console.log(`Got a POST in registro-motivo-falta with ${JSON.stringify(req.body)}`);
   app_controllers.asistencia.justificar(req, res);
@@ -120,13 +120,14 @@ app.post('/registro-motivo-falta', checkSesion, (req, res) => {
 
 app.get('/anular-clase', checkSesion, (req, res) => {
   console.log(req.query);
-  app_controllers.clase.getClases(req, res);
+  let fechayhora = req.query.fecha || moment.now();
+  app_controllers.clase.getClases(req, res, fechayhora);
 });
 
 app.post('/anular-clase', checkSesion, async (req, res) => {
   middleware.request_security.escapeRequest(req);
   console.log(`Got a POST in anular-clase with ${JSON.stringify(req.body)}`);
-  app_controllers.clase.anularClase(req, res)
+  app_controllers.clase.anularClase(req, res);
 });
 
 app.get('/verificar-docencias', checkSesion, async (req, res) => {
@@ -137,6 +138,19 @@ app.get('/verificar-docencias', checkSesion, async (req, res) => {
     {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
     {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''} ]
   });
+});
+
+app.get('/registrar-firmas', [checkSesion, checkClearanceAdministracion], async (req, res) => {
+  console.log(`Got a GET in registrar-firmas`);
+  await app_controllers.asistencia.filtrarAsistencias(req, res);
+});
+
+app.post('/registrar-firmas', [checkSesion, checkClearanceAdministracion], async (req, res) => {
+  middleware.cookie_mantainer.keepCookies(req, res, ['no_asistidas', 'sustituto_ids', 'resultado_firma', 'espacio_firma']);
+  middleware.request_security.escapeRequest(req);
+  console.log(`Got a POST in registrar-firmas with ${JSON.stringify(req.body)}`);
+  if (req.body.postType == 'filtro') app_controllers.asistencia.filtrarAsistencias(req, res);
+  else if (req.body.postType == 'firma') app_controllers.asistencia.confirmarFirma(req, res);
 });
 
 app.get('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato], async (req, res) => {

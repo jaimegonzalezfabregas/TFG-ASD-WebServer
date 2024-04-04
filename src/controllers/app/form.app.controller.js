@@ -1,10 +1,19 @@
 const messaging = require('../../messaging');
 const moment = require('moment');
 const recurrence_tool = require('../../parse_fecha.js');
+const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 async function getEspaciosPosibles(req, res) {
-  let data = { 
-    opcion: (req.query.all != 'yes') ? "espacios_rutina" : "espacios_irregularidad"
+
+  let data = {};
+
+  if (req.query.all == 'yes') {
+    req.session.user.estado = valoresAsistencia[1];
+    data.opcion = "espacios_irregularidad";
+  }
+  else {
+    req.session.user.estado = valoresAsistencia[0];
+    data.opcion = "espacios_rutina";
   }
 
   let espacios_doc = [];
@@ -81,7 +90,9 @@ async function getForm(req, res) {
     req.session.save();
   }
 
-  const currentHour = moment('16:30', 'HH:mm'); //moment().format('HH:mm');
+  let irregularidad = (req.session.user.estado == valoresAsistencia[1]);
+
+  const currentHour = moment().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30")
   const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res, true));
 
   // query a base de datos para conseguir asignatura y grupo que sería
@@ -91,48 +102,33 @@ async function getForm(req, res) {
   const api_path_act_esp = `/actividades/espacios/${esp}`;
   let actividades_ids_esp = (await messaging.getFromApi(api_path_act_esp, res, true)).actividades;
 
+  let actividad_ids_irregularidad = [];
+  let actividades_esp_aparicion = [];
   let actividades_ids = actividades_ids_us.filter(x => {
     for(let i = 0; i < actividades_ids_esp.length; i++) {
       if (x.id == actividades_ids_esp[i].id) {
+        actividades_esp_aparicion[i] = true;
         return true;
       }
     }
+    actividad_ids_irregularidad.push(x);
     return false;
   });
-
-  console.log(actividades_ids_us);
   console.log(actividades_ids);
-
-  let actividades_data = [];
-  for (let i = 0; i < actividades_ids.length; i++) {
-    const id_act = (actividades_ids[i].id).toString();
-    const api_act_path = `/actividades/${id_act}`;
-    actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path, res, true))});
-  }
-
-  req.session.user.actividades_ids = [];
-
+  console.log(actividad_ids_irregularidad);
+  
   //Comprobamos que estén en la franja horaria actual
-  let actividades_posibles = [];
-  for (let i = 0; i <actividades_data.length; i++) {
-    let act = actividades_data[i];
-    const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
-    const fin = moment(act.data.tiempo_fin, 'HH:mm');
-    if (inicio <= currentHour && currentHour <= fin) {
-      let act_rec = (await messaging.getFromApi(`/recurrencias/actividades/${act.id}`, res, true)).recurrencias;
-      
-      for (let j = 0; j < act_rec.length; j++) {
-        let rec_data = await messaging.getFromApi(`/recurrencias/${act_rec[j].id}`, res, true);
+  let actividades_posibles = await getActividadesPosibles(res, currentHour, actividades_ids);
 
-        if (recurrence_tool.isInRecurrencia(act.data, rec_data, moment(moment.now()).hours(inicio.hours()).minutes(inicio.minutes()))) {
-          actividades_posibles.push(act.data);
-          req.session.user.actividades_ids.push(act.id);
-          console.log(act);
-          break;
-        }
+  //Si no hay ninguna, estamos ante una irregularidad => mostramos todas las del docente en este momento, y las del espacio en este momento
+  if (actividades_posibles == 0) {
+    for (let i = 0; i < actividades_ids_esp.length; i++) {
+      if (!actividades_esp_aparicion[i]) {
+        actividad_ids_irregularidad.push(actividades_ids_esp[i]);
       }
-
     }
+    
+    actividades_posibles = await getActividadesPosibles(res, currentHour, actividad_ids_irregularidad);
   }
 
   if (actividades_posibles.length != 0) { 
@@ -165,35 +161,34 @@ async function getForm(req, res) {
       const str_grupo = clase.grupo.curso + "º" + clase.grupo.letra;
 
       resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
-        
     });
+    console.log('RESULTADO', resultado);
       
-    //console.log(resultado);
-    res.render('formulario-end', { resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+    res.render('formulario-end', { resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: irregularidad });
     return;
   }
   else {
     res.render('formulario-end', { resultado: {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
                                   hora: `${moment(currentHour, 'HH:mm').format('HH:mm')}`, clases: []}, 
-                                  usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos} });
+                                  usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: irregularidad });
   }
 }
 
 async function postForm(req, res) {
   const espacio_id = req.session.user.espacio_id;
-  const actividades_ids = req.session.user.actividades_ids;
-  let state = 'Asistida con Irregularidad';
-
-  if (actividades_ids.length != 0) {
-    state = 'Asistida'; 
-  }
+  let state = req.session.user.estado;
+  let motivo_asist = null;
+  if (req.body.sustitucion) { motivo_asist = "Sustitución"; }
+  if (req.body.claseMov) { (motivo_asist != null) ? motivo_asist += ", Cambio de Aula" : motivo_asist = "Cambio de Aula"; }
+  
 
   let data = {
     tipo_registro: "RegistroSeguimientoFormulario",
     espacioId: espacio_id,
     usuarioId: req.session.user.id,
-    estado: state
-  }
+    estado: state,
+    motivo: motivo_asist
+  };
 
   if (req.body.totp) {
     data.tipo_registro = "RegistroSeguimientoUsuario";
@@ -212,7 +207,7 @@ async function postForm(req, res) {
       clases: JSON.parse(req.body.clases),
       error: "Datos no válidos"
     }
-    res.render('formulario-end', {resultado: redo, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+    res.render('formulario-end', {resultado: redo, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: state == valoresAsistencia[1]});
     return;
   }
   
@@ -222,3 +217,49 @@ async function postForm(req, res) {
 module.exports = {
   getEspaciosPosibles, getAllEspacios, confirmEspacioPosible, getForm, postForm 
 }
+
+async function getActividadesPosibles(res, currentHour, actividades_ids) {
+  
+  let actividades_data = [];
+  for (let i = 0; i < actividades_ids.length; i++) {
+    const id_act = (actividades_ids[i].id).toString();
+    const api_act_path = `/actividades/${id_act}`;
+    actividades_data.push({id: id_act, data: (await messaging.getFromApi(api_act_path, res, true))});
+  }
+  
+  let actividades_posibles = [];
+  for (let i = 0; i < actividades_data.length; i++) {
+    let act = actividades_data[i];
+    const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
+    const fin = moment(act.data.tiempo_fin, 'HH:mm');
+    if (inicio.format('HH:mm') <= currentHour && currentHour <= fin.format('HH:mm')) {
+      let act_rec = (await messaging.getFromApi(`/recurrencias/actividades/${act.id}`, res, true)).recurrencias;
+      //TODO tener en cuenta reprogramaciones
+      //Comprobamos que su recurrencia caiga en la fecha actual
+      for (let j = 0; j < act_rec.length; j++) {
+        let rec_data = await messaging.getFromApi(`/recurrencias/${act_rec[j].id}`, res, true);
+        let hoy_hora_inicio = moment(moment.now()).hours(inicio.hours()).minutes(inicio.minutes());
+
+        if (recurrence_tool.isInRecurrencia(act.data, rec_data, hoy_hora_inicio)) {
+          
+          //Comprobamos que no está en una instancia de recurrencia cancelada
+          const excepcion_ids = (await messaging.getFromApi(`/excepciones/actividades/${act.id}`, res, true)).excepciones;
+          let cancelada = false;
+
+          for (let k = 0; k < excepcion_ids.length && !cancelada; k++) {
+            let exc = await messaging.getFromApi(`/excepciones/${excepcion_ids[k].id}`, res, true);
+
+            cancelada = (exc.esta_cancelado == 'Sí' && moment(exc.fecha_inicio_act).format('DD/MM/YYYY HH:mm') == hoy_hora_inicio);
+          }
+
+          if (!cancelada) {
+            actividades_posibles.push(act.data);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return actividades_posibles;
+} 
