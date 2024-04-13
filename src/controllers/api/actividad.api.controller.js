@@ -1,11 +1,8 @@
-const { Op } = require("sequelize");
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getActividadesOfUsuario(req, res, db) {
-    let idUsuario = null;
-    try{
-        idUsuario = Number(req.params.idUsuario);
-    }
-    catch (error) {
+    let idUsuario = Number(req.params.idUsuario);
+    if (!Number.isInteger(idUsuario)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -13,7 +10,7 @@ async function getActividadesOfUsuario(req, res, db) {
     const transaction = await db.sequelize.transaction();
         
     try {
-        console.log('Searching in Docente for id');
+        logger.info('Searching in Docente for id');
         const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id'],
             where: {
@@ -22,7 +19,7 @@ async function getActividadesOfUsuario(req, res, db) {
         });
     
         // Comprobamos que el usuario exista en la base de datos
-        if (Object.keys(query_doc.dataValues).length == 0) {
+        if (query_doc == null || Object.keys(query_doc.dataValues).length == 0) {
             res.status(404).send('Usuario no encontrado');
             await transaction.rollback();
             return;
@@ -30,7 +27,7 @@ async function getActividadesOfUsuario(req, res, db) {
     
         let respuesta = { actividades: [] };
 
-        console.log('Searching in Actividad impartida por Docente for actividad_id');
+        logger.info('Searching in Actividad impartida por Docente for actividad_id');
         const query_r = await db.sequelize.models.Actividad.findAll({
             attributes: ['id'], 
             include: {
@@ -45,17 +42,16 @@ async function getActividadesOfUsuario(req, res, db) {
         //Si tiene actividades
         if (query_r.length != 0) {
             query_r.forEach((act) => {
-                respuesta.actividades.push(act.dataValues);
+                respuesta.actividades.push({id: act.dataValues.id});
             });
         }
-        console.log(respuesta);
     
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(respuesta);
             
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -65,11 +61,8 @@ async function getActividadesOfUsuario(req, res, db) {
 }
 
 async function getActividadesOfEspacio(req, res, db) {
-    let idEspacio = null;
-    try {
-        idEspacio = Number(req.params.idEspacio);
-    }
-    catch (error) {
+    let idEspacio = Number(req.params.idEspacio);
+    if (!Number.isInteger(idEspacio)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -85,7 +78,7 @@ async function getActividadesOfEspacio(req, res, db) {
         });
 
         // Comprobamos que el espacio exista en la base de datos
-        if (Object.keys(query_esp.dataValues).length == 0) {
+        if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
             res.status(404).send('Espacio no encontrado');
             await transaction.rollback();
             return;
@@ -93,7 +86,7 @@ async function getActividadesOfEspacio(req, res, db) {
     
         let respuesta = { actividades: [] };
     
-        console.log('Searching in Actividad for id');
+        logger.info('Searching in Actividad for id');
         const query_act = await db.sequelize.models.Actividad.findAll({
             attributes:['id'],
             include: {
@@ -108,7 +101,7 @@ async function getActividadesOfEspacio(req, res, db) {
         //Si tiene actividades
         if (query_act.length != 0) {
             query_act.forEach((act) => {
-                respuesta.actividades.push(act.dataValues);
+                respuesta.actividades.push({id: act.dataValues.id});
             });
         }
     
@@ -117,7 +110,7 @@ async function getActividadesOfEspacio(req, res, db) {
             
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -127,11 +120,8 @@ async function getActividadesOfEspacio(req, res, db) {
 }
 
 async function getActividadesOfClase(req, res, db) {
-    let idClase = null;
-    try {
-        idClase = Number(req.params.idClase);
-    }
-    catch (error) {
+    let idClase = Number(req.params.idClase);
+    if (!Number.isInteger(idClase)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -147,7 +137,7 @@ async function getActividadesOfClase(req, res, db) {
         });
 
         // Comprobamos que el espacio exista en la base de datos
-        if (Object.keys(query_cla.dataValues).length == 0) {
+        if (query_cla == null || Object.keys(query_cla.dataValues).length == 0) {
             res.status(404).send('Clase no encontrada');
             await transaction.rollback();
             return;
@@ -155,7 +145,7 @@ async function getActividadesOfClase(req, res, db) {
     
         let respuesta = { actividades: [] };
     
-        console.log('Searching in Actividad for id');
+        logger.info('Searching in Actividad for id');
         const query_act_cla = await db.sequelize.models.Actividad.findAll({
             attributes:['id'],
             include: {
@@ -170,7 +160,7 @@ async function getActividadesOfClase(req, res, db) {
         //Si tiene actividades
         if (query_act_cla.length != 0) {
             query_act_cla.forEach((act) => {
-                respuesta.actividades.push(act.dataValues);
+                respuesta.actividades.push({id: act.dataValues.id});
             });
         }
     
@@ -179,7 +169,7 @@ async function getActividadesOfClase(req, res, db) {
             
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -189,11 +179,8 @@ async function getActividadesOfClase(req, res, db) {
 }
 
 async function getActividadById(req, res, db) {
-    let idActividad = null;
-    try {
-        idActividad = Number(req.params.idActividad);
-    }
-    catch (error) {
+    let idActividad = Number(req.params.idActividad);
+    if (!Number.isInteger(idActividad)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -201,7 +188,7 @@ async function getActividadById(req, res, db) {
     const transaction = await db.sequelize.transaction();
         
     try {
-        console.log('Searching in Actividad for id, fecha_inicio, fecha_fin, tiempo_inicio, tiempo_fin, es_todo_el_dia, es_recurrente');
+        logger.info('Searching in Actividad for id, fecha_inicio, fecha_fin, tiempo_inicio, tiempo_fin, es_todo_el_dia, es_recurrente');
         const query_act = await db.sequelize.models.Actividad.findOne({
             attributes:['id', 'fecha_inicio', 'fecha_fin', 'tiempo_inicio', 'tiempo_fin', 'es_todo_el_dia', 'es_recurrente'],
             where: {
@@ -214,7 +201,7 @@ async function getActividadById(req, res, db) {
             }
         });
 
-        if (Object.keys(query_act.dataValues).length == 0) {
+        if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
             res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
             return;
@@ -237,7 +224,7 @@ async function getActividadById(req, res, db) {
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;

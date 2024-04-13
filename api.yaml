@@ -185,34 +185,14 @@ paths:
         - ApiKeyAuth: []
 
   /ble:
-    get:
+    post:
       tags:
         - seguimiento
       summary: Devuelve una lista de MACs de dispositivos BLE
       description: Develve la lista de MACs de dispositivos BLE para las actividades docentes a llevar a cabo en un espacio en una ventana de tiempo.
       operationId: getMacsBLE
-      parameters:
-        - in: query
-          name: espacioId
-          schema:
-            type: integer
-            format: int64
-          required: true
-          description: Id del espacio para filtrar la búsqueda
-        - in: query
-          name: comienzo
-          schema:
-            type: string
-            format: date-time
-          required: false
-          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
-        - in: query
-          name: fin
-          schema:
-            type: string
-            format: date-time
-          required: false
-          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+      requestBody:
+        $ref: '#/components/requestBodies/BleQuery' 
       responses:
         '200':
           $ref: '#/components/responses/ListaMACsUsuarios'
@@ -257,10 +237,12 @@ paths:
       tags:
         - seguimiento
       summary: Modifica la información asociada a una asistencia
-      description: Devuelve la información modificada asociada a la asistencia con id = {idAsistencia}
+      description: Modifica la información modificada asociada a la asistencia con id = {idAsistencia}
       operationId: updateAsistenciaById
       parameters:
         - $ref: '#/components/parameters/idAsistencia'
+      requestBody:
+        $ref: '#/components/requestBodies/AsistenciaUpdateData'
       responses:
         '200':
           $ref: '#/components/responses/Asistencia'
@@ -268,6 +250,8 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Asistencia no encontrada
+        '422':
+          description: Datos no válidos
       
   
   /login:
@@ -503,6 +487,8 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Actividad no encontrada
+        '422':
+          description: Datos no válidos
           
   /excepciones/{idExcepcion}:
     get:
@@ -554,7 +540,7 @@ paths:
         '400':
           description: Id suministrado no válido
         '404':
-          description: Clase no encontrada
+          description: Recurrencia no encontrada
       
   /recurrencias/actividades/{idActividad}:
     get:
@@ -572,7 +558,7 @@ paths:
         '400':
           description: Id suministrado no válido
         '404':
-          description: Clase no encontrada
+          description: Actividad no encontrada
       
   /ping:
     get:
@@ -848,25 +834,22 @@ components:
           format: int64
           description: Id del espacio
           example: 1
+        estado:
+          type: string
+          enum: 
+            - 'Asistida'
+            - 'Asistida con Irregularidad'
+            - 'No Asistida'
         totp:
-          type: object
-          properties:
-            value:
-              type: number
-              format: int32
-              description: Valor del TOTP calculado
-            time:
-              type: integer
-              format: int32
-              description: Segundos desde T0 utilizados para el cálculo del TOTP
-          required:
-            - value
-            - time
+          type: number
+          format: int32
+          description: Valor del TOTP calculado
         tipo_registro:
           type: string
           example: RegistroSeguimientoDocenteApp
       required:
         - espacioId
+        - estado
         - totp
         - tipo_registro
       discriminator:
@@ -920,10 +903,10 @@ components:
     BaseRegistroSeguimientoDispositivo:
       type: object
       properties:
-        dispositivoId:
+        espacioId:
           type: integer
           format: int64
-          description: Id del dispositivo
+          description: Id del espacio del dispositivo
 
     RegistroSeguimientoDispositivoBle:
       allOf:
@@ -953,7 +936,7 @@ components:
             uid:
               type: string
               description: UID de la tarjeta NFC Mifare de la UCM (TUI)
-              example: 'y7w1T/D23w=='
+              example: '44822313231'
 
     SeguimientoNuevo:
       oneOf:
@@ -968,16 +951,34 @@ components:
     ResultadoSeguimiento:
       type: object
       properties:
-        resultado:
-          type: string
+        feedback_code:
+          type: integer
           enum:
-            - correcto
-            - no_esperado
+            - 1
+            - 2
           description: |
-            'correcto': si el seguimiento de la actividad docente es el esperado.
-            'no_esperado': si se registra un seguimiento que no estaba esperada (e.g. no es el profesor habitual ni hay una sustitución para la actividad docente programada)
+            1 : si el seguimiento de la actividad docente es el esperado.
+            2 : si se registra un seguimiento que no estaba esperado (e.g. no es el profesor habitual ni hay una sustitución para la actividad docente programada)
       required:
-        - resultado
+        - feedback_code
+        
+    BleQueryData:
+      type: object
+      properties: 
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del espacio para filtrar la búsqueda
+        comienzo:
+          type: string
+          format: date-time
+          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
+        fin:
+          type: string
+          format: date-time
+          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+      required:
+        - espacioId
 
     MACsUsuario:
       type: object
@@ -1041,6 +1042,17 @@ components:
               type: string
               description: Motivo por el que no se ha asistido a una actividad.
               example: "Motivos médicos"
+              
+    AsistenciaUpdateData:
+      allOf:
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            motivo:
+              type: string
+              description: Motivo por el que no se ha asistido a una actividad.
+              example: "Motivos médicos"
+        
             
     FiltroAsistencia:
       allOf:
@@ -1118,9 +1130,10 @@ components:
         - type: object
           properties:
             creador:
-              type: string
-              description: Email del usuario
-              example: 'adminmail@gmail.com'
+              type: integer
+              format: int64
+              description: Id del usuario
+              example: 67
 
     Usuario:
       allOf:
@@ -1238,19 +1251,19 @@ components:
           format: int64
           description: Id de la actividad a la que se asocia la excepción
           example: 1
-        tiempo_inicio_act:
+        fecha_inicio_act:
           type: string
           description: fecha de inicio de la actividad (o instancia de actividad) cancelada/reprogramada
           example: '2022-03-01 10:00:00.000'
-        tiempo_fin_act:
+        fecha_fin_act:
           type: string
           description: fecha de fin de la actividad (o instancia de actividad) cancelada/reprogramada
           example: '2022-03-01 11:40:00.000'
-        tiempo_inicio_ex:
+        fecha_inicio_ex:
           type: string
           description: fecha de inicio de la reprogramación de la actividad (o instancia de actividad) reprogramada
           example: '2022-03-05 13:00:00.000'
-        tiempo_fin_ex:
+        fecha_fin_ex:
           type: string
           description: fecha de fin de la reprogramación de la actividad (o instancia de actividad) reprogramada
           example: '2022-03-05 14:40:00.000'
@@ -1391,9 +1404,8 @@ components:
                 tipo_registro: RegistroSeguimientoUsuario
                 espacioId: 1
                 usuarioId: 1
-                totp:
-                  value: 942870
-                  time: 59
+                estado: "Asistida"
+                totp: 942870
             RegistroSeguimientoDispositivoBle:
               value:
                 tipo_registro: RegistroSeguimientoDispositivoBle
@@ -1410,10 +1422,15 @@ components:
                 tipo_registro: RegistroSeguimientoDispositivoNFC
                 espacioId: 1
                 uid: 'y7w1T/D23w=='
-                totp:
-                  value: 890059
-                  time: 1234567890
-                  
+                
+    BleQuery:
+      required: true
+      description: Query para filtrar la búsqueda de las macs que se esperan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BleQueryData'
+            
     FiltroAsistencia:
       required: false
       description: Parámetro opcional para filtrar las Asistencias por un Estado
@@ -1469,6 +1486,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/GrupoData'
+            
+    AsistenciaUpdateData:
+      required: true
+      description: Datos a modificar de una asistencia
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AsistenciaUpdateData'
 
   responses:
     Espacio:

@@ -2,10 +2,12 @@ const express = require('express');
 const db = require('./models');
 const app = express();
 // Rutas de la API
-const api_path = '/api/v1';
 const api_config = require('./config/api.config');
+
 // Controladores de la API
 const api_controllers = require('./controllers/api');
+
+const logger = require('./config/logger.config').child({"process": "api"});
 
 app.use(express.json());
 
@@ -22,7 +24,7 @@ app.use(express.json());
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/espacios', async (req, res) => await api_controllers.espacio.getEspacios(req, res, db));
+app.get(api_config.path + '/espacios', authenticateClient, async (req, res) => await api_controllers.espacio.getEspacios(req, res, db));
 
 /* /espacios/{idEspacio}
  
@@ -39,7 +41,7 @@ app.get(api_path + '/espacios', async (req, res) => await api_controllers.espaci
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/espacios/:idEspacio', async (req, res) => await api_controllers.espacio.getEspacioById(req, res, db));
+app.get(api_config.path + '/espacios/:idEspacio', authenticateClient, async (req, res) => await api_controllers.espacio.getEspacioById(req, res, db));
 
 /* /espacios/usuarios/{idUsuario}
 
@@ -62,9 +64,9 @@ app.get(api_path + '/espacios/:idEspacio', async (req, res) => await api_control
         '422':
             description: Datos no válidos
 */
-app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await api_controllers.espacio.getEspaciosOfUsuario(req, res, db));
+app.post(api_config.path + '/espacios/usuarios/:idUsuario', authenticateClient, async (req, res) => await api_controllers.espacio.getEspaciosOfUsuario(req, res, db));
 
-/* /espacios/actividad/{idActividad}
+/* /espacios/actividades/{idActividad}
       tags:
         - espacios
         - actividades
@@ -81,7 +83,7 @@ app.post(api_path + '/espacios/usuarios/:idUsuario', async (req, res) => await a
         '404':
           description: Actividad no encontrada
 */
-app.get(api_path + '/espacios/actividad/:idActividad', async (req, res) => await api_controllers.espacio.getEspacioOfActividad(req, res, db));
+app.get(api_config.path + '/espacios/actividades/:idActividad', authenticateClient, async (req, res) => await api_controllers.espacio.getEspacioOfActividad(req, res, db));
 
 /* /dispositivos
 
@@ -96,7 +98,7 @@ app.get(api_path + '/espacios/actividad/:idActividad', async (req, res) => await
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivo.getDispositivos(req, res, db));
+app.get(api_config.path + '/dispositivos', authenticateClient, async (req, res) => await api_controllers.dispositivo.getDispositivos(req, res, db));
 
 /* /dispositivos
 
@@ -115,7 +117,7 @@ app.get(api_path + '/dispositivos', async (req, res) => await api_controllers.di
     security:
         - ApiKeyAuth: []
 */
-app.post(api_path + '/dispositivos', async (req, res) => await api_controllers.dispositivo.creaDispositivo(req, res, db, api_config, api_path));
+app.post(api_config.path + '/dispositivos', authenticateClient, async (req, res) => await api_controllers.dispositivo.creaDispositivo(req, res, db, api_config));
 
 /* /dispositivos/{idDispositivo}
 
@@ -136,7 +138,7 @@ app.post(api_path + '/dispositivos', async (req, res) => await api_controllers.d
     security:
         - ApiKeyAuth: []
 */
-app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivo.getDispositivoById(req, res, db));
+app.get(api_config.path + '/dispositivos/:idDispositivo', authenticateClient, async (req, res) => await api_controllers.dispositivo.getDispositivoById(req, res, db));
 
 /* /dispositivos/{idDispositivo}
 
@@ -157,7 +159,7 @@ app.get(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api
     security:
         - ApiKeyAuth: []
 */
-app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => await api_controllers.dispositivo.deleteDispositivo(req, res, db));
+app.delete(api_config.path + '/dispositivos/:idDispositivo', authenticateClient, async (req, res) => await api_controllers.dispositivo.deleteDispositivo(req, res, db));
 
 /* /ping
 
@@ -170,7 +172,7 @@ app.delete(api_path + '/dispositivos/:idDispositivo', async (req, res) => await 
         '200':
             $ref: '#/components/responses/TimestampActual'
 */
-app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositivo.getLocalTime(req, res, db));
+app.get(api_config.path + '/ping', authenticateClient, async (req, res) => await api_controllers.dispositivo.getLocalTime(req, res, db));
 
 /* /seguimiento
 
@@ -189,7 +191,7 @@ app.get(api_path + '/ping', async (req, res) => await api_controllers.dispositiv
     security:
         - ApiKeyAuth: []
 */
-app.post(api_path + '/seguimiento', async (req, res) => await api_controllers.seguimiento.registroAsistencia(req, res, db));
+app.post(api_config.path + '/seguimiento', authenticateClient, async (req, res) => await api_controllers.seguimiento.registroAsistencia(req, res, db));
 
 /* /seguimiento/asistencias
     tags:
@@ -203,7 +205,7 @@ app.post(api_path + '/seguimiento', async (req, res) => await api_controllers.se
         '200':
           $ref: '#/components/responses/Asistencia'
 */
-app.post(api_path + '/seguimiento/asistencias', async (req, res) => await api_controllers.seguimiento.getAsistencias(req, res, db));
+app.post(api_config.path + '/seguimiento/asistencias', authenticateClient, async (req, res) => await api_controllers.seguimiento.getAsistencias(req, res, db));
 
 /* /seguimiento/asistencias/{idAsistencia}
     tags:
@@ -221,7 +223,7 @@ app.post(api_path + '/seguimiento/asistencias', async (req, res) => await api_co
         '404':
           description: Asistencia no encontrada
 */
-app.get(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) => await api_controllers.seguimiento.getAsistenciaById(req, res, db));
+app.get(api_config.path + '/seguimiento/asistencias/:idAsistencia', authenticateClient, async (req, res) => await api_controllers.seguimiento.getAsistenciaById(req, res, db));
 
 /* /seguimiento/asistencias/{idAsistencia}
     tags:
@@ -239,7 +241,7 @@ app.get(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) =>
         '404':
           description: Asistencia no encontrada
 */
-app.post(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) => await api_controllers.seguimiento.updateAsistenciaById(req, res, db));
+app.post(api_config.path + '/seguimiento/asistencias/:idAsistencia', authenticateClient, async (req, res) => await api_controllers.seguimiento.updateAsistenciaById(req, res, db));
 
 /* /ble
 
@@ -282,7 +284,7 @@ app.post(api_path + '/seguimiento/asistencias/:idAsistencia', async (req, res) =
     security:
         - ApiKeyAuth: []
 */
-app.post(api_path + '/ble', async (req, res) => await api_controllers.seguimiento.getMacsBLE(req, res, db));
+app.post(api_config.path + '/ble', authenticateClient, async (req, res) => await api_controllers.seguimiento.getMacsBLE(req, res, db));
 
 /* /login
 
@@ -301,7 +303,7 @@ app.post(api_path + '/ble', async (req, res) => await api_controllers.seguimient
     security:
         - ApiKeyAuth: []
     */
-app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.authenticateUser(req, res, db));
+app.post(api_config.path + '/login', authenticateClient, async (req, res) => await api_controllers.usuario.authenticateUser(req, res, db));
 
 /*  /usuarios
       tags:
@@ -313,7 +315,7 @@ app.post(api_path + '/login', async (req, res) => await api_controllers.usuario.
         '200':
           $ref: '#/components/responses/ListaUsuarios'
 */
-app.get(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.getUsuarios(req, res, db));
+app.get(api_config.path + '/usuarios', authenticateClient, async (req, res) => await api_controllers.usuario.getUsuarios(req, res, db));
 
 /* /usuarios
       tags:
@@ -333,7 +335,7 @@ app.get(api_path + '/usuarios', async (req, res) => await api_controllers.usuari
         '422':
           description: Datos no válidos
 */
-app.post(api_path + '/usuarios', async (req, res) => await api_controllers.usuario.createUser(req, res, db));
+app.post(api_config.path + '/usuarios', authenticateClient, async (req, res) => await api_controllers.usuario.createUser(req, res, db));
 
 /* /usuarios/:idUsuario
 
@@ -352,7 +354,7 @@ app.post(api_path + '/usuarios', async (req, res) => await api_controllers.usuar
       '404':
         description: Usuario no encontrado
 */
-app.get(api_path + '/usuarios/:idUsuario', async (req, res) => await api_controllers.usuario.getUsuarioById(req, res, db));
+app.get(api_config.path + '/usuarios/:idUsuario', authenticateClient, async (req, res) => await api_controllers.usuario.getUsuarioById(req, res, db));
 
 /* /actividades/usuarios/:idUsuario
  
@@ -372,7 +374,7 @@ app.get(api_path + '/usuarios/:idUsuario', async (req, res) => await api_control
         '404':
           description: Usuario no encontrado
     */
-app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => await api_controllers.actividad.getActividadesOfUsuario(req, res, db));
+app.get(api_config.path + '/actividades/usuarios/:idUsuario', authenticateClient, async (req, res) => await api_controllers.actividad.getActividadesOfUsuario(req, res, db));
 
 /* /actividades/:idActividad
 
@@ -391,7 +393,7 @@ app.get(api_path + '/actividades/usuarios/:idUsuario', async (req, res) => await
         '404':
           description: Actividad no encontrada
     */
-app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_controllers.actividad.getActividadById(req, res, db));
+app.get(api_config.path + '/actividades/:idActividad', authenticateClient, async (req, res) => await api_controllers.actividad.getActividadById(req, res, db));
 
 /* /actividades/espacios/:idEspacio
 
@@ -411,7 +413,7 @@ app.get(api_path + '/actividades/:idActividad', async (req, res) => await api_co
         '404':
           description: Espacio no encontrado
 */
-app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => await api_controllers.actividad.getActividadesOfEspacio(req, res, db));
+app.get(api_config.path + '/actividades/espacios/:idEspacio', authenticateClient, async (req, res) => await api_controllers.actividad.getActividadesOfEspacio(req, res, db));
 
 /* /actividades/clases/:idClase
     tags:
@@ -430,7 +432,7 @@ app.get(api_path + '/actividades/espacios/:idEspacio', async (req, res) => await
         '404':
           description: Clase no encontrada
 */
-app.get(api_path + '/actividades/clases/:idClase', async (req, res) => await api_controllers.actividad.getActividadesOfClase(req, res, db));
+app.get(api_config.path + '/actividades/clases/:idClase', authenticateClient, async (req, res) => await api_controllers.actividad.getActividadesOfClase(req, res, db));
 
 /* /excepciones
     tags:
@@ -448,7 +450,7 @@ app.get(api_path + '/actividades/clases/:idClase', async (req, res) => await api
         '404':
           description: Actividad no encontrada
 */
-app.post(api_path + '/excepciones', async (req, res) => await api_controllers.excepcion.createExcepcion(req, res, db));
+app.post(api_config.path + '/excepciones', authenticateClient, async (req, res) => await api_controllers.excepcion.createExcepcion(req, res, db));
 
 /* /excepciones/{idExcepcion}:
 
@@ -467,7 +469,7 @@ app.post(api_path + '/excepciones', async (req, res) => await api_controllers.ex
         '404':
           description: Excepción no encontrada
 */
-app.get(api_path + '/excepciones/:idExcepcion', async (req, res) => api_controllers.excepcion.gerExcepcionById(req, res, db));
+app.get(api_config.path + '/excepciones/:idExcepcion', authenticateClient, async (req, res) => api_controllers.excepcion.getExcepcionById(req, res, db));
 
 /* /excepciones/actividades/{idActividad}:
 
@@ -487,7 +489,7 @@ app.get(api_path + '/excepciones/:idExcepcion', async (req, res) => api_controll
         '404':
           description: Actividad no encontrada
 */
-app.get(api_path + '/excepciones/actividades/:idActividad', async (req, res) => api_controllers.excepcion.getExcepcionesOfActividad(req, res, db));
+app.get(api_config.path + '/excepciones/actividades/:idActividad', authenticateClient, async (req, res) => api_controllers.excepcion.getExcepcionesOfActividad(req, res, db));
 
 /* /clases/:idClase
 
@@ -506,7 +508,7 @@ app.get(api_path + '/excepciones/actividades/:idActividad', async (req, res) => 
         '404':
           description: Clase no encontrada      
 */
-app.get(api_path + '/clases/:idClase', async (req, res) => api_controllers.clase.getClaseById(req, res, db));
+app.get(api_config.path + '/clases/:idClase', authenticateClient, async (req, res) => api_controllers.clase.getClaseById(req, res, db));
 
 /* /clases/compose
     tags:
@@ -526,7 +528,7 @@ app.get(api_path + '/clases/:idClase', async (req, res) => api_controllers.clase
         '404':
           description: Clase no encontrada
 */
-app.post(api_path + '/clases/compose', async (req, res) => api_controllers.clase.getClaseOfAsignaturaGrupo(req, res, db));
+app.post(api_config.path + '/clases/compose', authenticateClient, async (req, res) => api_controllers.clase.getClaseOfAsignaturaGrupo(req, res, db));
 
 /* /asignaturas/:idAsignatura
 
@@ -545,7 +547,7 @@ app.post(api_path + '/clases/compose', async (req, res) => api_controllers.clase
         '404':
           description: Asignatura no encontrada      
 */
-app.get(api_path + '/asignaturas/:idAsignatura',  async (req, res) => api_controllers.asignatura.getAsignaturaById(req, res, db));
+app.get(api_config.path + '/asignaturas/:idAsignatura',  authenticateClient, async (req, res) => api_controllers.asignatura.getAsignaturaById(req, res, db));
 
 /* /grupos/:idGrupo
 
@@ -564,7 +566,7 @@ app.get(api_path + '/asignaturas/:idAsignatura',  async (req, res) => api_contro
         '404':
             description: Grupo no encontrado      
 */
-app.get(api_path + '/grupos/:idGrupo', async (req, res) => api_controllers.grupo.getGrupoById(req, res, db));
+app.get(api_config.path + '/grupos/:idGrupo', authenticateClient, async (req, res) => api_controllers.grupo.getGrupoById(req, res, db));
 
 /* /grupos/compose
     tags:
@@ -582,7 +584,7 @@ app.get(api_path + '/grupos/:idGrupo', async (req, res) => api_controllers.grupo
         '404':
           description: Grupo no encontrado
 */
-app.post(api_path + '/grupos/compose', async (req, res) => api_controllers.grupo.getGrupoByCursoLetra(req, res, db));
+app.post(api_config.path + '/grupos/compose', authenticateClient, async (req, res) => api_controllers.grupo.getGrupoByCursoLetra(req, res, db));
 
 /* /recurrencias/:idRecurrencia
     tags:
@@ -600,7 +602,7 @@ app.post(api_path + '/grupos/compose', async (req, res) => api_controllers.grupo
         '404':
           description: Clase no encontrada
 */
-app.get(api_path + '/recurrencias/:idRecurrencia', async (req, res) => api_controllers.recurrencia.getRecurrenciaById(req, res, db));
+app.get(api_config.path + '/recurrencias/:idRecurrencia', authenticateClient, async (req, res) => api_controllers.recurrencia.getRecurrenciaById(req, res, db));
 
 /* /recurrencias/actividades/:idActividad
     tags:
@@ -619,8 +621,20 @@ app.get(api_path + '/recurrencias/:idRecurrencia', async (req, res) => api_contr
         '404':
           description: Clase no encontrada
 */
-app.get(api_path + '/recurrencias/actividades/:idActividad', async (req, res) => api_controllers.recurrencia.getRecurrenciaByActividad(req, res, db));
+app.get(api_config.path + '/recurrencias/actividades/:idActividad', authenticateClient, async (req, res) => api_controllers.recurrencia.getRecurrenciaByActividad(req, res, db));
 
-app.listen(api_config.port, () => {
-    console.log(`Api listening on port ${api_config.port}`)
+app.listen(api_config.port, api_config.host, () => {
+  const port_spec = (api_config.port_spec) ? ':' + api_config.port : '';
+  logger.info(`Api listening on port ${api_config.port} at ${api_config.protocol}://${api_config.host}${port_spec}${api_config.path}`);
 });
+
+function authenticateClient(req, res, next) {
+  for (let i = 0; i < api_config.secrets.length; i++) {
+    if (req.header('X-Token') == api_config.secrets[i]) {
+      next();
+      logger.info(`Accepted with token ${i}`);
+      return true;
+    }
+  }
+  return false;
+}

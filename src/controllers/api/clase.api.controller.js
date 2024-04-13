@@ -1,10 +1,8 @@
-const { Op } = require("sequelize");
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getClaseById(req, res, db) {
-    try {
-        idClase = Number(req.params.idClase);
-    }
-    catch (error) {
+    let idClase = Number(req.params.idClase);
+    if (!Number.isInteger(idClase)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -12,7 +10,7 @@ async function getClaseById(req, res, db) {
     const transaction = await db.sequelize.transaction();
         
     try {
-        console.log('Searching in Clase for asignatura_id, grupo_id');
+        logger.info('Searching in Clase for asignatura_id, grupo_id');
         const query_cla = await db.sequelize.models.Clase.findOne({
             attributes:['asignatura_id', 'grupo_id'],
             where: {
@@ -20,7 +18,7 @@ async function getClaseById(req, res, db) {
             }
         });
 
-        if (Object.keys(query_cla.dataValues).length == 0) {
+        if (query_cla == null || Object.keys(query_cla.dataValues).length == 0) {
             res.status(404).send('Clase no encontrada');
             await transaction.rollback();
             return;
@@ -32,7 +30,7 @@ async function getClaseById(req, res, db) {
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -42,13 +40,10 @@ async function getClaseById(req, res, db) {
 }
 
 async function getClaseOfAsignaturaGrupo(req, res, db) {
-    let asignatura_id = req.body.asignatura_id;
-    let grupo_id = req.body.grupo_id;
-    try {
-        asignatura_id = Number(req.body.asignatura_id);
-        grupo_id = Number(req.body.grupo_id);
-    }
-    catch (error) {
+    let asignatura_id = Number(req.body.asignatura_id);
+    let grupo_id = Number(req.body.grupo_id);
+
+    if (!Number.isInteger(asignatura_id) || !Number.isInteger(grupo_id)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -71,13 +66,13 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
         });
 
         // Comprobamos que la asignatura y el grupo existan en la base de datos
-        if (Object.keys(query_asig.dataValues).length == 0 || Object.keys(query_gr.dataValues).length == 0) {
+        if (query_asig == null || Object.keys(query_asig.dataValues).length == 0 || query_gr == null || Object.keys(query_gr.dataValues).length == 0) {
             res.status(404).send('Clase no encontrada');
             await transaction.rollback();
             return;
         }
     
-        console.log('Searching in Clase for id');
+        logger.info('Searching in Clase for id');
         const query_cla = await db.sequelize.models.Clase.findOne({
             attributes:['id'],
             where: {
@@ -100,7 +95,7 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
             
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;

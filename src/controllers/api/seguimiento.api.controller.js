@@ -1,25 +1,26 @@
 const { Op } = require("sequelize");
 const { authenticator } = require('otplib');
 const moment = require('moment');
-const recurrence_tool = require('../../parse_fecha');
+const recurrence_tool = require('../../utils/recurrence_tool');
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 async function registroAsistencia(req, res, db) {
 
-    console.log(req.body);
+    logger.info(`Asistencia a registrar con datos: ${JSON.stringify(req.body)}`);
 
     if (Object.keys(req.body).length > 0 && req.body.tipo_registro != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
 
+        let code = 0;
         switch (req.body.tipo_registro) {
-            // IMPORTANTE: METODO AUXILIAR SOLO PARA USAR EN PRUEBAS, PARA PODER ASISTIR SIN TENER QUE PASAR EL TOTP DE LOS DISPOSITIVOS
-            case "RegistroSeguimientoFormulario": 
+            case "RegistroSeguimientoFormulario": // Método de registro para administración (registrar firmas)
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId) && req.body.estado != null && valoresAsistencia.includes(req.body.estado)) {
 
                     const transaction = await db.sequelize.transaction();
 
                     try {
-                        console.log('Searching in Docente for id');
+                        logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
                             attributes: ['id'],
                             where: {
@@ -28,10 +29,12 @@ async function registroAsistencia(req, res, db) {
                         })
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.send(404, 'Usuario no encontrado');
+                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
                             return;
                         }
+                        
+                        (req.body.estado == valoresAsistencia[0]) ? code = 1 : code = 2
 
                         await db.sequelize.models.Asistencia.create({ 
                             docente_id: req.body.usuarioId, 
@@ -44,7 +47,7 @@ async function registroAsistencia(req, res, db) {
                         await transaction.commit();
                     }
                     catch (error) {
-                        console.log('Error while interacting with database:', error);
+                        logger.error(`Error while interacting with database: ${error}`);
                         res.status(500).send('Something went wrong');
                         await transaction.rollback();
                         return;
@@ -55,14 +58,14 @@ async function registroAsistencia(req, res, db) {
                     return;
                 }
             break;
-            case "RegistroSeguimientoUsuario":
+            case "RegistroSeguimientoUsuario": // Método registro a través del formulario (es necesario el totp)
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
 
                     const transaction = await db.sequelize.transaction();
 
                     try {
-                        console.log('Searching in Dispositivo for id');
-                        const query_disp = await db.sequelize.models.Dispositivo.findAll({ // Si hay más de un dispositivo habría que comprobar todos
+                        logger.info('Searching in Dispositivo for id');
+                        const query_disp = await db.sequelize.models.Dispositivo.findAll({ // Si hay más de un dispositivo por espacio habría que comprobar todos
                             attributes: ['id', 'secret'],
                             where: {
                                 espacioId: req.body.espacioId
@@ -75,7 +78,7 @@ async function registroAsistencia(req, res, db) {
                             return;
                         }
 
-                        console.log('Searching in Docente for id');
+                        logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
                             attributes: ['id'],
                             where: {
@@ -84,11 +87,11 @@ async function registroAsistencia(req, res, db) {
                         })
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.send(404, 'Usuario no encontrado');
+                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
                             return;
                         }
-                        
+
                         let valid = false;
                         authenticator.options = { digits: 6, step: 60, window: [10, 0] };
                         query_disp.forEach(async (disp) => {
@@ -103,6 +106,8 @@ async function registroAsistencia(req, res, db) {
                             return;
                         }
 
+                        (req.body.estado == valoresAsistencia[0]) ? code = 1 : code = 2
+
                         await db.sequelize.models.Asistencia.create({ 
                             docente_id: req.body.usuarioId, 
                             espacio_id: req.body.espacioId, 
@@ -113,7 +118,7 @@ async function registroAsistencia(req, res, db) {
                         await transaction.commit();
                     }
                     catch (error) {
-                        console.log('Error while interacting with database:', error);
+                        logger.error(`Error while interacting with database: ${error}`);
                         res.status(500).send('Something went wrong');
                         await transaction.rollback();
                         return;
@@ -124,14 +129,13 @@ async function registroAsistencia(req, res, db) {
                     return;
                 }
             break;
-            case "RegistroSeguimientoDispositivoBle":
-                if (req.body.mac != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)
-                    && req.body.dispositivoId != null && Number.isInteger(req.body.dispositivoId)) {
+            case "RegistroSeguimientoDispositivoBle": // caso de registro por bluetooth
+                if (req.body.mac != null && req.body.dispositivoId != null && Number.isInteger(req.body.dispositivoId)) {
 
                     const transaction = await db.sequelize.transaction();
 
                     try {
-                        console.log('Searching in Dispositivo for id');
+                        logger.info('Searching in Dispositivo for id');
                         const query_disp = await db.sequelize.models.Dispositivo.findOne({ // Si hay más de un dispositivo habría que comprobar todos
                             attributes: ['id', 'secret'],
                             where: {
@@ -145,7 +149,7 @@ async function registroAsistencia(req, res, db) {
                             return;
                         }
 
-                        console.log('Searching in Docente for id');
+                        logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
                             attributes: ['id'],
                             include: {
@@ -156,23 +160,19 @@ async function registroAsistencia(req, res, db) {
                                 }
                             }
                         });
-
-                        console.log('Docente de la MAC', query_user);
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.send(404, 'Usuario no encontrado');
+                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
                             return;
                         }
 
-                        // authenticator.options = { epoch: req.body.totp.time, digits: 6, step: 60, window: [10, 0] };
-                        // if (!authenticator.verify({token: req.body.totp.value.toString(), secret: query_disp.dataValues.secret})) {
-                        //     res.status(422).send('Datos no válidos');
-                        //     await transaction.rollback();
-                        //     return;
-                        // }
+                        logger.info(`Docente de la MAC ${query_user}`);
 
-                        let checkEstado = checkEstadoAsistencia(query_user.dataValues.id, req.body.espacioId);
+                        let checkEstado = await checkEstadoAsistencia(db, res, query_user.dataValues.id, req.body.espacioId);
+                        (checkEstado) ? code = 1 : code = 2
+
+                        let ahora = moment().utc()
 
                         await db.sequelize.models.Asistencia.findOrCreate({
                             where: {
@@ -181,9 +181,7 @@ async function registroAsistencia(req, res, db) {
                                 estado: {
                                     [Op.or]: [valoresAsistencia[0], valoresAsistencia[1]]
                                 },
-                                fecha: {
-                                    [Op.and]: [{ [Op.gte]: x }, { [Op.lte]: y }]
-                                }
+                                fecha: { [Op.and]: [{ [Op.gte]: ahora.clone().subtract(20, 'minutes') }, { [Op.lte]: ahora }]}
                             }, 
                             order: [['creadoEn', 'DESC']],
                             defaults: {
@@ -197,7 +195,7 @@ async function registroAsistencia(req, res, db) {
                         await transaction.commit();
                     }
                     catch (error) {
-                        console.log('Error while interacting with database:', error);
+                        logger.error(`Error while interacting with database: ${error}`);
                         res.status(500).send('Something went wrong');
                         await transaction.rollback();
                         return;
@@ -208,15 +206,13 @@ async function registroAsistencia(req, res, db) {
                     return;
                 }
             break;
-            case "RegistroSeguimientoDispositivoQr":
-            break;
-            case "RegistroSeguimientoDispositivoNFC":
+            case "RegistroSeguimientoDispositivoNFC": // caso de registro por lectura de nfc
                 if (req.body.uid != null) {
 
                     const transaction = await db.sequelize.transaction();
 
                     try {
-                        console.log('Searching in Dispositivo for id');
+                        logger.info('Searching in Dispositivo for id');
                         const query_disp = await db.sequelize.models.Dispositivo.findAll({ // Si hay más de un dispositivo habría que comprobar todos
                             attributes: ['id', 'secret'],
                             where: {
@@ -230,7 +226,7 @@ async function registroAsistencia(req, res, db) {
                             return;
                         }
 
-                        console.log('Searching in Docente for id');
+                        logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
                             attributes: ['id'],
                             include: {
@@ -243,29 +239,16 @@ async function registroAsistencia(req, res, db) {
                         });
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.send(404, 'Usuario no encontrado');
+                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
                             return;
                         }
                         
-                        // let valid = false;
-                        // authenticator.options = { digits: 6, step: 60, window: [10, 0] };
-                        // query_disp.forEach(async (disp) => {
-                        //     if (authenticator.verify({token: req.body.totp, secret: disp.dataValues.secret})) {
-                        //         valid = true;
-                        //     }
-                        // });
-
-                        // if (!valid) {
-                        //     res.status(422).send('Datos no válidos');
-                        //     await transaction.rollback();
-                        //     return;
-                        // }
-                        
-                        let checkEstado = checkEstadoAsistencia(query_user.dataValues.id, req.body.espacioId);
+                        let checkEstado = await checkEstadoAsistencia(db, res, query_user.dataValues.id, req.body.espacioId);
+                        (checkEstado) ? code = 1 : code = 2
 
                         await db.sequelize.models.Asistencia.create({ 
-                            docente_id: req.body.usuarioId, 
+                            docente_id: query_user.dataValues.id, 
                             espacio_id: req.body.espacioId, 
                             fecha: db.sequelize.fn('NOW'), 
                             estado: (checkEstado) ? valoresAsistencia[0] : valoresAsistencia[1]
@@ -274,7 +257,7 @@ async function registroAsistencia(req, res, db) {
                         await transaction.commit();
                     }
                     catch (error) {
-                        console.log('Error while interacting with database:', error);
+                        logger.error(`Error while interacting with database: ${error}`);
                         res.status(500).send('Something went wrong');
                         await transaction.rollback();
                         return;
@@ -288,7 +271,8 @@ async function registroAsistencia(req, res, db) {
         }
      
         res.setHeader('Content-Type', 'application/json');
-        res.status(200).send({ resultado: 'correcto' });
+        res.status(200).send({ feedback_code: code});
+        //res.status(200).send({ resultado: 'correcto' });
     }
     else {
         res.status(422).send('Datos no válidos');
@@ -297,7 +281,6 @@ async function registroAsistencia(req, res, db) {
 }
 
 async function getMacsBLE(req, res, db) {
-    console.log(req.body);
     if (Object.keys(req.body).length > 0 && req.body.espacioId != null) {
         try {
             espId = parseInt(req.body.espacioId);
@@ -307,13 +290,13 @@ async function getMacsBLE(req, res, db) {
             return;
         }
 
-        const comienzo = (req.body.comienzo == null)? moment().subtract(30, 'minutes').format('HH:mm') : req.body.comienzo;
-        const fin = (req.body.fin == null)? moment().add(30, 'minutes').format('HH:mm') : req.body.fin;
+        const comienzo = (req.body.comienzo == null)? moment().subtract(30, 'minutes').utc() : moment(req.body.comienzo, 'HH:mmZ').utc();
+        const fin = (req.body.fin == null)? moment().add(30, 'minutes').utc() : moment(req.body.fin, 'HH:mmZ').utc();
 
         const transaction = await db.sequelize.transaction();
         
         try {
-            console.log('Searching in Espacio for id');
+            logger.info('Searching in Espacio for id');
             const query_esp = await db.sequelize.models.Espacio.findOne({
                 attributes:['id'],
                 where: {
@@ -322,7 +305,7 @@ async function getMacsBLE(req, res, db) {
             });
 
             // Comprobamos que el espacio exista en la base de datos
-            if (Object.keys(query_esp.dataValues).length == 0) {
+            if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
                 res.status(404).send('Espacio no encontrado');
                 await transaction.rollback();
                 return;
@@ -331,9 +314,9 @@ async function getMacsBLE(req, res, db) {
             let respuesta = { macs: [] };
             let actividades = []
         
-            console.log('Searching in Actividad for id');
+            logger.info('Searching in Actividad for id');
             const query_act = await db.sequelize.models.Actividad.findAll({
-                attributes:['id', 'tiempo_inicio', 'tiempo_fin'],
+                attributes:['id', 'tiempo_inicio', 'tiempo_fin', 'es_recurrente'],
                 include: {
                     model: db.sequelize.models.Espacio,
                     as: 'impartida_en',
@@ -345,10 +328,13 @@ async function getMacsBLE(req, res, db) {
                 
             // Si tiene actividades
             if (query_act.length != 0) {
+                let ahora = moment().utc();
                 for (let i = 0; i < query_act.length; i++) {
                     let act = query_act[i];
-                    if ((act.dataValues.tiempo_inicio <= comienzo && act.dataValues.tiempo_fin >= comienzo) 
-                        || (act.dataValues.tiempo_inicio <= fin && act.dataValues.tiempo_fin >= fin)) {
+                    if ((moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= comienzo.format('HH:mm') 
+                        && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  >= comienzo.format('HH:mm')) 
+                        || (moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= fin.format('HH:mm') 
+                        && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  >= fin.format('HH:mm'))) {
                             
                         let cancelada = false;
                         
@@ -361,21 +347,42 @@ async function getMacsBLE(req, res, db) {
                         });
 
                         excepciones_act.forEach(ex => {
-                            if (moment(ex.dataValues.fecha_inicio_act).format('YYYY-MM-DD') == moment().format('YYYY-MM-DD')) {
+                            if (moment(ex.dataValues.fecha_inicio_act).format('YYYY-MM-DD') == ahora.format('YYYY-MM-DD')) {
                                 cancelada = true;
                             }
                         });
 
-                        if (!cancelada) {
-                            actividades.push(act.dataValues.id);
+                        
+                        if (act.dataValues.es_recurrente == 'Sí') {
+
+                            const recurrencias = await db.sequelize.models.Recurrencia.findAll({
+                                where: {
+                                    actividad_id: act.dataValues.id
+                                }
+                            });
+
+                            let moment_inicio = moment(act.dataValues.tiempo_inicio, "HH:mm").utc();
+
+                            for (let j = 0; j < recurrencias.length; j++) {
+                                let rec = recurrencias[j].dataValues;
+                                
+                                if (!cancelada && recurrence_tool.isInRecurrencia(act, rec, ahora.hours(moment_inicio.hours()).minutes(moment_inicio.minutes()).format('YYYY-MM-DDTHH:mm'))) {
+                                    actividades.push(act.dataValues.id);
+                                    break;
+                                }
+                            }
                         }
+                        else {
+                            if (ahora.format('YYYY-MM-DD') == act.dataValues.fecha_inicio) {
+                                actividades.push(act.dataValues.id);
+                            }
+                        }
+                       
                     }
                 }
 
-                let comienzo_moment = moment(comienzo, 'HH:mm');
-                let fin_moment = moment(fin, 'HH:mm')
-                let ahora_comienzo = moment().hours(comienzo_moment.hours()).minutes(comienzo_moment.minutes()).format('YYYY-MM-DD HH:mm:00');
-                let ahora_fin = moment().hours(fin_moment.hours()).minutes(fin_moment.minutes()).format('YYYY-MM-DD HH:mm:00');
+                let ahora_comienzo = moment().utc().hours(comienzo.hours()).minutes(comienzo.minutes()).format('YYYY-MM-DD HH:mm:00');
+                let ahora_fin = moment().utc().hours(fin.hours()).minutes(fin.minutes()).format('YYYY-MM-DD HH:mm:00');
                 
                 const reprogramaciones_act = await db.sequelize.models.Excepcion.findAll({
                     attributes: ['actividad_id'],
@@ -391,13 +398,8 @@ async function getMacsBLE(req, res, db) {
                     actividades.push(reprog.dataValues.actividad_id);
                 });
 
-                console.log(actividades);
-
-                const query_macs = await db.sequelize.models.Macs.findAll({
-                    attributes: ['usuario_id', 'mac'],
-                    include: {
-                        model: db.sequelize.models.Docente,
-                        as: 'asociado_a',
+                if (actividades.length > 0) {
+                    const query_doc = await db.sequelize.models.Docente.findAll({
                         include: {
                             model: db.sequelize.models.Actividad,
                             as: 'imparte',
@@ -407,18 +409,30 @@ async function getMacsBLE(req, res, db) {
                                 }
                             }
                         }
-                    }
-                });
-
-                console.log(query_macs.dataValues);
-
-                // Si tiene MACs
-                if (query_macs.length != 0) {
-                    query_macs.forEach((mac) => {
-                        respuesta.macs.push(mac.dataValues.mac);
                     });
 
-                    console.log(respuesta.macs);
+                    let docentes = [];
+                    query_doc.forEach((doc) => {
+                        docentes.push(doc.dataValues.id);
+                    })
+
+                    const query_macs = await db.sequelize.models.Macs.findAll({
+                        attributes: ['usuario_id', 'mac'],
+                        include: {
+                            model: db.sequelize.models.Docente,
+                            as: 'asociado_a',
+                            where: {
+                                id: { [Op.or]: docentes }
+                            }
+                        }
+                    });
+
+                    // Si tiene MACs
+                    if (query_macs.length != 0) {
+                        query_macs.forEach((mac) => {
+                            respuesta.macs.push(mac.dataValues.mac);
+                        });
+                    }
                 }
             }
 
@@ -427,7 +441,7 @@ async function getMacsBLE(req, res, db) {
                     
         }
         catch (error) {
-            console.log('Error while interacting with database:', error);
+            logger.error(`Error while interacting with database: ${error}`);
             res.status(500).send('Something went wrong');
             await transaction.rollback();
             return;
@@ -444,10 +458,10 @@ async function getAsistencias(req, res, db) {
 
     filtroEstado = req.body.estado || null;
     filtroMotivo = req.body.motivo || null;
-    filtroFecha = moment(req.body.fecha, 'YYYY-MM-DD').format('YYYY-MM-DD 00:00:00');
+    filtroFecha = moment(req.body.fecha + 'Z', 'YYYY-MM-DDZ').utc().format('YYYY-MM-DD 00:00:00[Z]');
     filtroEspacio = req.body.espacioId || null;
 
-    let fechaSiguiente = moment(req.body.fecha, 'YYYY-MM-DD').add(1, 'days').format('YYYY-MM-DD 00:00:00');
+    let fechaSiguiente = moment(req.body.fecha + 'Z', 'YYYY-MM-DDZ').utc().add(1, 'days').format('YYYY-MM-DD 00:00:00[Z]');
 
     const transaction = await db.sequelize.transaction();
 
@@ -467,20 +481,17 @@ async function getAsistencias(req, res, db) {
         
         let respuesta = { asistencias: [] }
 
-        console.log(query_asist);
         if (query_asist.length > 0) {
             query_asist.forEach((asist) => {
                 respuesta.asistencias.push(asist.dataValues);
             }); 
         }
-
-        console.log(respuesta);
     
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(respuesta);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -490,11 +501,8 @@ async function getAsistencias(req, res, db) {
 }
 
 async function getAsistenciaById(req, res, db) {
-    let idAsistencia = null;
-    try {
-        idAsistencia = Number(req.params.idAsistencia);
-    }
-    catch (error) {
+    let idAsistencia = Number(req.params.idAsistencia);
+    if (!Number.isInteger(idAsistencia)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -502,7 +510,7 @@ async function getAsistenciaById(req, res, db) {
     const transaction = await db.sequelize.transaction();
 
     try {
-        console.log('Searching in Asistencia for id, docente_id, espacio_id, fecha, estado, motivo');
+        logger.info('Searching in Asistencia for id, docente_id, espacio_id, fecha, estado, motivo');
         const query_asist = await db.sequelize.models.Asistencia.findOne({
             attributes:['id', 'fecha', 'docente_id', 'espacio_id', 'estado', 'motivo'],
             where: {
@@ -510,7 +518,7 @@ async function getAsistenciaById(req, res, db) {
             }
         });
 
-        if (Object.keys(query_asist.dataValues).length == 0) {
+        if (query_asist == null || Object.keys(query_asist.dataValues).length == 0) {
             res.status(404).send('Asistencia no encontrada');
             await transaction.rollback();
             return;
@@ -526,7 +534,7 @@ async function getAsistenciaById(req, res, db) {
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -537,19 +545,21 @@ async function getAsistenciaById(req, res, db) {
 
 async function updateAsistenciaById(req, res, db) {
 
-    let idAsistencia = null;
-    try {
-        idAsistencia = Number(req.params.idAsistencia);
-    }
-    catch (error) {
+    let idAsistencia = Number(req.params.idAsistencia);
+    if (!Number.isInteger(idAsistencia)) {
         res.status(400).send('Id suministrado no válido');
+        return;
+    }
+
+    if (req.body.estado != null && !valoresAsistencia.includes(req.body.estado)) {
+        res.status(422).send('Datos no válidos');
         return;
     }
 
     const transaction = await db.sequelize.transaction();
 
     try {
-        console.log('Searching in Asistencia for id, docente_id, espacio_id, fecha, estado, motivo');
+        logger.info('Searching in Asistencia for id, docente_id, espacio_id, fecha, estado, motivo');
         const query_asist = await db.sequelize.models.Asistencia.findOne({
             attributes:['id', 'fecha', 'docente_id', 'espacio_id', 'estado', 'motivo'],
             where: {
@@ -557,25 +567,17 @@ async function updateAsistenciaById(req, res, db) {
             }
         });
 
-        if (Object.keys(query_asist.dataValues).length == 0) {
+        if (query_asist == null || Object.keys(query_asist.dataValues).length == 0) {
             res.status(404).send('Asistencia no encontrada');
             await transaction.rollback();
             return;
         }
 
-        let update_data = {}
-        if (req.body.estado != null) update_data.estado = req.body.estado;
-        if (req.body.motivo != null) update_data.motivo = req.body.motivo;
-
-        const nueva_asist = await db.sequelize.models.Asistencia.update(update_data, {
-            where: {
-                id: idAsistencia
-            }
-        });
-
+        let update_data = {};
         let resultado = query_asist.dataValues;
+
         if (req.body.estado != null) {
-            update_data.estado = req.body.estado; 
+            update_data.estado = req.body.estado;
             resultado.estado = req.body.estado;
         }
         if (req.body.motivo != null) {
@@ -583,11 +585,17 @@ async function updateAsistenciaById(req, res, db) {
             resultado.motivo = req.body.motivo;
         }
 
+        const nueva_asist = await db.sequelize.models.Asistencia.update(update_data, {
+            where: {
+                id: idAsistencia
+            }
+        });
+
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -600,23 +608,23 @@ module.exports = {
     registroAsistencia, getMacsBLE, getAsistencias, getAsistenciaById, updateAsistenciaById
 }
 
-async function checkEstadoAsistencia(docenteId, espacioId) {
+async function checkEstadoAsistencia(db, res, docenteId, espacioId) {
 
-    const transaction = await db.sequelize.transaction();
+    let actividades_posibles = [];
 
-    try {
-                    
-        // Comprobar que en la hora actual ese profesor tenga una asignatura en ese espacio para validar el estado
-        const query_act = await db.sequelize.models.Actividad.findAll({
-            attributes: ['id', 'tiempo_inicio', 'tiempo_fin', 'es_recurrente', 'fecha_inicio', 'fecha_fin'],
-            include: {
-                model: db.sequelize.models.Docente,
-                where: {
-                    id: docenteId
-                } 
+    // Comprobar que en la hora actual ese profesor tenga una asignatura en ese espacio para validar el estado
+    const query_act = await db.sequelize.models.Actividad.findAll({
+        attributes: ['id', 'tiempo_inicio', 'tiempo_fin', 'es_recurrente', 'fecha_inicio', 'fecha_fin'],
+        include: {
+            model: db.sequelize.models.Docente,
+            as: 'impartida_por',
+            where: {
+                id: docenteId
+            } 
             },
             include: {
                 model: db.sequelize.models.Espacio,
+                as: 'impartida_en',
                 where: {
                     id: espacioId
                 }
@@ -627,7 +635,7 @@ async function checkEstadoAsistencia(docenteId, espacioId) {
             const act = query_act[i].dataValues;
             // Comprobar si existe excepcion que este reprogramada para hoy
             // Si esta cancelada, pasamos de ella
-            const query_ex = db.sequelize.models.Excepcion.findAll({
+            const query_ex = await db.sequelize.models.Excepcion.findAll({
                 attributes: ['esta_cancelado', 'esta_reprogramado', 'fecha_inicio_act', 'fecha_fin_act', 'fecha_inicio_ex', 'fecha_fin_ex'],
                 where: {
                     actividad_id: act.id
@@ -638,17 +646,17 @@ async function checkEstadoAsistencia(docenteId, espacioId) {
             let ignore_actividad = false;
             for (let j = 0; j < query_ex; j++) {
                 let excep = query_ex[j].dataValues;
-                let a_comparar = moment().format('DD/MM/YYYY HH:mm');
+                let a_comparar = moment().format('YYYY-MM-DD HH:mm');
                 //Está reprogramado para ahora, y no cancelado (está antes en el if para comprobar casos de desplazamientos menores que la duración del evento original)
                 if (excep.esta_cancelado == 'No' && excep.esta_reprogramado == 'Sí' && 
-                    moment(excep.fecha_inicio_ex).format('DD/MM/YYYY HH:mm') >= a_comparar &&
-                    moment(excep.fecha_fin_ex).format('DD/MM/YYYY HH:mm') <= a_comparar) {
+                    moment(excep.fecha_inicio_ex + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
+                    moment(excep.fecha_fin_ex + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
                         actividades_posibles.push(act);
                         break;
                 } //Está cancelada la instancia de ahora o se ha reprogamado para otro día
                 else if ((excep.esta_cancelado == 'Sí' || excep.esta_reprogramado == 'Sí') && 
-                    moment(excep.fecha_inicio_act).format('DD/MM/YYYY HH:mm') >= a_comparar &&
-                    moment(excep.fecha_fin_act).format('DD/MM/YYYY HH:mm') <= a_comparar) {
+                    moment(excep.fecha_inicio_act + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
+                    moment(excep.fecha_fin_act + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
                         ignore_actividad = true;
                         break;
                 }
@@ -672,28 +680,19 @@ async function checkEstadoAsistencia(docenteId, espacioId) {
                         rec_list.push(rec.dataValues)
                     });
                                         
-                    let last = recurrence_tool.getLastEventOfActividad(act, rec_list);
+                    let last = recurrence_tool.getLastEventOfActividad(act, rec_list).utc();
                     // Si está en el día de hoy, Asistida, si no, la ignoramos
-                    if (moment(last).format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+                    if (last.format('YYYY-MM-DD') == moment().utc().format('YYYY-MM-DD')) {
                         actividades_posibles.push(act);
                     }
         
                 }
-                else if (moment(act.fecha_inicio).format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+                else if (moment(act.fecha_inicio + 'Z').format('YYYY-MM-DD') == moment().format('YYYY-MM-DD')) {
                     actividades_posibles.push(act);
                 }
             }
         }
-    }
-    catch (error) {
-        console.log('Error while interacting with database:', error);
-        res.status(500).send('Something went wrong');
-        await transaction.rollback();
-        return;
-    }
-       
-
-    await transaction.commit();
+    
 
     return actividades_posibles > 0;
 }

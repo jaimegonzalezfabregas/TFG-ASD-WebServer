@@ -1,5 +1,5 @@
-const { Op } = require("sequelize");
 const bcrypt = require('bcrypt');
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 const spices = [
     "inOPPh4IThFNhRF0",
@@ -18,7 +18,7 @@ async function authenticateUser(req, res, db) {
     const transaction = await db.sequelize.transaction();
     
     try {
-        console.log('Searching in Docente for id, email, password, nombre, apellidos');
+        logger.info('Searching in Docente for id, email, password, nombre, apellidos');
 
         const query = await db.sequelize.models.Docente.findOne({
             attributes: ['id', 'email', 'password', 'nombre', 'apellidos', 'rol'],
@@ -36,13 +36,13 @@ async function authenticateUser(req, res, db) {
                 }
             }
             if (!valid) {
-                res.status(422).send("Datos inválidos al hacer login");
+                res.status(422).send("Datos no válidos");
                 await transaction.rollback();
                 return;
             }
         }
         else {
-            res.status(422).send("Datos inválidos al hacer login");
+            res.status(422).send("Datos no válidos");
             await transaction.rollback();
             return;
         }
@@ -55,7 +55,7 @@ async function authenticateUser(req, res, db) {
 
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -106,7 +106,7 @@ async function createUser(req, res, db) {
         });
 
         if (!nuevo) {
-            console.log(`El docente con el email ${req.body.email} ya existe en la base de datos`);
+            logger.error(`El docente con el email ${req.body.email} ya existe en la base de datos`);
             res.status(409).send(`El docente con el email ${req.body.email} ya existe en la base de datos`);
         }
 
@@ -115,7 +115,7 @@ async function createUser(req, res, db) {
         return;
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -139,7 +139,7 @@ async function getUsuarios(req, res, db) {
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -149,12 +149,8 @@ async function getUsuarios(req, res, db) {
 }
 
 async function getUsuarioById(req, res, db) {
-    let idUsuario;
-
-    try {
-        idUsuario = Number(req.params.idUsuario);
-    }
-    catch (error) {
+    let idUsuario = Number(req.params.idUsuario);
+    if (!Number.isInteger(idUsuario)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -162,7 +158,7 @@ async function getUsuarioById(req, res, db) {
     const transaction = await db.sequelize.transaction();
         
     try {
-        console.log('Searching in Docentes for id, nombre, apellidos, email');
+        logger.info('Searching in Docentes for id, nombre, apellidos, email');
         const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id', 'nombre', 'apellidos', 'email', 'rol'],
             where: {
@@ -170,7 +166,7 @@ async function getUsuarioById(req, res, db) {
             }
         });
 
-        if (Object.keys(query_doc.dataValues).length == 0) {
+        if (query_doc == null || Object.keys(query_doc.dataValues).length == 0) {
             res.status(404).send('Usuario no encontrado');
             await transaction.rollback();
             return;
@@ -182,7 +178,7 @@ async function getUsuarioById(req, res, db) {
         res.status(200).send(resultado);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;

@@ -1,12 +1,13 @@
 const moment = require('moment');
 const { authenticator } = require('otplib');
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getDispositivos(req, res, db) {
 
     const transaction = await db.sequelize.transaction();
     
     try {
-        console.log('Searching in Dispositivo for id, nombre, espacioId, idExternoDispositivo');
+        logger.info('Searching in Dispositivo for id, nombre, espacioId, idExternoDispositivo');
         const query = await db.sequelize.models.Dispositivo.findAll({
             attributes:['id', 'nombre', 'espacioId', 'idExternoDispositivo']
         });
@@ -20,7 +21,7 @@ async function getDispositivos(req, res, db) {
         res.status(200).send(dispositivos);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -29,22 +30,20 @@ async function getDispositivos(req, res, db) {
     await transaction.commit();    
 }
 
-async function creaDispositivo(req, res, db, api_config, api_path) {
-    console.log("Recibido post dispositivos", req.body);
+async function creaDispositivo(req, res, db, api_config) {
     if (req.body != null && Object.keys(req.body).length == 3 && req.body.nombre != null && req.body.espacioId != null && req.body.idExternoDispositivo != null) {
 
         if (!Number.isInteger(req.body.espacioId) || typeof req.body.nombre != 'string' || typeof req.body.idExternoDispositivo != 'string') {
             res.status(422).send('Datos no válidos');
             return;
         }
-        console.log("Post dispositivos con datos válidos");
         
         const transaction = await db.sequelize.transaction();
 
         try {   
-            const endpointSeguimiento = 'http://' + api_config.host + ':' + api_config.port + api_path + '/seguimiento';
+            const port_spec = (api_config.port_spec) ? ':' + api_config.port : '';
+            const endpointSeguimiento = `${api_config.protocol}://${api_config.host}${port_spec}${api_config.path}/seguimiento`;
             const dispSecret = authenticator.generateSecret();
-            console.log(`Post dispositivos datos a pasar: ${endpointSeguimiento}, ${dispSecret}`);
 
             let [disp, created] = await db.sequelize.models.Dispositivo.findOrCreate({
                 where: {
@@ -62,7 +61,7 @@ async function creaDispositivo(req, res, db, api_config, api_path) {
             });
 
             if (!created && req.body.idExternoDispositivo != disp.dataValues.idExternoDispositivo) {
-                console.log(`Nuevo idExternoDispositivo ${req.body.idExternoDispositivo} del dispositivo con id ${disp.dataValues.id}`);
+                logger.info(`Nuevo idExternoDispositivo ${req.body.idExternoDispositivo} del dispositivo con id ${disp.dataValues.id}`);
                 await db.sequelize.models.Dispositivo.update({ idExternoDispositivo: req.body.idExternoDispositivo }, {
                     where: {
                         id: disp.dataValues.id
@@ -91,7 +90,7 @@ async function creaDispositivo(req, res, db, api_config, api_path) {
             res.status(200).send(respuesta);
         }
         catch (error) {
-            console.log('Error while interacting with database:', error);
+            logger.error(`Error while interacting with database: ${error}`);
             res.status(500).send('Something went wrong');
             await transaction.rollback();
             return;
@@ -106,12 +105,8 @@ async function creaDispositivo(req, res, db, api_config, api_path) {
 
 async function getDispositivoById(req, res, db) {
 
-    let idDispositivo = null;
-
-    try{
-        idDispositivo = Number(req.params.idDispositivo);
-    }
-    catch (error) {
+    let idDispositivo = Number(req.params.idDispositivo);
+    if (!Number.isInteger(idDispositivo)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -119,15 +114,15 @@ async function getDispositivoById(req, res, db) {
     const transaction = await db.sequelize.transaction();
         
     try {
-        console.log('Searching in Dispositivo for all columns');
+        logger.info('Searching in Dispositivo for all columns');
         const query = await db.sequelize.models.Dispositivo.findOne({
             attributes: { exclude: [] },
             where: {
-                espacioId: req.params.idDispositivo
+                id: req.params.idDispositivo
             }
         });
 
-        if (Object.keys(query.dataValues).length == 0) {
+        if (query == null || Object.keys(query.dataValues).length == 0) {
             res.status(404).send('Dispositivo no encontrado');
             await transaction.rollback();
             return;
@@ -137,7 +132,7 @@ async function getDispositivoById(req, res, db) {
         res.status(200).send(query.dataValues);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -148,12 +143,8 @@ async function getDispositivoById(req, res, db) {
 
 async function deleteDispositivo(req, res, db) {
     
-    let idDispositivo = null;
-            
-    try{
-        idDispositivo = Number(req.params.idDispositivo);
-    }
-    catch (error) {
+    let idDispositivo = Number(req.params.idDispositivo);
+    if (!Number.isInteger(idDispositivo)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -161,15 +152,15 @@ async function deleteDispositivo(req, res, db) {
     const transaction = await db.sequelize.transaction();
 
     try {
-        console.log('Searching in Dispositivo for id');
+        logger.info('Searching in Dispositivo for id');
         const query = await db.sequelize.models.Dispositivo.findOne({
             attributes: ['id'],
              where: {
-                    espacioId: req.params.idDispositivo
-        }
+                id: idDispositivo
+            }
         });
                     
-        if (Object.keys(query.dataValues).length == 0) {
+        if (query == null || Object.keys(query.dataValues).length == 0) {
             res.status(404).send('Dispositivo no encontrado');
             await transaction.rollback();
             return;
@@ -184,7 +175,7 @@ async function deleteDispositivo(req, res, db) {
         res.status(204).send('Operación exitosa');
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -199,7 +190,7 @@ async function getLocalTime(req, res, db) {
         epoch: Math.floor(new Date().getTime() / 1000)
     }
 
-    console.log("Pong!", resultado);
+    logger.info(`Pong! ${resultado}`);
 
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(resultado);    

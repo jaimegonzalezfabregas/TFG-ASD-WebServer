@@ -1,14 +1,13 @@
 const { Op } = require("sequelize");
 const moment = require('moment');
-const { querystring } = require("browserify/lib/builtins");
-const { isInRecurrencia } = require("../../parse_fecha");
+const { isInRecurrencia } = require("../../utils/recurrence_tool");
+const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getEspacios(req, res, db) {
     const transaction = await db.sequelize.transaction();
     
     try {
-        console.log('Searching in Espacio for id, numero, tipo, edificio');
-        console.log(`${JSON.stringify(db.sequelize.models)} ${db.sequelize.models.Espacio}`)
+        logger.info('Searching in Espacio for id, numero, tipo, edificio');
         const query = await db.sequelize.models.Espacio.findAll({
             attributes:['id', 'tipo', 'numero', 'edificio'],
             order: ['edificio', 'tipo', 'numero']
@@ -24,7 +23,7 @@ async function getEspacios(req, res, db) {
         res.status(200).send(espacios);
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -37,7 +36,7 @@ async function getEspacioById(req, res, db) {
     const transaction = await db.sequelize.transaction();
     
     try {
-        console.log('Searching in Espacio for id, creadoPor, actualizadoPor, creadoEn, actualizadoEn, numero, tipo, edificio');
+        logger.info('Searching in Espacio for id, creadoPor, actualizadoPor, creadoEn, actualizadoEn, numero, tipo, edificio');
         const query = await db.sequelize.models.Espacio.findOne({
             attributes:['id', 'creadoPor', 'actualizadoPor', 'creadoEn', 'actualizadoEn', 'edificio', 'tipo', 'numero'],
             where: {
@@ -60,7 +59,7 @@ async function getEspacioById(req, res, db) {
     
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -70,11 +69,8 @@ async function getEspacioById(req, res, db) {
 }
 
 async function getEspaciosOfUsuario(req, res, db) {
-    let idUsuario = 0;
-    try {
-        idUsuario = Number(req.params.idUsuario);
-    }
-    catch (error) {
+    let idUsuario = Number(req.params.idUsuario);
+    if (!Number.isInteger(idUsuario)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -82,7 +78,7 @@ async function getEspaciosOfUsuario(req, res, db) {
     const transaction = await db.sequelize.transaction();
     
     try {
-        console.log('Searching in Docente for id');
+        logger.info('Searching in Docente for id');
         const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id'],
             where: {
@@ -91,7 +87,7 @@ async function getEspaciosOfUsuario(req, res, db) {
         })
 
         // Comprobamos que el usuario exista en la base de datos
-        if (Object.keys(query_doc.dataValues).length == 0) {
+        if (query_doc == null || Object.keys(query_doc.dataValues).length == 0) {
             res.status(404).send('Usuario no encontrado');
             await transaction.rollback();
             return;
@@ -102,14 +98,15 @@ async function getEspaciosOfUsuario(req, res, db) {
         let actividades_posibles = [];
         let espacios_ids = [];
         
-        const currentHour = moment().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30")
+        const currentHour = moment().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30", tener en cuenta que se busca en UTC)
 
-        console.log(req.body.opcion);
+        logger.info(req.body.opcion);
+        logger.info(`currentHour = ${currentHour}, alt = ${moment().utc().format('HH:mm')}`)
 
         switch (req.body.opcion) {
             case "espacios_rutina":
 
-                console.log('Searching in Actividad impartida por Docente for actividad_id');
+                logger.info('Searching in Actividad impartida por Docente for actividad_id');
                 const query_r = await db.sequelize.models.Actividad.findAll({
                     attributes: ['id'], 
                     include: {
@@ -120,8 +117,6 @@ async function getEspaciosOfUsuario(req, res, db) {
                         }
                     },
                 });
-
-                console.log('Actividades docente', query_r.length);
                 
                 //Si tiene actividades
                 if (query_r.length != 0) {
@@ -130,7 +125,7 @@ async function getEspaciosOfUsuario(req, res, db) {
                         actividades_ids.push(act.dataValues.id);
                     });
 
-                    console.log('Searching in Actividad for id, tiempo_inicio, tiempo_fin, fecha_inicio, fecha_fin, es_todo_el_dia');
+                    logger.info('Searching in Actividad for id, tiempo_inicio, tiempo_fin, fecha_inicio, fecha_fin, es_todo_el_dia');
                     
                     //Comprobamos que estén en la franja horaria actual
                     const query_act_r = await db.sequelize.models.Actividad.findAll({
@@ -148,14 +143,12 @@ async function getEspaciosOfUsuario(req, res, db) {
                         }
                     });
 
-                    console.log('Actividades docente de hoy', query_act_r.length);
-
                     for (let i = 0; i < query_act_r.length; i++) {
                         let act = query_act_r[i].dataValues;
                         
-                        const inicio = moment(act.tiempo_inicio, 'HH:mm');
-                        const hoy_hora_inicio = moment(moment.now()).hours(inicio.hours()).minutes(inicio.minutes());
+                        const hoy_hora_inicio = moment(act.tiempo_inicio, 'HH:mm').utc();
 
+                        logger.info('Searching in Excepcion for id, esta_reprogramado, fecha_inicio_act, fecha_fin_act, fecha_inicio_ex, fecha_fin_ex');
                         const excepciones = await db.sequelize.models.Excepcion.findAll({
                             attributes: ['id', 'esta_reprogramado', 'fecha_inicio_act', 'fecha_fin_act', 'fecha_inicio_ex', 'fecha_fin_ex'],
                             where: {
@@ -164,7 +157,9 @@ async function getEspaciosOfUsuario(req, res, db) {
                             }
                         });
 
+                        
                         if (act.es_recurrente == 'Sí') {
+                            logger.info('Searching in Recurrencia for id, tipo_recurrencia, separacion, maximo, dia_semana, dia_mes, semana_mes, mes_anio');
                             const recurrencias = await db.sequelize.models.Recurrencia.findAll({
                                 attributes: ['id', 'tipo_recurrencia', 'separacion', 'maximo', 'dia_semana', 'dia_mes', 'semana_mes', 'mes_anio'],
                                 where: {
@@ -172,24 +167,24 @@ async function getEspaciosOfUsuario(req, res, db) {
                                 }
                             });
 
+                            logger.info(`Buscando en recurrencias para actividad ${act.id} (${act.fecha_inicio} - ${act.fecha_fin}; ${act.tiempo_inicio} - ${act.tiempo_fin})`);
                             for (let j = 0; j < recurrencias.length; j++) {
                                 let rec = recurrencias[j].dataValues;
                                 let cancelada = false;
 
-                                console.log('Recurrencia ', j ,' de la actividad ', i);
-                                console.log(act, rec);
-
-                                if (isInRecurrencia(act, rec, hoy_hora_inicio)) {
+                                logger.info(`Actividad ${act.id} para recurrencia ${rec.id} (${rec.tipo_recurrencia}, ${rec.dia_semana}, ${hoy_hora_inicio}), ${isInRecurrencia(act, rec, hoy_hora_inicio.format("YYYY-MM-DD HH:mm:ss"))}`);
+                                if (isInRecurrencia(act, rec, hoy_hora_inicio.format("YYYY-MM-DD HH:mm:ss"))) {
                                     // Comprobar que si está cancelado es en la fecha de la recurrencia
-                                    console.log('Está en la recurrencia');
+                                    logger.info(`Actividad ${act.id} en recurrencia ${rec.id}`);
                                     for (let k = 0; k < excepciones.length && !cancelada; k++) {
                                         let exc = excepciones[k].dataValues;
 
-                                        cancelada = (moment(exc.fecha_inicio_act).format('DD/MM/YYYY HH:mm') == hoy_hora_inicio);
+                                        cancelada = (moment(exc.fecha_inicio_act + 'Z').utc().format('YYYY-MM-DD HH:mm') == hoy_hora_inicio.format('YYYY-MM-DD HH:mm'));
+                                        logger.info(`Cancelada actividad ${act.id} por excepción ${exc.id} (${moment(exc.fecha_inicio_act + 'Z').utc().format('YYYY-MM-DD HH:mm')}
+                                                     == ${hoy_hora_inicio.format('YYYY-MM-DD HH:mm')} => ${moment(exc.fecha_inicio_act + 'Z').utc().format('YYYY-MM-DD HH:mm') == hoy_hora_inicio.format('YYYY-MM-DD HH:mm')})`)
                                     }
                           
                                     if (!cancelada) {
-                                        console.log('No está cancelada');
                                         actividades_posibles.push(act.id);
                                         break;
                                     }
@@ -201,18 +196,17 @@ async function getEspaciosOfUsuario(req, res, db) {
                             for (let j = 0; j < excepciones.length && !cancelada; j++) {
                                 let exc = excepciones[j].dataValues;
 
-                                cancelada = (moment(exc.fecha_inicio_act).format('DD/MM/YYYY HH:mm') == hoy_hora_inicio);
+                                cancelada = (moment(exc.fecha_inicio_act + 'Z').utc().format('YYYY-MM-DD HH:mm') == hoy_hora_inicio.format('YYYY-MM-DD HH:mm'));
                             }
                       
                             if (!cancelada) {
-                                console.log('No está cancelada');
                                 actividades_posibles.push(act.id);
                                 break;
                             }
                         }
                     }
 
-                    const ahora = moment().format('YYYY-MM-DD HH:mm:00');
+                    const ahora = moment().utc().format('YYYY-MM-DD HH:mm:00');
 
                     //Sacamos las actividades reprogramadas para ahora mismo
                     const query_reprog = await db.sequelize.models.Excepcion.findAll({
@@ -229,12 +223,10 @@ async function getEspaciosOfUsuario(req, res, db) {
                         actividades_posibles.push(reprog.actividad_id);
                     });
 
-                    console.log('Actividades posibles', actividades_posibles.length);
-
                     //Si hay actividades posibles en estos momentos buscamos sus espacios
                     if (actividades_posibles.length != 0) {
 
-                        console.log('Searching in Espacio ocupado por Actividad for id');
+                        logger.info('Searching in Espacio ocupado por Actividad for id');
                         
                         //Encontramos todos los ids de los espacios pertenecientes a actividades posibles
                         const query_esp_r = await db.sequelize.models.Espacio.findAll({
@@ -251,8 +243,6 @@ async function getEspaciosOfUsuario(req, res, db) {
                             order: [['edificio'], ['tipo'], ['numero']]
                         });
 
-                        console.log('\n\n\n\n\n\n\n\nEspacios docente rutina', query_esp_r);
-
                         //Obtenemos los espacios de las actividades
                         query_esp_r.forEach((esp) => {
                             espacios_ids.push({ id: esp.dataValues.id });
@@ -265,7 +255,7 @@ async function getEspaciosOfUsuario(req, res, db) {
             break;
             case "espacios_irregularidad":
 
-                console.log('Searching in Actividad impartida por Docente for id');
+                logger.info('Searching in Actividad impartida por Docente for id');
                 const query_i = await db.sequelize.models.Actividad.findAll({
                     attributes: ['id'], 
                     include: {
@@ -284,7 +274,7 @@ async function getEspaciosOfUsuario(req, res, db) {
                         actividades_ids.push(act.dataValues.id);
                     });
 
-                    console.log('Searching in Actividad for id, tiempo_inicio, tiempo_fin');
+                    logger.info('Searching in Actividad for id, tiempo_inicio, tiempo_fin');
                     
                     //Comprobamos que estén en la franja horaria actual
                     const query_act_i = await db.sequelize.models.Actividad.findAll({
@@ -293,19 +283,22 @@ async function getEspaciosOfUsuario(req, res, db) {
                             id: {
                                 [Op.or]: actividades_ids
                             }
-                        }
+                        }   
                     });
 
+
                     query_act_i.forEach((act) => {
-                        if (act.dataValues.tiempo_inicio <= currentHour && currentHour <= act.dataValues.tiempo_fin) {
+                        if (moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= moment(currentHour, "HH:mm").utc().format('HH:mm') 
+                            && moment(currentHour, "HH:mm").utc().format('HH:mm') <= moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')) {
+                        
                             actividades_posibles.push(act.dataValues.id);
                         }
                     });
-
+                    
                     //Si hay actividades posibles en estos momentos buscamos sus espacios
                     if (actividades_posibles.length != 0) {
 
-                        console.log('Searching in Espacio ocupado por Actividad for espacio_id');
+                        logger.info('Searching in Espacio ocupado por Actividad for espacio_id');
                         
                         //Encontramos todos los ids de los espacios pertenecientes a actividades posibles
                         const query_esp_i = await db.sequelize.models.Espacio.findAll({
@@ -342,7 +335,10 @@ async function getEspaciosOfUsuario(req, res, db) {
                         respuesta.espacios = espacios_ids_neg;
                     }
                 }
-                else {
+
+                logger.info(`${query_i.length}, ${respuesta.espacios.length}, ${query_i.length == 0 || respuesta.espacios.length == 0}`);
+
+                if (query_i.length == 0 || respuesta.espacios.length == 0) {
                     let query_esp = await db.sequelize.models.Espacio.findAll({
                         attributes: ['id'],
                         order: [['edificio'], ['tipo'], ['numero']]
@@ -367,7 +363,7 @@ async function getEspaciosOfUsuario(req, res, db) {
         
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
@@ -377,11 +373,8 @@ async function getEspaciosOfUsuario(req, res, db) {
 }
 
 async function getEspacioOfActividad(req, res, db) {
-    let idActividad = 0;
-    try {
-        idActividad = Number(req.params.idActividad);
-    }
-    catch (error) {
+    let idActividad = Number(req.params.idActividad);
+    if (!Number.isInteger(idActividad)) {
         res.status(400).send('Id suministrado no válido');
         return;
     }
@@ -396,7 +389,7 @@ async function getEspacioOfActividad(req, res, db) {
         });
     
         // Comprobamos que el usuario exista en la base de datos
-        if (Object.keys(query_act.dataValues).length == 0) {
+        if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
             res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
             return;
@@ -414,10 +407,10 @@ async function getEspacioOfActividad(req, res, db) {
         });
     
         if (query_act_esp.length > 0) {
-            let resultado = { espacios: []};
+            let resultado = { espacios: [] };
 
             query_act_esp.forEach((esp) => {
-                resultado.espacios.push(esp.dataValues);
+                resultado.espacios.push({ id: esp.dataValues.id });
             });
 
             res.setHeader('Content-Type', 'application/json');
@@ -425,7 +418,7 @@ async function getEspacioOfActividad(req, res, db) {
         }
     }
     catch (error) {
-        console.log('Error while interacting with database:', error);
+        logger.error(`Error while interacting with database: ${error}`);
         res.status(500).send('Something went wrong');
         await transaction.rollback();
         return;
