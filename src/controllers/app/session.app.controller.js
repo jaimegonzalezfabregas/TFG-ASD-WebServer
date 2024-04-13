@@ -1,4 +1,5 @@
 const messaging = require('../../messaging');
+const logger = require('../../config/logger.config').child({"process": "server"});
 
 async function login(req, res) {
   const redirectTo = req.session.redirectTo || '/';
@@ -14,12 +15,12 @@ async function login(req, res) {
     usuario = await (messaging.sendToApiJSON(data, '/login', res, false));
   }
   catch (error) {
-    console.log('ERROR: ', error);
+    logger.error(`ERROR: ${error}`);
     res.render('login', { usuario: req.body.usuario, error: 'Usuario o contraseña incorrectos' });
     return;
   }
 
-  const sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email, rol: usuario.rol };
+  const sesion = { id: usuario.id, nombre: usuario.nombre, apellidos: usuario.apellidos, email: usuario.email, rol: usuario.rol, offset: Number(req.body.timezone) };
 
   req.session.regenerate(function (err) {
     if (err) next(err)
@@ -30,10 +31,7 @@ async function login(req, res) {
     // Guardar la sesión y luego redirigir
     req.session.save(function (err) {
       if (err) return next(err)
-  
-      console.log(req.session);
 
-      console.log(redirectTo);
       res.redirect(redirectTo);
     });
   });

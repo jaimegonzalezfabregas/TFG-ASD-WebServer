@@ -1,6 +1,6 @@
 const messaging = require('../../messaging');
 const moment = require('moment');
-const recurrence_tool = require('../../parse_fecha.js');
+const recurrence_tool = require('../../utils/recurrence_tool');
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 async function getEspaciosPosibles(req, res) {
@@ -27,7 +27,6 @@ async function getEspaciosPosibles(req, res) {
     for (let i = 0; i < espacios_ids.length; i++) {
       const id_esp = (espacios_ids[i].id).toString();
       const api_esp_path = `/espacios/${id_esp}`;
-      console.log(api_esp_path);
       espacios_data.push((await messaging.getFromApi(api_esp_path, res, false)));
     }
 
@@ -81,7 +80,7 @@ function confirmEspacioPosible(req, res) {
 async function getForm(req, res) {
   let esp = '';
   let totp = '';
-  if (Object.keys(req.query).length != 0) {
+  if (req.query == null || Object.keys(req.query).length != 0) {
     if (req.query.espacioId) {
       esp = req.query.espacioId;
       req.session.user.espacio_id = parseInt(esp);
@@ -92,7 +91,7 @@ async function getForm(req, res) {
 
   let irregularidad = (req.session.user.estado == valoresAsistencia[1]);
 
-  const currentHour = moment().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30")
+  const currentHour = moment().utc().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30" (se transformará a UTC desde el offset local))
   const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res, true));
 
   // query a base de datos para conseguir asignatura y grupo que sería
@@ -114,8 +113,6 @@ async function getForm(req, res) {
     actividad_ids_irregularidad.push(x);
     return false;
   });
-  console.log(actividades_ids);
-  console.log(actividad_ids_irregularidad);
   
   //Comprobamos que estén en la franja horaria actual
   let actividades_posibles = await getActividadesPosibles(res, currentHour, actividades_ids);
@@ -152,7 +149,7 @@ async function getForm(req, res) {
     }
 
     let resultado = {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp,
-                     hora: `${moment(currentHour, 'HH:mm').format('HH:mm')}`, clases: [] 
+                     hora: `${moment(currentHour + "Z", 'HH:mmZ').utcOffset(req.session.user.offset).format('HH:mm')}`, clases: [] 
                      // clases = [ { asignatura: , grupo: } ]
     };
 
@@ -162,14 +159,13 @@ async function getForm(req, res) {
 
       resultado.clases.push({asignatura: str_asig, grupo: str_grupo});
     });
-    console.log('RESULTADO', resultado);
       
     res.render('formulario-end', { resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: irregularidad });
     return;
   }
   else {
     res.render('formulario-end', { resultado: {espacio: esp_data.nombre + " " + esp_data.edificio, totp: totp, 
-                                  hora: `${moment(currentHour, 'HH:mm').format('HH:mm')}`, clases: []}, 
+                                  hora: `${moment(currentHour + "Z", 'HH:mmZ').utcOffset(req.session.user.offset).format('HH:mm')}`, clases: []}, 
                                   usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: irregularidad });
   }
 }
@@ -195,7 +191,6 @@ async function postForm(req, res) {
     data.totp = req.body.totp;
   }
   
-  console.log(data);
   try {
     await messaging.sendToApiJSON(data, '/seguimiento', res, false);
   }
@@ -203,7 +198,7 @@ async function postForm(req, res) {
     let redo = {
       usuario: req.body.docente, 
       espacio: req.body.espacio, totp: req.body.totp, 
-      hora: `${moment().format('HH:mm')}`, 
+      hora: `${moment().utc().utcOffset(req.session.user.offset).format('HH:mm')}`, 
       clases: JSON.parse(req.body.clases),
       error: "Datos no válidos"
     }
@@ -230,26 +225,28 @@ async function getActividadesPosibles(res, currentHour, actividades_ids) {
   let actividades_posibles = [];
   for (let i = 0; i < actividades_data.length; i++) {
     let act = actividades_data[i];
-    const inicio = moment(act.data.tiempo_inicio, 'HH:mm');
-    const fin = moment(act.data.tiempo_fin, 'HH:mm');
+    let inicio = moment(act.data.tiempo_inicio, 'HH:mm');
+    let hoy_hora_inicio = moment(moment.now()).utc().hours(inicio.hours()).minutes(inicio.minutes());
+    inicio.utc();
+    const fin = moment(act.data.tiempo_fin, 'HH:mm').utc();
+    const excepcion_ids = (await messaging.getFromApi(`/excepciones/actividades/${act.id}`, res, true)).excepciones;
+
     if (inicio.format('HH:mm') <= currentHour && currentHour <= fin.format('HH:mm')) {
       let act_rec = (await messaging.getFromApi(`/recurrencias/actividades/${act.id}`, res, true)).recurrencias;
-      //TODO tener en cuenta reprogramaciones
+      
       //Comprobamos que su recurrencia caiga en la fecha actual
       for (let j = 0; j < act_rec.length; j++) {
         let rec_data = await messaging.getFromApi(`/recurrencias/${act_rec[j].id}`, res, true);
-        let hoy_hora_inicio = moment(moment.now()).hours(inicio.hours()).minutes(inicio.minutes());
 
-        if (recurrence_tool.isInRecurrencia(act.data, rec_data, hoy_hora_inicio)) {
+        if (recurrence_tool.isInRecurrencia(act.data, rec_data, hoy_hora_inicio.format('YYYY-MM-DD HH:mm:ss'))) {
           
           //Comprobamos que no está en una instancia de recurrencia cancelada
-          const excepcion_ids = (await messaging.getFromApi(`/excepciones/actividades/${act.id}`, res, true)).excepciones;
           let cancelada = false;
 
           for (let k = 0; k < excepcion_ids.length && !cancelada; k++) {
             let exc = await messaging.getFromApi(`/excepciones/${excepcion_ids[k].id}`, res, true);
 
-            cancelada = (exc.esta_cancelado == 'Sí' && moment(exc.fecha_inicio_act).format('DD/MM/YYYY HH:mm') == hoy_hora_inicio);
+            cancelada = ((exc.esta_cancelado == 'Sí' || exc.esta_reprogramado == 'Sí') && exc.fecha_inicio_act == hoy_hora_inicio.format('YYYY-MM-DDTHH:mm:00'));
           }
 
           if (!cancelada) {
@@ -257,6 +254,16 @@ async function getActividadesPosibles(res, currentHour, actividades_ids) {
             break;
           }
         }
+      }
+    }
+    
+    for (let j = 0; j < excepcion_ids.length; j++) {
+      let exc = await messaging.getFromApi(`/excepciones/${excepcion_ids[j].id}`, res, true);
+      let currentTime = moment(currentHour + 'Z', 'HH:mmZ').utc().format('YYYY-MM-DDTHH:mm:00');
+
+      if (exc.esta_cancelado == 'No' && exc.esta_reprogramado == 'Sí' && exc.fecha_inicio_ex <= currentTime && currentTime <= exc.fecha_fin_ex) {
+        actividades_posibles.push(act.data);
+        break;
       }
     }
   }
