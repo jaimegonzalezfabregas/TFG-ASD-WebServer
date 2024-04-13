@@ -1,19 +1,20 @@
-const http = require('http');
 const wretch = require('wretch');
 const api_config = require('./config/api.config');
+const logger = require('./config/logger.config').child({"process": "messaging"});
 
-const api = wretch(`http://${api_config.host}:${api_config.port}${api_config.path}`);
+const port_spec = (api_config.port_spec) ? ':' + api_config.port : '';
+const api = wretch(`${api_config.protocol}://${api_config.host}${port_spec}${api_config.path}`);
 
 async function getFromApi(req_path, server_response, omit_error) {
 
-    const getResult = await api.get(req_path)
+    const getResult = await api.headers({"X-Token": api_config.secrets[0]}).get(req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
             throw response.status
         }
         else {
             server_response.status(500).send("Something went wrong");
-            console.log(`Received status code ${response.status} on a get to ${req_path}`);
+            logger.error(`Received status code ${response.status} on a get to ${req_path}`);
             return null;
         }
     }).res(async response => { 
@@ -24,14 +25,14 @@ async function getFromApi(req_path, server_response, omit_error) {
 
 async function sendToApiJSON(json, req_path, server_response, omit_error) {
     
-    const postResult = await api.post(json, req_path)
+    const postResult = await api.headers({"X-Token": api_config.secrets[0]}).post(json, req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
             throw response.status
         }
         else {
             server_response.status(500).send("Something went wrong");
-            console.log(`Received status code ${response.status} on a post to ${req_path}`);
+            logger.error(`Received status code ${response.status} on a post to ${req_path}`);
             return null;
         }
     }).res(async response => { 
