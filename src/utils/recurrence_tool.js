@@ -1,4 +1,6 @@
 const moment = require('moment');
+const logger = require('../config/logger.config').child({"process": "recurrence_tool"});
+
 const recTypeParser = {
     Diaria: 'days',
     Semanal: 'weeks',
@@ -28,7 +30,7 @@ function getInicioDiferencia(act) {
             diferencia_minutos = minuto_fin - minuto_inicio;
         }
         catch (error) {
-            console.log("Error while parsing tiempo_inicio: ", error);
+            logger.error(`Error while parsing tiempo_inicio: ${error}`);
             throw error;
         }
     }
@@ -40,7 +42,7 @@ function primeraRecurrencia(act, rec) {
     let [hora_inicio, minuto_inicio] = getInicioDiferencia(act);
 
     // Encontrar el primer evento
-    let inicio = moment(act.fecha_inicio, 'YYYY-MM-DDTHH:mm');
+    let inicio = moment(act.fecha_inicio + "Z", 'YYYY-MM-DDTHH:mmZ');
     
     // Calibramos las horas y minutos
     let minuto_partida = inicio.minute();
@@ -57,7 +59,7 @@ function primeraRecurrencia(act, rec) {
     let dia_partida, mes_partida, offset_dias, offset_meses;
     switch (rec.tipo_recurrencia) { // Si la recurrencia es diaria, se puede omitir
         case 'Semanal':
-            dia_partida = (inicio.isoWeekday() - 1); // -1 para que cuadre con el guardado en bd
+            dia_partida = inicio.isoWeekday();
             dias_semana = 7;
             offset_dias = (rec.dia_semana < dia_partida) ?  dias_semana - (dia_partida - rec.dia_semana) : rec.dia_semana - dia_partida;
             inicio.add(offset_dias, 'days');
@@ -102,7 +104,7 @@ function fechaFromActividadRecurrencia(act, rec) {
         let max_veces = act.maximo || 32; 
         for (let i = 0; i < max_veces; i++) {
             let clon = a_evento.clone().add({hours: diferencia_horas, minutes: diferencia_minutos});
-            eventos_resultantes.push({ inicio: a_evento.toISOString(true), fin: clon.toISOString(true)});
+            eventos_resultantes.push({ inicio: a_evento.utc().format("YYYY-MM-DD[T]HH:mm:00[Z]"), fin: clon.utc().format("YYYY-MM-DD[T]HH:mm:00[Z]")});
             a_evento.add(separacion + 1, tipo_rec);
         }
     }
@@ -110,7 +112,7 @@ function fechaFromActividadRecurrencia(act, rec) {
         
         for (let i = 0; a_evento < punto_fin; i++) {
             let clon = a_evento.clone().add({hours: diferencia_horas, minutes: diferencia_minutos});
-            eventos_resultantes.push({ inicio: a_evento.toISOString(true), fin: clon.toISOString(true)});
+            eventos_resultantes.push({ inicio: a_evento.utc().format("YYYY-MM-DD[T]HH:mm:00[Z]"), fin: clon.utc().format("YYYY-MM-DD[T]HH:mm:00[Z]")});
             a_evento.add(separacion + 1, tipo_rec);
         }
     }
@@ -118,19 +120,28 @@ function fechaFromActividadRecurrencia(act, rec) {
     return eventos_resultantes;
 }
 
+/*
+    act: Instancia de actividad
+    rec: Instancia de recurrencia
+    fecha: String en formato YYYY-MM-DDTHH:mm
+*/
 function isInRecurrencia(act, rec, fecha) {
-    let inicio = primeraRecurrencia(act, rec);
+    let inicio = primeraRecurrencia(act, rec).utc();
     let separacion = rec.separacion + 1; // Se añade uno para no hacer módulo 0 (da NaN)
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
-    let a_comparar = moment(fecha, 'YYYY-MM-DDTHH:mm');
+    let a_comparar = moment(fecha + 'Z', 'YYYY-MM-DDTHH:mmZ').utc();
+    let [,, diferencia_horas, diferencia_minutos] = getInicioDiferencia(act);
+    let fin = inicio.clone().add(diferencia_horas, 'hours').add(diferencia_minutos, 'minutes').utc();
     // Para que esté en la recurrencia, la diferencia entre la primera actividad y esta debe, en la unidad de separación,
-    // debe ser divisible por la separación entre actividades impuesta por la recurrencia
+    // ser divisible por la separación entre actividades impuesta por la recurrencia
 
-    let aux = false;
+    let aux = (inicio.format("HH:mm") <= a_comparar.format("HH:mm") && a_comparar.format("HH:mm") <= fin.format("HH:mm")); 
+    // Descartamos por hora la fecha propuesta
+    if (aux == false) return false;
+    
     switch (rec.tipo_recurrencia) {
         case "Diaria":
             // No hace falta comprobar nada auxiliar
-            aux = true;
         break;
         case "Semanal":
             // Comprobar que está en el día de la semana correcto 
@@ -144,9 +155,12 @@ function isInRecurrencia(act, rec, fecha) {
             // Comprobar que está en el día y en el mes correctos
             aux = inicio.date() == a_comparar.date() && inicio.month() == a_comparar.month();
         break;
+        default:
+            aux = false;
+        break;
     }
     // Nos aseguramos de que se cumpla la separación
-    return (inicio.diff(a_comparar, tipo_rec) % separacion == 0) && aux;
+    return (aux && (inicio.diff(a_comparar, tipo_rec) % separacion == 0));
 }
 
 function getLastEventOfRecurrencia(act, rec) {
@@ -195,18 +209,19 @@ function getFinActividad(act_instance, t_fin) {
     return act_end;
 }
 
-fechaFromActividadRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
-tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
-{tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1});
+// fechaFromActividadRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
+// tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
+// {tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1});
 
-isInRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
-tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
-{tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1}, "2024-06-22T16:45:11.647");
+// isInRecurrencia({fecha_inicio: "2024-01-22 08:00:00", fecha_fin: "2024-05-10 19:00:00", tiempo_inicio: '20:00', 
+// tiempo_fin: '21:50', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
+// {tipo_recurrencia: 'Diaria', dia_semana: 4, separacion: 0}, "2024-04-12T20:00Z");
 
-getLastEventOfRecurrencia({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
-tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
-{tipo_recurrencia: 'Mensual', dia_semana: 4, dia_mes: 22, mes_anio: 5, separacion: 1});
-
+// getLastEventOfActividad({fecha_inicio: "2024-03-07T16:45:11.647", fecha_fin: "2024-06-22T16:45:11.647", tiempo_inicio: '16:00', 
+// tiempo_fin: '17:40', es_todo_el_dia: 'No', es_recurrente: 'Sí', creadoPor: 'Galdo', responsable_id: 3},
+// [{tipo_recurrencia: 'Mensual', dia_semana: 4, dia_mes: 30, mes_anio: 5, separacion: 0},
+// {tipo_recurrencia: 'Semanal', dia_semana: 4, dia_mes: 30, mes_anio: 5, separacion: 0},
+// {tipo_recurrencia: 'Semanal', dia_semana: 2, dia_mes: 30, mes_anio: 5, separacion: 0}]);
 
 
 module.exports = {
