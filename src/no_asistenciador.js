@@ -1,10 +1,12 @@
 const { Cron } = require('croner');
-const db = require('./models/');
+const db = require('./models');
 const moment = require('moment');
-const recurrence_parser = require('./parse_fecha');
+const recurrence_tool = require('./utils/recurrence_tool');
 const { Op } = require('sequelize');
+const logger = require('./config/logger.config').child({"process": "asistencia_daemon"});
 
 async function noAsistenciar() {
+    let num_no_asistidas = 0;
     const current_date = moment(moment.now());
     
     const query_act = await db.sequelize.models.Actividad.findAll({
@@ -18,7 +20,6 @@ async function noAsistenciar() {
         let fechas_actividades = [];
         for (let i = 0; i < query_act.length; i++) {  
             let act = query_act[i];
-            console.log('ACTIVIDAD', act.dataValues.id);
 
             if (act.dataValues.es_recurrente == 'Sí') {
                 
@@ -31,15 +32,11 @@ async function noAsistenciar() {
 
                 let rec_list = [];
                 query_rec.forEach((elem) => rec_list.push(elem.dataValues));
-                let ultima_actividad = moment(recurrence_parser.getLastEventOfActividad(act, rec_list));
-
-                if (act.dataValues.id == 6) {
-                    console.log(ultima_actividad, act, rec_list);
-                }
+                let ultima_actividad = moment(recurrence_tool.getLastEventOfActividad(act, rec_list));
 
                 if (ultima_actividad.isValid() && ultima_actividad.format('DD-MM-YYYY') == current_date.format('DD-MM-YYYY')) {
                     actividades_del_dia.push(act.dataValues.id);
-                    fechas_actividades[act.dataValues.id] = {inicio: ultima_actividad, fin: recurrence_parser.getFinActividad(ultima_actividad, act.dataValues.tiempo_fin)};
+                    fechas_actividades[act.dataValues.id] = {inicio: ultima_actividad, fin: recurrence_tool.getFinActividad(ultima_actividad, act.dataValues.tiempo_fin)};
                 }
             }
             else if (act.dataValues.fecha_fin && act.dataValues.fecha_fin.includes(current_date.format('DD-MM-YYYY'))) { // Termina en el día
@@ -47,8 +44,6 @@ async function noAsistenciar() {
                 fechas_actividades[act.dataValues.id] = {inicio: act.dataValues.fecha_inicio, fin: act.dataValues.fecha_fin};
             }
         };
-
-        console.log('Actividades', actividades_del_dia);
 
         for(let i = 0; i < actividades_del_dia.length; i++) {
             // El responsable de la actividad da clase en ella, así que está en la relación imparte
@@ -91,7 +86,6 @@ async function noAsistenciar() {
             for (let j = 0; j < lista_docentes.length; j++) {
                 
                 let docente_actual = lista_docentes[j];
-                console.log('Docente', docente_actual);
                 
                 const [asist, asist_cr] = await db.sequelize.models.Asistencia.findOrCreate({
                     where: {
@@ -110,14 +104,19 @@ async function noAsistenciar() {
                         estado: 'No Asistida'
                     }   
                 });
+
+                if (asist_cr) {
+                    num_no_asistidas += 1;
+                }
             }
         }
     }
-        
+    
+    logger.info(num_no_asistidas, 'no asistencias registradas');
 }
 
 // Expresiones de 6, * para no especificar, en ss mm HH DD MM nD (nD = número de días)
 // Para que funcione bien, ejecutar en el MISMO día (sobre las 23h, '23 * * *')
-const comprobarAsistencias = Cron('* * * * *', await noAsistenciar()); // Cada minuto
+Cron('* 23 * * *', noAsistenciar());
 
 //noAsistenciar();

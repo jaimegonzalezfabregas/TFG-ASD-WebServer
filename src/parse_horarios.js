@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const db = require('./models');
 const moment = require('moment');
+const logger = require('./config/logger.config').child({"process": "horarios_parser"});
+const iana_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Europe/Madrid
 
 const tiempo_periodos = {
     1: {inicio: "2023-09-11T09:00:00", fin: "2023-12-21T21:00:00"},
@@ -24,11 +26,14 @@ const tipo_espacios = {
     "Lab.": "Laboratorio"
 }
 
+//TODO asumir que las fusiones ya existen y comprobar que los horarios coincidan en lugar de crearlas
+//TODO pasar las horas a UTC antes de guardarlas en la base de datos
+
 async function parseHorarios(filename) {
     const results = [];
     let keys = [];
     fs.createReadStream(path.join(__dirname, filename))
-    .on('error', (error) => console.log("Error while trying to read file %s: %s", filename, error))
+    .on('error', (error) => logger.error(`Error while trying to read file ${filename}: ${error}`))
     .pipe(csv({separator: ';'}))
     .on('headers', (headers) => keys = headers)
     .on('data', (data) => results.push(data))
@@ -37,9 +42,9 @@ async function parseHorarios(filename) {
 
         for (let i = 0; i < results.length; i++) {
             
-            while (results[i][keys[7]].includes('UPM') || results[i][keys[7]].includes('IMDEA')) { // Recursión externa a la UCM
-                i++;
-            }
+            // while (results[i][keys[7]].includes('UPM') || results[i][keys[7]].includes('IMDEA')) { // Recursión externa a la UCM
+            //     i++;
+            // }
 
             const row = results[i];
             // Elementos de la fila
@@ -51,9 +56,6 @@ async function parseHorarios(filename) {
             const departamentos = row[keys[5]];
             const periodo = row[keys[6]];
             const docencia = row[keys[7]];
-
-            console.log('===================================================================================================================================');
-            console.log(JSON.stringify(row) + '\n', titulacion, curso, codGEA, asignatura_siglas, grupo, departamentos, periodo, docencia);
 
             const transaction = await db.sequelize.transaction();
 
@@ -233,7 +235,7 @@ async function parseHorarios(filename) {
                     let checkDup = await db.sequelize.models.Actividad.findAll({
                         where: {
                             fecha_inicio: tiempo_periodos[periodo].inicio,
-                            fecha_fin: tiempo_periodos[periodo].fin,
+                            fecha_fin: tiempo_periodos[periodo].fin,    
                             tiempo_inicio: ( hora_inicio.includes(':') ? moment(hora_inicio, 'HH:mm').format('HH:mm') : moment(hora_inicio, 'HH').format('HH:mm') ),
                             tiempo_fin: ( hora_fin && hora_fin.includes(':') ? moment(hora_fin, 'HH:mm').format('HH:mm') : moment(hora_fin, 'HH').format('HH:mm') ),
                             responsable_id: entidad_docente.id,
@@ -340,7 +342,6 @@ async function parseHorarios(filename) {
                         });
 
                         let keepComparing = (rec_list.length == orig_recs.length) || (rec_list.length < orig_recs.length && dupeEspComp[k].length == 0);
-                        console.log(rec_list.length, orig_recs.length);
 
                         // Si no tienen la misma longitud no son la misma actividad
                         if (!keepComparing) {
@@ -382,7 +383,6 @@ async function parseHorarios(filename) {
                                 k--;
                             }
                         }
-                        console.log(rec_list);
 
                         // Mientras no se haya descartado al candidato, comparar cada una de las recurrencias
                         for (let l = 0; l < rec_list.length && keepComparing; l++) { 
@@ -415,8 +415,6 @@ async function parseHorarios(filename) {
 
                     // En caso de que verdaderamente sea una copia, destruimos todo lo creado de la actividad
                     if (dupeOf.length > 0) {
-                        
-                        console.log(dupeOf);
 
                         for (let k = 0; k < dupeOf.length; k++) {
                             for (let l = 0; l < dupeEspComp[k].length; l++) {
@@ -466,14 +464,14 @@ async function parseHorarios(filename) {
                 await transaction.commit();
             }
             catch (error) {
-                console.log('Something went wrong when parsing: ', error);
+                logger.error(`Something went wrong when parsing: ${error}`);
                 await transaction.rollback();
             }
         }
-        
-        //console.log(actividades_borradas);
     });
+
+    logger.info('Horarios insertados');
 }
 
-//parseHorarios('Horario2324.csv');
-parseHorarios('prueba.csv');
+parseHorarios('Horario2324.csv');
+//parseHorarios('prueba.csv');
