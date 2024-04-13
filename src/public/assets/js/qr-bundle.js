@@ -2891,11 +2891,11 @@
   },{}],30:[function(require,module,exports){
   const { toCanvas } = require('qrcode');
   
-  espacio = document.URL.split("espacio=");
+  espacio = document.URL.split("/formulario-end-qr/?espacio=");
   
   if (espacio.length > 1) {
     console.log('Generating QR...');
-    toCanvas(document.getElementById('qrcode'),`http://localhost:5500/formulario-end-qr/?espacio=${espacio[1]}`, {
+    toCanvas(document.getElementById('qrcode'),`${espacio[0]}/formulario-end/?espacio=${espacio[1]}`, {
       errorCorrectionLevel: 'M',  // M sirve para una pantalla de ordenador, para pantallas más pequeñas usar H
       width: 280,
       height: 280

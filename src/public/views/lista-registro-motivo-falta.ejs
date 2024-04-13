@@ -47,7 +47,7 @@
                             </a>
                             <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
                                     <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
                                     <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
@@ -55,7 +55,7 @@
                             <% if (usuario.rol == 'Decanato') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
-                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div> <!-- triangle-exclamation -->
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div>
                                     Resumen de faltas
                                 </a>
                             <% } %>
@@ -89,10 +89,10 @@
             <div id="layoutSidenav_content">
                 <main>
                     <div class="container-fluid px-5">
-                        <h1 class="text-title py-4">Features</h1>
+                        <h1 class="text-title py-4">Mis faltas</h1>
                         <div class="row justify-content-center" id="feature-div">
                             <div class="mt-5 col-11 col-sm-10 col-md-8 col-lg-6 my-auto">
-                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                                <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
                                 <% clases.forEach(function(clase) { %>
                                     <a href="/registro-motivo-falta/?fecha=<%=clase.fechayhora %>&clase=<%=clase.clase%>&i=<%=clase.pos%>">
                                         <div class="card mt-3">

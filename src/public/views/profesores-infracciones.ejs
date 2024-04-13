@@ -48,7 +48,7 @@
                             </a>
                             <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
                                     <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
                                     <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
@@ -116,10 +116,10 @@
                                     <tbody>
                                         <% docentes.forEach(function(docente) { %>
                                             <tr>
-                                                <td>docente.nombre</td>
-                                                <td>docente.totales</td>
-                                                <td>docente.mes</td>
-                                                <td>docente.justificadas</td>
+                                                <td><%= docente.nombre %></td>
+                                                <td><%= docente.totales %></td>
+                                                <td><%= docente.mes %></td>
+                                                <td><%= docente.justificadas %></td>
                                             </tr>
                                         <% }); %>
                                     </tbody>
