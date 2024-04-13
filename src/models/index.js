@@ -4,9 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
+const logger = require('../config/logger.config').child({"process": "model_creation"});
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/db.config')[env];
+const config = require('./../config/db.config')[env];
 const db = {};
 
 let sequelize;
@@ -15,6 +16,19 @@ if (config.use_env_variable) {
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
+
+async function connect() {
+  try {
+    await sequelize.authenticate();
+    logger.info("Connected to database successfully");
+  }
+  catch (err) {
+    logger.error("Couldn't connect to database");
+    throw "Couldn't connect to database";
+  }
+}
+
+connect();
 
 fs
   .readdirSync(__dirname)
@@ -27,7 +41,7 @@ fs
   })
   .forEach(file => {
     const model = require(path.join(__dirname, file)).model(sequelize, Sequelize.DataTypes);
-    console.log(model.name);
+    logger.info(`Detected ${model.name} model`);
     db[model.name] = model;
   });
 
