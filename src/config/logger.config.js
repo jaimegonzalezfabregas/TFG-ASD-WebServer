@@ -16,7 +16,7 @@ let transport = {
     ]
 };
 
-if ((process.env.NODE_ENV !== "production" && process.env.LOG_TO_STDOUT === "true") ? true : false) { 
+if (process.env.LOG_TO_STDOUT === "true") { 
     transport.targets.push({
         target: 'pino-pretty',
         level: (process.env.LOG_LEVEL || 'info'),
