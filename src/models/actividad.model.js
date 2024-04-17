@@ -16,14 +16,14 @@ function model(sequelize, DataTypes) {
             type: DataTypes.DATE,
             allowNull: true
         },
-        tiempo_inicio: { //Tipo timestamp
+        tiempo_inicio: { //Tipo Time
             type: DataTypes.STRING,
             allowNull: true,
             // validate: {
             //     is: ["^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"]
             // }
         },
-        tiempo_fin: { //Tipo timestamp
+        tiempo_fin: { //Tipo Time
             type: DataTypes.STRING,
             allowNull: true,
             // validate: {
