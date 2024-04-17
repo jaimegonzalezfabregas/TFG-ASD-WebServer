@@ -680,9 +680,9 @@ async function checkEstadoAsistencia(db, res, docenteId, espacioId) {
                         rec_list.push(rec.dataValues)
                     });
                                         
-                    let last = recurrence_tool.getLastEventOfActividad(act, rec_list).utc();
+                    let [exists, last] = recurrence_tool.getLastEventOfActividad(act, rec_list).utc();
                     // Si está en el día de hoy, Asistida, si no, la ignoramos
-                    if (last.format('YYYY-MM-DD') == moment().utc().format('YYYY-MM-DD')) {
+                    if (exists && last.format('YYYY-MM-DD') == moment().utc().format('YYYY-MM-DD')) {
                         actividades_posibles.push(act);
                     }
         

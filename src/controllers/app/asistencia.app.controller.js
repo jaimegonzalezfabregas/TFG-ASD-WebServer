@@ -147,8 +147,6 @@ async function filtrarAsistencias(req, res) {
     
     const noJustificadas = (await messaging.sendToApiJSON(data, '/seguimiento/asistencias', res, true)).asistencias;
 
-    console.log(noJustificadas);
-
     let clases = [];
     req.session.user.no_asistidas = [];
     for (let i = 0; i < noJustificadas.length; i++) {
@@ -232,8 +230,6 @@ async function filtrarAsistencias(req, res) {
 async function confirmarFirma(req, res) {
     
     const ids = req.session.user.no_asistidas[Number(req.body.pos)];
-    
-    console.log(req.session.user.no_asistidas, ids);
     
     let data = null;
     if (req.body.checkSustituto != null) {
