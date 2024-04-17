@@ -169,13 +169,15 @@ function getLastEventOfRecurrencia(act, rec) {
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
     let ahora = moment.now();
 
+    let occurred = false;
     let last_event = 'Event not yet occurred';
     while (inicio.diff(ahora) < 0) {
         last_event = inicio.clone();
         inicio.add(separacion + 1, tipo_rec);
+        if (!occurred) occurred = true;
     }
 
-    return last_event;
+    return [occurred, last_event];
 };
 
 function getLastEventOfActividad(act, rec_list) {
@@ -183,22 +185,24 @@ function getLastEventOfActividad(act, rec_list) {
 
     let next_rec;
     let next_left = null;
+    let values = [false, "Event not yet occurred"];
     let current = moment.now();
 
     rec_list.forEach(rec => {
-        let event = getLastEventOfRecurrencia(act, rec);
+        let [occ, event] = getLastEventOfRecurrencia(act, rec);
 
-        if (moment(event).isValid()) {  
+        if (occ) {  
             let left = moment(current).diff(moment(event));
             // No consideramos las iguales porque su tiempo restante es igual, así que darán lugar al mismo evento en tiempo
             if (left >= 0 && (next_left == null || left < next_left)) {
                 next_left = left;
                 next_rec = rec;
+                values = [occ, event];
             }
         } 
     });
 
-    return (next_left == null) ? "Event not yet occurred" : getLastEventOfRecurrencia(act, next_rec);
+    return values;
 }
 
 function getFinActividad(act_instance, t_fin) {
