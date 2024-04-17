@@ -7,13 +7,13 @@ const api = wretch(`${api_config.protocol}://${api_config.host}${port_spec}${api
 
 async function getFromApi(req_path, server_response, omit_error) {
 
-    const getResult = await api.headers({"X-Token": api_config.secrets[0]}).get(req_path)
+    const getResult = await api.headers({"X-Token": "app:" + api_config.secrets["app"]}).get(req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
             throw response.status
         }
         else {
-            server_response.status(500).send("Something went wrong");
+            server_response.status(response.status).send(response.text());
             logger.error(`Received status code ${response.status} on a get to ${req_path}`);
             return null;
         }
@@ -25,7 +25,8 @@ async function getFromApi(req_path, server_response, omit_error) {
 
 async function sendToApiJSON(json, req_path, server_response, omit_error) {
     
-    const postResult = await api.headers({"X-Token": api_config.secrets[0]}).post(json, req_path)
+    const postResult = await api.headers({"X-Token": "app:" + api_config.secrets["app"]
+}).post(json, req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
             throw response.status

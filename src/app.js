@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
 const moment = require('moment');
-const session = require('express-session')
+const session = require('express-session');
+const memory_store = require('memorystore')(session);
 const app_controllers =  require('./controllers/app/');
 const middleware = require("./middleware/");
 const server_config = require('./config/server.config');
@@ -22,7 +23,10 @@ app.use(session({
   // Hacer la sesión expirable
   cookie: {
     maxAge: 30 * 60 * 1000 // 30 minutos en milisegundos
-  }
+  },
+  store: new memory_store({
+    checkPeriod: 30 * 60 * 1000 // 30 minutos en milisegundos
+  })
 }));
 
 // Página web
@@ -149,7 +153,6 @@ app.post('/registrar-firmas', [checkSesion, checkClearanceAdministracion], async
   middleware.cookie_mantainer.keepCookies(req, res, ['no_asistidas', 'sustituto_ids', 'resultado_firma', 'espacio_firma']);
   middleware.request_security.escapeRequest(req);
   logger.info(`Got a POST in registrar-firmas with ${JSON.stringify(req.body)}`);
-  console.log(req.body.postType == 'filtro');
   if (req.body.postType == 'filtro') app_controllers.asistencia.filtrarAsistencias(req, res);
   else if (req.body.postType == 'firma') app_controllers.asistencia.confirmarFirma(req, res);
 });
@@ -184,7 +187,7 @@ app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkCl
   }
 });
 
-app.listen(server_config.port, server_config.host, () => {
+app.listen(server_config.port, () => {
   const port_spec = (server_config.port_spec) ? ':' + server_config.port : ''
   logger.info(`App listening on port ${server_config.port} at ${server_config.protocol}://${server_config.host}${port_spec}`);
 });

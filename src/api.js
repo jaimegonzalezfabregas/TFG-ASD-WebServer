@@ -623,18 +623,21 @@ app.get(api_config.path + '/recurrencias/:idRecurrencia', authenticateClient, as
 */
 app.get(api_config.path + '/recurrencias/actividades/:idActividad', authenticateClient, async (req, res) => api_controllers.recurrencia.getRecurrenciaByActividad(req, res, db));
 
-app.listen(api_config.port, api_config.host, () => {
+app.listen(api_config.port, () => {
   const port_spec = (api_config.port_spec) ? ':' + api_config.port : '';
   logger.info(`Api listening on port ${api_config.port} at ${api_config.protocol}://${api_config.host}${port_spec}${api_config.path}`);
 });
 
 function authenticateClient(req, res, next) {
-  for (let i = 0; i < api_config.secrets.length; i++) {
-    if (req.header('X-Token') == api_config.secrets[i]) {
+  if (req.header('X-Token') !== undefined) {
+    const [clientId, secret] = req.header('X-Token').split(':');
+    if (api_config.secrets[clientId] !== undefined && secret === api_config.secrets[clientId]) {
       next();
-      logger.info(`Accepted with token ${i}`);
+      logger.info(`Accepted with ${clientId} token`);
       return true;
     }
   }
+
+  res.status(403).send("No Authorization");
   return false;
 }
