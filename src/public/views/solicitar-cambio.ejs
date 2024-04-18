@@ -47,17 +47,17 @@
                             </a>
                             <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a>
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
                                     <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
                                     <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
                             <% if (usuario.rol == 'Decanato') { %>
-                                <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
+                                <!-- <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
-                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div> <!-- triangle-exclamation -->
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div>
                                     Resumen de faltas
-                                </a>
+                                </a> -->
                             <% } %>
                             <% if (usuario.rol == 'Admin') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
@@ -65,14 +65,14 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-file-signature"></i></div>
                                     Registrar firmas
                                 </a>
-                                <a class="nav-link text-bg-menu" href="/verificar-docencias">
+                                <!-- <a class="nav-link text-bg-menu" href="/verificar-docencias">
                                     <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
                                     Ver docencias
-                                </a>
-                                <a class="nav-link text-bg-menu" href="/enviar-avisos">
+                                </a> -->
+                                <!-- <a class="nav-link text-bg-menu" href="/enviar-avisos">
                                     <div class="sb-nav-link-icon"><i class="fas fa-envelope"></i></div>
                                     Enviar avisos
-                                </a>
+                                </a> -->
                                 <a class="nav-link text-bg-menu" href="/crear-usuario">
                                     <div class="sb-nav-link-icon"><i class="fas fa-user-plus"></i></div>
                                     Crear un usuario
