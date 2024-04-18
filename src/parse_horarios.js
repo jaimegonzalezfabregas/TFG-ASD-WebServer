@@ -42,9 +42,9 @@ async function parseHorarios(filename) {
 
         for (let i = 0; i < results.length; i++) {
             
-            // while (results[i][keys[7]].includes('UPM') || results[i][keys[7]].includes('IMDEA')) { // Recursión externa a la UCM
-            //     i++;
-            // }
+            while (results[i][keys[7]].includes('UPM') || results[i][keys[7]].includes('IMDEA')) { // Recursión externa a la UCM
+                i++;
+            }
 
             const row = results[i];
             // Elementos de la fila
