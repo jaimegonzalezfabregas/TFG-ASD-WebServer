@@ -1,5 +1,6 @@
-const { Op } = require("sequelize");
 const logger = require('../../config/logger.config').child({"process": "api"});
+
+const { Op } = require("sequelize");
 
 async function getGrupoById(req, res, db) {
     let idGrupo = Number(req.params.idGrupo);

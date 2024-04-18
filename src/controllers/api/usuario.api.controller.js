@@ -1,5 +1,6 @@
-const bcrypt = require('bcrypt');
 const logger = require('../../config/logger.config').child({"process": "api"});
+
+const bcrypt = require('bcrypt');
 
 const spices = [
     "inOPPh4IThFNhRF0",

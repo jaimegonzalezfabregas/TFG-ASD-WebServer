@@ -1,13 +1,14 @@
+const api_config = require('./config/api.config');
+const logger = require('./config/logger.config').child({"process": "api"});
+
 const express = require('express');
 const db = require('./models');
 const app = express();
 // Rutas de la API
-const api_config = require('./config/api.config');
 
 // Controladores de la API
 const api_controllers = require('./controllers/api');
 
-const logger = require('./config/logger.config').child({"process": "api"});
 
 app.use(express.json());
 

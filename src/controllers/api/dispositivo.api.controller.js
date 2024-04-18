@@ -1,6 +1,7 @@
+const logger = require('../../config/logger.config').child({"process": "api"});
+
 const moment = require('moment');
 const { authenticator } = require('otplib');
-const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getDispositivos(req, res, db) {
 
@@ -190,7 +191,7 @@ async function getLocalTime(req, res, db) {
         epoch: Math.floor(new Date().getTime() / 1000)
     }
 
-    logger.info(`Pong! ${resultado}`);
+    logger.info(`Pong! ${resultado.epoch}`);
 
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(resultado);    

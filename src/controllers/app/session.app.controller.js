@@ -1,5 +1,6 @@
-const messaging = require('../../messaging');
 const logger = require('../../config/logger.config').child({"process": "server"});
+
+const messaging = require('../../messaging');
 
 async function login(req, res) {
   const redirectTo = req.session.redirectTo || '/';

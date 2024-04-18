@@ -1,8 +1,9 @@
+const logger = require('../../config/logger.config').child({"process": "api"});
+
 const { Op } = require("sequelize");
 const { authenticator } = require('otplib');
 const moment = require('moment');
 const recurrence_tool = require('../../utils/recurrence_tool');
-const logger = require('../../config/logger.config').child({"process": "api"});
 
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 

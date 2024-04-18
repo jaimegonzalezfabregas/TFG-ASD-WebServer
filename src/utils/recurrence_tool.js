@@ -1,5 +1,6 @@
-const moment = require('moment');
 const logger = require('../config/logger.config').child({"process": "recurrence_tool"});
+
+const moment = require('moment');
 
 const recTypeParser = {
     Diaria: 'days',

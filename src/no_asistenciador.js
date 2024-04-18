@@ -1,9 +1,10 @@
+const logger = require('./config/logger.config').child({"process": "asistencia_daemon"});
+
 const { Cron } = require('croner');
 const db = require('./models');
 const moment = require('moment');
 const recurrence_tool = require('./utils/recurrence_tool');
 const { Op } = require('sequelize');
-const logger = require('./config/logger.config').child({"process": "asistencia_daemon"});
 
 async function noAsistenciar() {
     let num_no_asistidas = 0;

@@ -1,6 +1,7 @@
-const wretch = require('wretch');
 const api_config = require('./config/api.config');
 const logger = require('./config/logger.config').child({"process": "messaging"});
+
+const wretch = require('wretch');
 
 const port_spec = (api_config.port_spec) ? ':' + api_config.port : '';
 const api = wretch(`${api_config.protocol}://${api_config.host}${port_spec}${api_config.path}`);

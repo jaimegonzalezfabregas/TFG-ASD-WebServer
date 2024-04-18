@@ -1,7 +1,8 @@
+const logger = require('../../config/logger.config').child({"process": "api"});
+
 const { Op } = require("sequelize");
 const moment = require('moment');
 const { isInRecurrencia } = require("../../utils/recurrence_tool");
-const logger = require('../../config/logger.config').child({"process": "api"});
 
 async function getEspacios(req, res, db) {
     const transaction = await db.sequelize.transaction();

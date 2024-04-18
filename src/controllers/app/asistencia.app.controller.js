@@ -1,7 +1,8 @@
+const logger = require('../../config/logger.config').child({"process": "server"});
+
 const messaging = require('../../messaging');
 const recurrence_tool = require('../../utils/recurrence_tool');
 const moment = require('moment');
-const logger = require('../../config/logger.config').child({"process": "server"});
 const getOffsetString = require('../../utils/offset_string');
 
 async function getAJustificar(req, res) {

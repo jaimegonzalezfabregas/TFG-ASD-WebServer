@@ -1,3 +1,6 @@
+const server_config = require('./config/server.config');
+const logger = require('./config/logger.config').child({"process": "server"});
+
 const express = require('express');
 const path = require('path');
 const moment = require('moment');
@@ -5,9 +8,7 @@ const session = require('express-session');
 const memory_store = require('memorystore')(session);
 const app_controllers =  require('./controllers/app/');
 const middleware = require("./middleware/");
-const server_config = require('./config/server.config');
 const app = express();
-const logger = require('./config/logger.config').child({"process": "server"});
 const staticname = __dirname + '/public';
 
 const valoresRol = ['Usuario', 'Decanato', 'Admin'];

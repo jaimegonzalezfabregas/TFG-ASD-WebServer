@@ -1,9 +1,10 @@
+const logger = require('./config/logger.config').child({"process": "horarios_parser"});
+
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
 const db = require('./models');
 const moment = require('moment');
-const logger = require('./config/logger.config').child({"process": "horarios_parser"});
 const iana_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Europe/Madrid
 
 const tiempo_periodos = {
