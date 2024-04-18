@@ -2,13 +2,13 @@ openapi: 3.0.3
 info:
   title: Gestión de seguimiento docente
   description: |-
-    API para gestionar el seguimient docente
+    API para gestionar el seguimiento docente
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.1.0
 servers:
-  - url: http://localhost:3000/api/v1/
+  - url: http://localhost:8070/api/v1/
 tags:
   - name: espacios
     description: Gestión de espacios
@@ -16,6 +16,21 @@ tags:
     description: Gestión de dispositivos
   - name: seguimiento
     description: Gestión del seguimiento
+  - name: usuarios
+    description: Gestión de logins
+  - name: actividades
+    description: Gestión de actividades disponibles
+  - name: grupos
+    description: Gestión de grupos
+  - name: asignaturas
+    description: Gestión de asignaturas
+  - name: clases
+    description: Gestión de clases
+  - name: excepciones
+    description: Gestión de excepciones
+  - name: recurrencias
+    description: Gestión de recurrrencias
+    
 
 paths:
   /espacios:
@@ -45,6 +60,46 @@ paths:
           $ref: '#/components/responses/Espacio'
       security:
         - ApiKeyAuth: []
+        
+  /espacios/usuarios/{idUsuario}:
+    post:
+      tags:
+        - espacios
+        - usuarios
+      summary: Devuelve una lista de los espacios influenciada por una opción de cierto usuario por su id
+      description: Dada una opción, devuelve una lista de espacios en los que puede estar el usuario con id = {idUsuario}, o en los que no es común que esté, todo en la hora actual.
+      operationId: getEspaciosOfUsuario
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      requestBody:
+        $ref: '#/components/requestBodies/InfoUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/EspacioListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+        '422':
+          description: Datos no válidos
+          
+  /espacios/actividades/{idActividad}:
+    get:
+      tags:
+        - espacios
+        - actividades
+      summary: Devuelve una lista de los espacios asociados a una actividad
+      description: Devuelve una lista de espacios relacionados a la actividad con id = {idActividad}
+      operationId: getEspaciosOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/EspacioListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
 
   /dispositivos:
     get:
@@ -130,34 +185,14 @@ paths:
         - ApiKeyAuth: []
 
   /ble:
-    get:
+    post:
       tags:
         - seguimiento
       summary: Devuelve una lista de MACs de dispositivos BLE
       description: Develve la lista de MACs de dispositivos BLE para las actividades docentes a llevar a cabo en un espacio en una ventana de tiempo.
       operationId: getMacsBLE
-      parameters:
-        - in: query
-          name: espacioId
-          schema:
-            type: integer
-            format: int64
-          required: true
-          description: Id del espacio para filtrar la búsqueda
-        - in: query
-          name: comienzo
-          schema:
-            type: string
-            format: date-time
-          required: false
-          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
-        - in: query
-          name: fin
-          schema:
-            type: string
-            format: date-time
-          required: false
-          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+      requestBody:
+        $ref: '#/components/requestBodies/BleQuery' 
       responses:
         '200':
           $ref: '#/components/responses/ListaMACsUsuarios'
@@ -168,6 +203,374 @@ paths:
       security:
         - ApiKeyAuth: []
 
+  /seguimiento/asistencias:
+    post:
+      tags:
+        - seguimiento
+      summary: Devuelve las asistencias de un día
+      description: Devuelve una lista de asistencias con sus estados y motivos
+      operationId: getAsistencias
+      requestBody:
+        $ref : '#/components/requestBodies/FiltroAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaAsistencias'
+
+  /seguimiento/asistencias/{idAsistencia}:
+    get:
+      tags:
+        - seguimiento
+      summary: Devuelve la información asociada a una asistencia
+      description: Devuelve la información asociada a la asistencia con id = {idAsistencia}
+      operationId: getAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+          
+    post:
+      tags:
+        - seguimiento
+      summary: Modifica la información asociada a una asistencia
+      description: Modifica la información modificada asociada a la asistencia con id = {idAsistencia}
+      operationId: updateAsistenciaById
+      parameters:
+        - $ref: '#/components/parameters/idAsistencia'
+      requestBody:
+        $ref: '#/components/requestBodies/AsistenciaUpdateData'
+      responses:
+        '200':
+          $ref: '#/components/responses/Asistencia'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asistencia no encontrada
+        '422':
+          description: Datos no válidos
+      
+  
+  /login:
+    post:
+      tags:
+        - usuarios
+      summary: Devuelve los parámetros de un usuario
+      description: Dados un email y una contraseña válidas y en base de datos, devuelve los parámetros del usuario asociado.
+      operationId: authenticateUser
+      requestBody:
+        $ref: '#/components/requestBodies/LoginUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/UsuarioData'
+        '422':
+          description: Datos no válidos
+
+  /usuarios:
+    get:
+      tags:
+        - usuarios
+      summary: Devuelve una lista de usuarios
+      description: Devuelve la lista de los usuarios de la base de datos
+      operationId: getUsuarios
+      responses:
+        '200':
+          $ref: '#/components/responses/UsuarioListaData'
+
+    post:
+      tags:
+        - usuarios
+      summary: Crea un usuario en la base de datos
+      description: Dados los datos de un usuario, y el usuario que intenta crear a dicho usuario, crea a un usuario en la base de datos.
+      operationId: createUser
+      requestBody:
+        $ref: '#/components/requestBodies/CreateUsuario'
+      responses:
+        '201':
+          description: Usuario creado con éxito
+        '404':
+          description: Usuario creador no válido
+        '422':
+          description: Datos no válidos
+
+  /usuarios/{idUsuario}:
+    get:
+      tags:
+        - usuarios
+      summary: Devuelve los datos de un usuario por su id
+      description: Devuelve los datos del usuario con id = {idUsuario}
+      operationId: getUsuarioById
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/Usuario'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+  
+  /actividades/usuarios/{idUsuario}:
+    get:
+      tags:
+        - actividades
+        - usuarios
+      summary: Devuelve una lista de las actividades de un usuario por su id
+      description: Devuelve una lista de las actividades del usuario con id = {idUsuario}.
+      operationId: getActividadesOfUsuario
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+          
+  /actividades/espacios/{idEspacio}:
+    get:
+      tags:
+        - actividades
+        - espacios
+      summary: Devuelve una lista de las actividades de un espacio por su id
+      description: Devuelve una lista de las actividades del espacio con id = {idEspacio}.
+      operationId: getActividadesOfEspacio
+      parameters:
+        - $ref: '#/components/parameters/idEspacio'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Espacio no encontrado
+
+  /actividades/clases/{idClase}:
+    get:
+      tags:
+        - actividades
+        - clases
+      summary: Devuelve una lista de actividades de una clase por su id
+      description: Devuelve una lista de las actividades de la clase con id = {idClase}.  
+      operationId: getActividadesOfClase
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActividadListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+
+  /actividades/{idActividad}:
+    get:
+      tags:
+        - actividades
+      summary: Devuelve información sobre una actividad por su id
+      description: Devuelve parámetros informativos de la actividad con id = {idActividad}
+      operationId: getActividadById
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/Actividad'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+          
+  /clases/{idClase}:
+    get:
+      tags:
+        - clases
+      summary: Devuelve información sobre una clase por su id
+      description: Devuelve la asignatura y el grupo al que hace referencia la clase con id = {idClase}
+      operationId: getClaseById
+      parameters:
+        - $ref: '#/components/parameters/idClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+
+  /clases/compose:
+    post:
+      tags:
+        - clases
+        - asignaturas
+        - grupos
+      summary: Devuelve el id de la clase asociada a una asignatura y un grupo
+      description: Devuelve la clase a la que hacen referencia una tupla (idAsignatura, idGrupo)
+      operationId: getClaseByAsignaturaGrupo
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeClase'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClaseId'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Clase no encontrada
+  
+  /asignaturas/{idAsignatura}:
+    get:
+      tags:
+        - asignaturas
+      summary: Devuelve información de una asignatura por su id
+      description: Devuelve información de la asignatura con id = {idAsignatura}
+      operationId: getAsignaturaById
+      parameters:
+        - $ref: '#/components/parameters/idAsignatura'
+      responses:
+        '200':
+          $ref: '#/components/responses/AsignaturaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Asignatura no encontrada
+          
+  /grupos/{idGrupo}:
+    get:
+      tags:
+        - grupos
+      summary: Devuelve información de un grupo por su id
+      description: Devuelve información del grupo con id = {idAsignatura}
+      operationId: getGrupoById
+      parameters:
+        - $ref: '#/components/parameters/idGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Grupo no encontrado
+          
+  /grupos/compose:
+    post:
+      tags:
+        - grupos
+      summary: Devulve el id del grupo asociado a un curso y una letra
+      description: Devuelve el grupo al que hacen referencia una tupla (curso, letra)
+      operationId: getGrupoByCursoLetra
+      requestBody:
+        $ref: '#/components/requestBodies/ComposeGrupo'
+      responses:
+        '200':
+          $ref: '#/components/responses/GrupoId'
+        '400':
+          description: Datos suministrados no válidos
+        '404':
+          description: Grupo no encontrado
+      
+  /excepciones:
+    post:
+      tags:
+        - excepciones
+      summary: Crea una nueva excepción en la base de datos
+      description: Dados los parámetros, genera una excepción para una actividad en la base de datos
+      operationId: createExcepcion
+      requestBody:
+        $ref: '#/components/requestBodies/CreateExcepcion'
+      responses:
+        '200':
+          description: Excepción creada con éxito
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+        '422':
+          description: Datos no válidos
+          
+  /excepciones/{idExcepcion}:
+    get:
+      tags:
+        - excepciones
+      summary: Devuelve información de una excepción por su id
+      description: Devuelve información sobre la excepción con id = {idExcepcion}
+      operationId: getExcepcionById
+      parameters:
+        - $ref: '#/components/parameters/idExcepcion'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Excepcion no encontrada
+          
+  /excepciones/actividades/{idActividad}:
+    get:
+      tags:
+        - excepciones
+        - actividades
+      summary: Devuelve una lista de excepciones de una actividad por su id
+      description: Devuelve la lista de excepciones asociadas a la actividad con id = {idActividad}
+      operationId: getExcepcionesOfActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExcepcionListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+          
+  /recurrencias/{idRecurrencia}:
+    get:
+      tags:
+        - recurrencias
+      summary: Devuelve información de una recurrencia por su id
+      description: Devuelve información de la recurrencia con id = {idRecurrencia}
+      operationId: getRecurrenciaById
+      parameters:
+        - $ref: '#/components/parameters/idRecurrencia'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Recurrencia no encontrada
+      
+  /recurrencias/actividades/{idActividad}:
+    get:
+      tags:
+        - recurrencias
+        - actividades
+      summary: Devuelve la lista de recurrencias asociadas a una actividad
+      description: Devuelve la lista de recurrencias de la actividad con id = {idActividad}.
+      operationId: getRecurrenciaByActividad
+      parameters:
+        - $ref: '#/components/parameters/idActividad'
+      responses:
+        '200':
+          $ref: '#/components/responses/RecurrenciaListaData'
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Actividad no encontrada
+      
+  /ping:
+    get:
+      tags:
+        - dispositivos
+      summary: Devuelve el tiempo actual
+      description: Devuelve el tiempo actual en formato epoch.
+      operationId: getLocalTime
+      responses:
+        '200':
+          $ref: '#/components/responses/EpochActual'
+  
 components:
   parameters:
 
@@ -185,6 +588,86 @@ components:
       name: idDispositivo
       in: path
       description: ID del dispositivo
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idUsuario:
+      name: idUsuario
+      in: path
+      description: ID del usuario
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idActividad:
+      name: idActividad
+      in: path
+      description: ID de la actividad
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idClase:
+      name: idClase
+      in: path
+      description: ID de la clase
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idAsignatura:
+      name: idAsignatura
+      in: path
+      description: ID de la asignatura
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+    idGrupo:
+      name: idGrupo
+      in: path
+      description: ID del grupo
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+  
+    idAsistencia:
+      name: idAsistencia
+      in: path
+      description: ID de la asistencia
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idExcepcion:
+      name: idExcepcion
+      in: path
+      description: ID de la excepcion
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+      
+    idRecurrencia:
+      name: idRecurrencia
+      in: path
+      description: ID de la recurrencia
       required: true
       schema:
         type: integer
@@ -230,6 +713,15 @@ components:
         - actualizadoEn
         - creadoPor
         - actualizadoPor
+  
+    EpochActual:
+      type: object
+      properties:
+        epoch:
+          type: integer
+          format: int64
+          description: En formato epoch, el tiempo actual
+          example: 1707416266705
 
     EspacioUpdateData:
       type: object
@@ -238,6 +730,10 @@ components:
           type: string
           example: Aula 8
           description: Nombre amigable del espacio
+        edificio:
+          type: string
+          example: Facultad de Informática
+          description: Edificio del espacio de forma amigable
 
     EspacioData:
       allOf:
@@ -269,16 +765,15 @@ components:
           format: int64
           description: Id del espacio donde está colocado el dispositivo
           example: 1
+        idExternoDispositivo:
+          type: string
+          description: Id de la plataforma externa de gestión de dispositivos IOT
+          example: abcdefg
+        
 
     DispositivoUpdateData:
       allOf:
         - $ref: '#/components/schemas/DispositivoBasicUpdateData'
-        - type: object
-          properties:
-            idExternoDispositivo:
-              type: string
-              description: Id de la plataforma externa de gestión de dispositivos IOT
-              example: abcdefg
 
     DispositivoBasicData:          
       allOf:
@@ -295,6 +790,7 @@ components:
     DispositivoData:          
       allOf:
         - $ref: '#/components/schemas/DispositivoUpdateData'
+        - $ref: '#/components/schemas/EpochActual'
         - type: object
           properties:
             endpointSeguimiento:
@@ -338,25 +834,22 @@ components:
           format: int64
           description: Id del espacio
           example: 1
+        estado:
+          type: string
+          enum: 
+            - 'Asistida'
+            - 'Asistida con Irregularidad'
+            - 'No Asistida'
         totp:
-          type: object
-          properties:
-            value:
-              type: number
-              format: int32
-              description: Valor del TOTP calculado
-            time:
-              type: integer
-              format: int32
-              description: Segundos desde T0 utilizados para el cálculo del TOTP
-          required:
-            - value
-            - time
+          type: number
+          format: int32
+          description: Valor del TOTP calculado
         tipo_registro:
           type: string
           example: RegistroSeguimientoDocenteApp
       required:
         - espacioId
+        - estado
         - totp
         - tipo_registro
       discriminator:
@@ -367,18 +860,53 @@ components:
         - $ref: '#/components/schemas/RegistroSeguimiento'
         - type: object
           properties:
-            idUsuario:
+            usuarioId:
               type: integer
               format: int64
               description: Id del Usuario
 
+    RegistroSeguimientoFormulario:
+      type: object
+      properties:
+        usuarioId:
+          type: integer
+          format: int64
+          description: Id del Usuario
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del Espacio
+        fecha: 
+          type: string
+          description: fecha de la asistencia, o inicio de la hora de la actividad no asistida para una no asistida
+        motivo:
+          type: string
+          description: Motivo de una no asistencia (opcional)
+        estado:
+          type: string
+          enum: 
+            - 'Asistida'
+            - 'Asistida con Irregularidad'
+            - 'No Asistida'
+          description: Estado de la asistencia
+        tipo_registro:
+          type: string
+          example: RegistroSeguimientoDocenteApp
+      discriminator:
+        propertyName: tipo_registro
+      required:
+        - usuarioId
+        - espacioId
+        - estado
+            
+
     BaseRegistroSeguimientoDispositivo:
       type: object
       properties:
-        dispositivoId:
+        espacioId:
           type: integer
           format: int64
-          description: Id del dispositivo
+          description: Id del espacio del dispositivo
 
     RegistroSeguimientoDispositivoBle:
       allOf:
@@ -408,10 +936,11 @@ components:
             uid:
               type: string
               description: UID de la tarjeta NFC Mifare de la UCM (TUI)
-              example: 'y7w1T/D23w=='
+              example: '44822313231'
 
     SeguimientoNuevo:
       oneOf:
+        - $ref: '#/components/schemas/RegistroSeguimientoFormulario'
         - $ref: '#/components/schemas/RegistroSeguimientoUsuario'
         - $ref: '#/components/schemas/RegistroSeguimientoDispositivoBle'
         - $ref: '#/components/schemas/RegistroSeguimientoDispositivoQr'
@@ -422,16 +951,34 @@ components:
     ResultadoSeguimiento:
       type: object
       properties:
-        resultado:
-          type: string
+        feedback_code:
+          type: integer
           enum:
-            - correcto
-            - no_esperado
+            - 1
+            - 2
           description: |
-            'correcto': si el seguimiento de la actividad docente es el esperado.
-            'no_esperado': si se registra un seguimiento que no estaba esperada (e.g. no es el profesor habitual ni hay una sustitución para la actividad docente programada)
+            1 : si el seguimiento de la actividad docente es el esperado.
+            2 : si se registra un seguimiento que no estaba esperado (e.g. no es el profesor habitual ni hay una sustitución para la actividad docente programada)
       required:
-        - resultado
+        - feedback_code
+        
+    BleQueryData:
+      type: object
+      properties: 
+        espacioId:
+          type: integer
+          format: int64
+          description: Id del espacio para filtrar la búsqueda
+        comienzo:
+          type: string
+          format: date-time
+          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
+        fin:
+          type: string
+          format: date-time
+          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+      required:
+        - espacioId
 
     MACsUsuario:
       type: object
@@ -444,14 +991,382 @@ components:
         nombre:
           type: string
           description: Nombre del Usuario
-          example: Grace Hopper
+          example: Grace
+        apellidos:
+          type: string
+          description: Apellidos del Usuario
+          example: Hopper
         macs:
           type: array
           items:
             type: string
             format: binary
           example: ['00:11:22:33:FF:EE', '11:22:33:44:AA:BB']
+          
+    EstadoAsistencia:
+      type: object
+      properties:
+        estado:
+          type: string
+          enum: 
+          - Asistida
+          - Asistida con Irregularidad
+          - No Asistida
+          description: |
+            'Asistida': La actividad está asistida como planeado
+            'Asistida con Irregularidad': La actividad está asistida, pero no como programado
+            'No Asistida': La actividad no ha sido asistida durante su periodo
+          
+    Asistencia:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            espacioId:
+              type: integer
+              format: int64
+              example: 1
+              description: Id del espacio donde se ha asistido la actividad
+            docenteId:
+              type: integer
+              format: int64
+              example: 1
+              description: Id de la persona que ha asistido, o se encargaba de asistir a una actividad
+            fecha:
+              type: string
+              description: Fecha de registro de asistencia de la actividad
+              example: "2024-02-14T09:00:00.000"        
+            motivo:
+              type: string
+              description: Motivo por el que no se ha asistido a una actividad.
+              example: "Motivos médicos"
+              
+    AsistenciaUpdateData:
+      allOf:
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            motivo:
+              type: string
+              description: Motivo por el que no se ha asistido a una actividad.
+              example: "Motivos médicos"
+        
+            
+    FiltroAsistencia:
+      allOf:
+        - $ref: '#/components/schemas/EstadoAsistencia'
+        - type: object
+          properties:
+            motivo:
+              type: string
+              enum:
+              - Sí
+              - No
+              description: |
+                'Sí': Se buscarán las asistencias con motivos
+                'No': Se buscarán las asistencias sin motivos
+            fecha:
+              type: string
+              description: 'Fecha en DD/MM/YYYY, se buscarán las asistencias de ese día'
+              example: '10/04/2024'
+            espacioId:
+              type: integer
+              format: int64
+              description: Id del Espacio
+              example: 1
+          
+    ListaAsistencia:
+      type: object
+      properties:
+        asistencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de asistencias válidos
+          example: [ { "id": 1 } ]
+          
+    UsuarioBasicData:
+      type: object
+      properties:
+        email: 
+          type: string
+          description: Email del usuario
+          example: 'grhopper@gmail.com'
 
+    UsuarioLoginData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioBasicData'
+        - type: object
+          properties:
+            password:
+              type: string
+              description: Contraseña del usuario
+              example: "As34dnF5fsDlRPfdnsmRSDDFJAJ4JDRJEJaSD"
+
+    UsuarioData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioBasicData'
+        - type: object
+          properties:
+            nombre:
+              type: string
+              description: Nombre del Usuario
+              example: Grace
+            apellidos:
+              type: string
+              description: Apellidos del Usuario
+              example: Hopper
+            rol:
+              type: string
+              description: Rol del Usuario
+              example: Admin
+
+    UsuarioCreateData:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioData'
+        - $ref: '#/components/schemas/UsuarioLoginData'
+        - type: object
+          properties:
+            creador:
+              type: integer
+              format: int64
+              description: Id del usuario
+              example: 67
+
+    Usuario:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioData'
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/conMod'
+        
+    ListaUsuarios:
+      type: object
+      properties:
+        usuarios:
+          type: array
+          items: 
+            $ref: '#/components/schemas/conId'
+          
+        
+    EspacioUsuarioQuery:
+      type: object
+      properties:
+        opcion:
+          type: string
+          enum:
+            - espacios_rutina
+            - espacios_irregularidad
+          description: |
+            'espacios_rutina': Lista de espacios en los que debería estar el usuario en el tramo horario
+            'espacios_irregularidad': Lista de espacios en los que no debería estar el usuario en el tramo horario
+      required:
+        - opcion
+        
+    ListaEspacios:
+      type: object
+      properties:
+        espacios:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de espacios válidos
+          example: [ { "id": 1 } ]
+          
+    ListaActividades:
+      type: object
+      properties:
+        actividades:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de actividades válidas
+          example: [ { "id": 1 } ]
+          
+    ActividadTimeData:
+      type: object
+      properties: 
+        fecha_inicio:
+          type: string
+          description: Fecha de inicio de la actividad y su recursión
+          example: "2024-02-14T09:00:00.000"
+        fecha_fin:
+          type: string
+          description: Fecha de fin de la actividad y su recursión
+          example: "2024-06-30T18:40:00.000"
+        tiempo_inicio:
+          type: string
+          description: Hora del dia a la que comienza la actividad
+        tiempo_fin:
+          type: string
+          description: Hora del dia a la que finaliza la actividad
+        es_todo_el_dia:
+          type: string
+          enum:
+            - Si
+            - No
+          description: Si es todo el día o no la actividad. Si no lo es se ignoran los campos de tiempo_inicio y tiempo_fin
+          
+    ActividadData:
+      allOf:
+      - $ref: '#/components/schemas/ActividadTimeData'
+      - type: object
+        properties:
+          es_recurrente:
+            type: string
+            enum:
+              - Si
+              - No
+            description: Si es o no recurrente la actividad
+          clase_ids:
+              type: array
+              items:
+                $ref: '#/components/schemas/conId'
+              description: Array con ids de clases válidas, para las cuales se realiza la actividad
+              example: [ { "id": 1 }, { "id": 3 } ]
+        
+    Actividad:
+      allOf:
+        - $ref: '#/components/schemas/conId'
+        - $ref: '#/components/schemas/ActividadData'
+        
+    ExcepcionData:
+      type: object
+      properties:
+        esta_reprogramado:
+          type: string
+          enum:
+            - Sí
+            - No
+          description: Si está o no reprogramada la actividad
+        esta_cancelado:
+          type: string
+          enum:
+            - Sí
+            - No
+          description: Si está o no cancelada la actividad (aunque esté reprogramada, se puede cancelar)
+        actividad_id:
+          type: integer
+          format: int64
+          description: Id de la actividad a la que se asocia la excepción
+          example: 1
+        fecha_inicio_act:
+          type: string
+          description: fecha de inicio de la actividad (o instancia de actividad) cancelada/reprogramada
+          example: '2022-03-01 10:00:00.000'
+        fecha_fin_act:
+          type: string
+          description: fecha de fin de la actividad (o instancia de actividad) cancelada/reprogramada
+          example: '2022-03-01 11:40:00.000'
+        fecha_inicio_ex:
+          type: string
+          description: fecha de inicio de la reprogramación de la actividad (o instancia de actividad) reprogramada
+          example: '2022-03-05 13:00:00.000'
+        fecha_fin_ex:
+          type: string
+          description: fecha de fin de la reprogramación de la actividad (o instancia de actividad) reprogramada
+          example: '2022-03-05 14:40:00.000'
+          
+    ListaExcepciones:
+      type: object
+      properties:
+        excepciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de excepciones válidas
+          example: [ { "id": 1 } ]
+        
+    ClaseData:
+      type: object
+      properties:
+        asignatura_id:
+          type: integer
+          format: int64
+          description: Id de una asignatura
+          example: 1
+        grupo_id:
+          type: integer
+          format: int64
+          description: Id de un grupo
+          example: 1
+    
+    AsignaturaData:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nombre de la asignatura
+          example: "Programación Declarativa"
+        siglas:
+          type: string
+          description: Siglas de la asignatura
+          example: "PD"
+        departamento:
+          type: string 
+          description: Departamento que imparte esta asignatura
+        periodo:
+          type: integer
+          enum:
+            - 1
+            - 2
+          description: Periodo / Cuatrimestre en el que se imparte esta asignatura
+    
+    GrupoData:
+      type: object
+      properties:
+        curso:
+          type: integer
+          description: Curso al que pertenece al grupo
+          example: 3
+        letra:
+          type: string
+          description: Letra asociada al grupo
+          example: "A"
+          
+    ListaRecurrencias:
+      type: object
+      properties:
+        recurrencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/conId'
+          description: Array con ids de recurrencias válidos
+          example: [ { "id": 1 } ]
+          
+    RecurrenciaData:
+      type: object
+      properties:
+        tipo_recurrencia:
+          type: string
+          description: Tipo de recurrencia
+          example: "mensual"
+        separacion:
+          type: integer
+          description: Separación en la medida del tipo de recurrencia
+          example: 1
+        maximo:
+          type: integer
+          description: Maximo de veces que se repite la recurrencia
+          example: 5
+        dia_semana:
+          type: integer
+          description: Dia de la semana en el que ocurre la recurrencia, usado en _semanal
+          example: 4
+        semana_mes:
+          type: integer
+          description: Semana del mes en el que ocurre la recurrencia, usado en _mensual
+          example: 2
+        dia_mes:
+          type: integer
+          description: Dia del mes en el que ocurre la recurrencia, usado en _mensual
+          example: 12
+        mes_anio:
+          type: integer
+          description: Mes del año en el que ocurre la recurrencia, usado en _mensual o _anual
+          example: 10
+ 
   requestBodies:
     EspacioNuevo:
       required: true
@@ -477,43 +1392,108 @@ components:
           schema:
             $ref: '#/components/schemas/SeguimientoNuevo'
           examples:
+            RegistroSeguimientoFormulario:
+              value: 
+                tipo_registro: RegistroSeguimientoFormulario
+                espacioId: 1
+                usuarioId: 1
+                estado: 'No Asistida'
+                motivo: 'Movida al siguiente viernes por motivos médicos'
             RegistroSeguimientoUsuario:
               value:
                 tipo_registro: RegistroSeguimientoUsuario
                 espacioId: 1
                 usuarioId: 1
-                totp:
-                  value: 94287082
-                  time: 59
+                estado: "Asistida"
+                totp: 942870
             RegistroSeguimientoDispositivoBle:
               value:
                 tipo_registro: RegistroSeguimientoDispositivoBle
                 espacioId: 1
-                dispositivoId: 1
                 mac: '00:11:22:33:FF:EE'
-                totp:
-                  value: 07081804
-                  time: 1111111109
             RegistroSeguimientoDispositivoQr:
               value:
                 tipo_registro: RegistroSeguimientoDispositivoQr
                 espacioId: 1
-                dispositivoId: 2
                 qr: |
                   ZXlKaGJHY2lPaUpTVTBFdFQwRkZVQ0lzSW1WdVl5STZJa0V5TlRaRFFrTXRTRk0xTVRJaUxDSnJhV1FpT2lJeE9HSXhZMlkzTlRoak1XUTBaV00yWW1SaE5qVTRPVE0xTjJGaVpHUTROU0lzSW5SNWNDSTZJa3BYVkNJc0ltTjBlU0k2SWtwWFZDSjkuZ0NieFA3OG8zRGdwRFRVUWJ1SG5pdUdnWXBBVHFnR2tSR3k3cGFDNmhScno3TjdlSWE2c0FPV0RPOUZobmotYzhvY01sNGNGNEpiX212NXFSUENoOXI1N1BCcXg3ak9oTUlNUFR3SkdwamN5QmFxdEhsWmx1MXZ1cFk1dFEzWTJqR3oxVGk0Qm55d2FlRUhQeUlQUUp0TjdGN2hJQU9Semo3SVk0c0lLa1ZYdFFKWmdhS1c4cEVIcV9HQ3FqOGk1YWFpTTB1Sm5SRzNHT2gzbGl2cDlOcGp2OWRvcXAzZ3lQYTF6anJnMkgxUnNPR24wajJRTUd2dHVWZmt1TndGLVNvUEtGRUN5SE9xMFpLMW9IMnNUTzgtSnd2SGZsYklaUXI1eFdUcFM4cTdNYlVYRXVxVVJ0cmcwVGotMno2dGRhT0xUNGIzVWVEdWZLMmFyM2JCZlJENC1uUkFMdG9ZMGVrY015R0ZPUzdvMU14bDNoeTVzSUctRXlTeVdldUJWeTY4YURXRHBpOXFab1F1WTFUYnh4YWtqbmNDT0d1X0doMWwxbV9tSzJsX0lkeVhDVF9HQ2Z6RnE0WlRrUFo1ZXlkTkJBUFp1eEJMVWI0QnJNYjVpRGRaalQ3QWdHT2xScmVfd0lSSG1tS204VzluRGVRUVJtYklYTzIzSnVPdzkuQkRDYXJmcTJyX1VrOERITmZzTndTUS40RHVReDFjZkpYYWRIbnVkclZhQnNzNDV6eHlkNmlvdXVTelpVeU9lTTRpa0ZfN2hET2d3bWFDbWEtWjk3X1FaQko1RHpWbjlTSmhLVVRBcXBWUjNCUkdBeEpfSEFYVTVqYVRqWHFidlVheHNoN1o1VGdaOWVjazBGSW9lMWxrd3Y1MXhFdllxcVFfWG9qcjRNQUVtTHVNRV85QXJDSzltTmFNQURJek9qNFZvUXRhRFAxbDI2eXRvY2Mtb0VOaWZCUllHdTI4TGJKTGt5UUt6eVF5NkZ1QU90V2pMTTBXQ1hWNy1vX2R2ajZxZmVZSE5CRDdZQlN4eXFkZ0Q4ZGN4TUJOZDJzSzczWXNaUEhFYTBWMS04eno3aG0zYkgzdFplbHB3UFdTY3FMTFdfU1VINTg2YzBGVmVJNmdndnF6amZMWl9ZNmVRaWJWU2RYZk90SkJrMjJRckxzdUNYYlJLOEcxdzl0MjNQd3U4dWtVQXc0djBsN0hlYVdfMFNKeUtTUFFBTlJQODNNeUZiSzdmbXpUWWFXOVRZTjJKcktOLVBMcGQyZElGU20yR2FfRWZhQ3dOSkJtNFJETXpETnJm
-                totp:
-                  value: 14050471
-                  time: 1111111111
             RegistroSeguimientoDispositivoNFC:
               value:
                 tipo_registro: RegistroSeguimientoDispositivoNFC
                 espacioId: 1
-                dispositivoId: 3
                 uid: 'y7w1T/D23w=='
-                totp:
-                  value: 89005924
-                  time: 1234567890
                 
+    BleQuery:
+      required: true
+      description: Query para filtrar la búsqueda de las macs que se esperan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BleQueryData'
+            
+    FiltroAsistencia:
+      required: false
+      description: Parámetro opcional para filtrar las Asistencias por un Estado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FiltroAsistencia'
+                
+    LoginUsuario:
+      required: true
+      description: Email y Contraseña de un usuario existente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioLoginData'
+
+    CreateUsuario:
+      required: true
+      description: Datos necesarios para la creación de un usuario
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioCreateData'
+          
+    InfoUsuario:
+      required: true
+      description: Opcion para especificar información a devolver sobre un usuario existente
+      content:
+        application/json:
+          schema:
+              $ref: '#/components/schemas/EspacioUsuarioQuery'
+              
+    CreateExcepcion:
+      required: true
+      description: Datos necesarios para la creación de una excepción
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ExcepcionData'
+
+    ComposeClase:
+      required: true
+      description: Datos necesarios para obtener el id de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ClaseData'
+            
+    ComposeGrupo:
+      required: true
+      description: Datos necesarios para obtener el id de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GrupoData'
+            
+    AsistenciaUpdateData:
+      required: true
+      description: Datos a modificar de una asistencia
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AsistenciaUpdateData'
 
   responses:
     Espacio:
@@ -533,14 +1513,14 @@ components:
               $ref: '#/components/schemas/EspacioRef'
 
     Dispositivo:
-      description: Espacio
+      description: Dispositivo
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Dispositivo'
 
     ListaDispositivos:
-      description: Lista de espacios
+      description: Lista de dispositivos
       content:
         application/json:
           schema:
@@ -561,6 +1541,132 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/MACsUsuario'
+            
+    Asistencia:
+      description: Datos de una asistencia mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Asistencia'
+            
+    ListaAsistencias:
+      description: Datos de varias asistencias, con sus ids
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListaAsistencia'
+            
+    Actividad:
+      description: Datos de una actividad mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Actividad'
+            
+    UsuarioData:
+      description: Datos de un usuario a devolver en un login
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsuarioData'
+            
+    Usuario:
+      description: Datos de un usuario mas su id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Usuario'
+            
+    UsuarioListaData:
+      description: Lista de ids de usuarios a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListaUsuarios'
+            
+    EspacioListaData:
+      description: Lista de ids de espacios a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaEspacios'
+             
+    ActividadListaData:
+      description: Lista de ids de actividades a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaActividades'
+      
+    ClaseData:
+      description: Datos de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ClaseData'
+
+    ClaseId:
+      description: Id de una clase
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/conId'
+                
+    AsignaturaData:
+      description: Datos de una asignatura
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AsignaturaData'
+                
+    GrupoData:
+      description: Datos de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GrupoData'
+            
+    GrupoId:
+      description: Id de un grupo
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/conId'
+            
+    ExcepcionData:
+      description: Datos de una excepcion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ExcepcionData'
+            
+    ExcepcionListaData:
+      description: Lista de ids de excepciones a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaExcepciones'
+            
+    RecurrenciaListaData:
+      description: Lista de ids de recurrencias a devolver a petición de una query
+      content:
+        application/json:
+          schema:
+             $ref: '#/components/schemas/ListaRecurrencias'
+             
+    RecurrenciaData:
+      description: Datos de una recurrencia
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RecurrenciaData'
+            
+    EpochActual:
+      description: Timestamp en formato epoch del momento actual
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EpochActual'
 
   securitySchemes:
     ApiKeyAuth:

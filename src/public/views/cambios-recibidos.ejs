@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Mis cambios - ASD</title>
+        <link href="../assets/css/styles.min.css" rel="stylesheet" />
+        <link href="../assets/css/styles-tfg.min.css" rel="stylesheet" />
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous" async></script>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-menu">
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+            <a class="navbar-brand ps-3" href="/"> Seguimiento Docente </a>
+            
+            <!-- Navbar-->
+            <ul class="d-md-inline-block navbar-nav ms-auto me-0 me-md-3 my-2 my-md-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!">Settings</a></li>
+                        <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark bg-menu" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
+                            <a class="nav-link text-bg-menu" href="/formulario-aulas">
+                                <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
+                                Registrar asistencia
+                            </a>
+                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
+                                <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
+                                Gestión
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                <nav class="sb-sidenav-menu-nested nav">
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                    <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
+                                    <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
+                                </nav>
+                            </div>
+                            <% if (usuario.rol == 'Decanato') { %>
+                                <!-- <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
+                                <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div>
+                                    Resumen de faltas
+                                </a> -->
+                            <% } %>
+                            <% if (usuario.rol == 'Admin') { %>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
+                                <a class="nav-link text-bg-menu" href="/registrar-firmas">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-file-signature"></i></div>
+                                    Registrar firmas
+                                </a>
+                                <!-- <a class="nav-link text-bg-menu" href="/verificar-docencias">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                                    Ver docencias
+                                </a> -->
+                                <!-- <a class="nav-link text-bg-menu" href="/enviar-avisos">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-envelope"></i></div>
+                                    Enviar avisos
+                                </a> -->
+                                <a class="nav-link text-bg-menu" href="/crear-usuario">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-user-plus"></i></div>
+                                    Crear un usuario
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer bg-menu">
+                        <div class="small">Logged in as:</div>
+                        <%= usuario.nombre %> <%= usuario.apellidos %>
+                    </div>
+                </nav>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <!-- espacio necesario para que el navbar no se coma parte de los datos -->
+                    <div class="container-fluid px-4"> 
+                        <div class="row justify-content-center" id="feature-div">
+                        <!-- separar de arriba, en xs 11 columnas, en s 10 columnas, etc. -->
+                            <div class="mt-5 col-12 col-sm-10 col-md-8 col-lg-6">
+                                <% cambios.forEach((cambio) => { %>
+                                    <a href="/confirmar-cambio">
+                                        <div class="card mt-3">
+                                            <div class="card-body">
+                                                <p class="text-center">Asignatura <%= cambio.asignatura1 %> Grupo <%= cambio.grupo1 %><br><%= cambio.fecha1 %><br>por<br>Asignatura <%= cambio.asignatura2 %> Grupo <%= cambio.grupo2 %><br><%= cambio.fecha2 %></p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../assets/js/scripts.min.js"></script>
+    </body>
+</html>
