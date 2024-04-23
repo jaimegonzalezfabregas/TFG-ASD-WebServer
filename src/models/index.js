@@ -1,13 +1,13 @@
 'use strict';
+const process = require('process');
+const env = process.env.NODE_ENV || 'development';
 const logger = require('../config/logger.config').child({"process": "model_creation"});
 const config = require('./../config/db.config')[env];
 
 const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
-const process = require('process');
 const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
 const db = {};
 
 let sequelize;

@@ -202,6 +202,24 @@ paths:
           description: Espacio no encontrado
       security:
         - ApiKeyAuth: []
+        
+  /pla:
+    post:
+      tags:
+        - seguimiento
+      summary: Registra una asistencia en un espacio dada desde un archivo csv
+      description: Registra una asistencia en un espacio dada desde un archivo csv
+      operationId: registroPLA
+      requestBody:
+        $ref: '#/components/requestBodies/SeguimientoPLA'
+      responses:
+        '200':
+          $ref: '#/components/responses/ResultadoSeguimiento'
+        '422':
+          description: Datos no válidos
+      security:
+        - ApiKeyAuth: []
+      
 
   /seguimiento/asistencias:
     post:
@@ -312,6 +330,52 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Usuario no encontrado
+          
+  /usuarios/macs/{idUsuario}:
+    post:
+      tags:
+        - usuarios
+      summary: Asocia una MAC a un usuario por su id
+      description: Asocia la MAC especificada al usuario con id = {idUsuario}
+      operationId: registerMACToUsuario
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterMAC'
+      responses:
+        '200':
+          description: MAC registrada con éxito
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+        '409':
+          description: MAC ya registrada
+        '422':
+          description: Datos no válidos
+          
+  /usuarios/nfcs/{idUsuario}:
+    post:
+      tags:
+        - usuarios
+      summary: Asocia un UID de NFC a un usuario por su id
+      description: Asocia el UID de NFC especificado al usuario con id = {idUsuario}
+      operationId: registerNFCToUsuario
+      parameters:
+        - $ref: '#/components/parameters/idUsuario'
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterNFC'
+      responses:
+        '200':
+          description: UID de NFC registrado con éxito
+        '400':
+          description: Id suministrado no válido
+        '404':
+          description: Usuario no encontrado
+        '409':
+          description: UID de NFC ya registrado
+        '422':
+          description: Datos no válidos
   
   /actividades/usuarios/{idUsuario}:
     get:
@@ -418,7 +482,7 @@ paths:
         '400':
           description: Id suministrado no válido
         '404':
-          description: Clase no encontrada
+          description: Asignatura no encontrada o Grupo no encontrado
   
   /asignaturas/{idAsignatura}:
     get:
@@ -934,7 +998,7 @@ components:
         - type: object
           properties:
             uid:
-              type: string
+              type: integer
               description: UID de la tarjeta NFC Mifare de la UCM (TUI)
               example: '44822313231'
 
@@ -979,6 +1043,23 @@ components:
           description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
       required:
         - espacioId
+        
+    ObjetoMAC:
+      type: object
+      properties:
+        mac:
+          type: string
+          pattern: '^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$'
+          description: MAC de un dispositivo con bluetooth
+          example: '00:11:22:33:FF:EE'
+          
+    ObjetoNFC:
+      type: object
+      properties:
+        uid:
+          type: integer
+          description: UID de la tarjeta NFC Mifare de la UCM (TUI)
+          example: '44822313231'
 
     MACsUsuario:
       type: object
@@ -1000,7 +1081,7 @@ components:
           type: array
           items:
             type: string
-            format: binary
+            pattern: '^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$'
           example: ['00:11:22:33:FF:EE', '11:22:33:44:AA:BB']
           
     EstadoAsistencia:
@@ -1421,7 +1502,7 @@ components:
               value:
                 tipo_registro: RegistroSeguimientoDispositivoNFC
                 espacioId: 1
-                uid: 'y7w1T/D23w=='
+                uid: '449923882'
                 
     BleQuery:
       required: true
@@ -1430,6 +1511,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/BleQueryData'
+            
+    SeguimientoPLA:
+      required: true
+      description: Nuevo registro de seguimiento desde PLA con un CSV que contiene los logs de registro
+      content:
+        text/csv:
+          schema:
+            type: 'string'
+            format: 'binary'
             
     FiltroAsistencia:
       required: false
@@ -1462,6 +1552,22 @@ components:
         application/json:
           schema:
               $ref: '#/components/schemas/EspacioUsuarioQuery'
+              
+    RegisterMAC:
+      required: true
+      description: Datos necesarios para el registro de una MAC a un usuario
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ObjetoMAC'
+            
+    RegisterNFC:
+      required: true
+      description: Datos necesarios para el registro de un UID de NFC a un usuario
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ObjetoNFC'
               
     CreateExcepcion:
       required: true
