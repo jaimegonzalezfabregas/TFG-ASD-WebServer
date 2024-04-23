@@ -2,11 +2,13 @@ const logger = require('../../config/logger.config').child({"process": "api"});
 
 const { Op } = require("sequelize");
 
-async function getGrupoById(req, res, db) {
+async function getGrupoById(req, res, next, db) {
     let idGrupo = Number(req.params.idGrupo);
     if (!Number.isInteger(idGrupo)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -21,9 +23,11 @@ async function getGrupoById(req, res, db) {
         });
 
         if (query_gru == null || Object.keys(query_gru.dataValues).length == 0) {
-            res.status(404).send('Grupo no encontrado');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Grupo no encontrado';
+            return next(err);
         }
 
         const resultado = query_gru.dataValues;
@@ -33,25 +37,31 @@ async function getGrupoById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit();
 }
 
-async function getGrupoByCursoLetra(req, res, db) {
+async function getGrupoByCursoLetra(req, res, next, db) {
     
     let curso = Number(req.body.curso);
     if (!Number.isInteger(curso)) {
-        res.status(400).send('Datos suministrados no válidos');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Datos suministrados no válidos';
+        return next(err);
     }
 
     if (typeof req.body.letra != "string") {
-        res.status(400).send('Datos suministrados no válidos');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Datos suministrados no válidos';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -66,18 +76,22 @@ async function getGrupoByCursoLetra(req, res, db) {
         });
     
         if (query_grupo == null || Object.keys(query_grupo.dataValues).length == 0) {
-            res.status(404).send('Grupo no encontrado');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Grupo no encontrado';
+            return next(err);
         }
     
         res.status(200).send(query_grupo.dataValues);
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     transaction.commit();

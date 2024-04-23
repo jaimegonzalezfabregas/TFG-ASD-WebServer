@@ -1,10 +1,12 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
 
-async function getRecurrenciaById(req, res, db) {
+async function getRecurrenciaById(req, res, next, db) {
     let idRecurrencia = Number(req.params.idRecurrencia);
     if (!Number.isInteger(idRecurrencia)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -18,9 +20,11 @@ async function getRecurrenciaById(req, res, db) {
         });
 
         if (query_rec == null || Object.keys(query_rec.dataValues).length == 0) {
-            res.status(404).send('Recurrencia no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Recurrencia no encontrada';
+            return next(err);
         }
 
         let respuesta = query_rec.dataValues;
@@ -30,19 +34,23 @@ async function getRecurrenciaById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();
 }
 
-async function getRecurrenciaByActividad(req, res, db) {
+async function getRecurrenciaByActividad(req, res, next, db) {
     let idActividad = Number(req.params.idActividad);
     if (!Number.isInteger(idActividad)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -55,9 +63,11 @@ async function getRecurrenciaByActividad(req, res, db) {
         });
 
         if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
-            res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Actividad no encontrada';
+            return next(err);
         }
         
         const query_rec = await db.sequelize.models.Recurrencia.findAll({
@@ -84,9 +94,11 @@ async function getRecurrenciaByActividad(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();

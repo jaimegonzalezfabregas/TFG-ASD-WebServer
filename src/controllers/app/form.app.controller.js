@@ -89,8 +89,6 @@ async function getForm(req, res) {
     req.session.save();
   }
 
-  let irregularidad = (req.session.user.estado == valoresAsistencia[1]);
-
   const currentHour = moment().utc().format('HH:mm'); //Cambiar la hora para probar aquí (ejemplo "16:30" (se transformará a UTC desde el offset local))
   const esp_data = (await messaging.getFromApi(`/espacios/${esp}`, res, true));
 
@@ -116,9 +114,19 @@ async function getForm(req, res) {
   
   //Comprobamos que estén en la franja horaria actual
   let actividades_posibles = await getActividadesPosibles(res, currentHour, actividades_ids);
+  if  (req.session.user.estado != null){
+    irregularidad = (req.session.user.estado == valoresAsistencia[1])
+  }
+  else {
+    irregularidad = false;
+    req.session.user.estado = valoresAsistencia[0];
+  }
 
   //Si no hay ninguna, estamos ante una irregularidad => mostramos todas las del docente en este momento, y las del espacio en este momento
   if (actividades_posibles == 0) {
+    irregularidad = true;
+    if (req.session.user.estado == null) req.session.user.estado = valoresAsistencia[1];
+
     for (let i = 0; i < actividades_ids_esp.length; i++) {
       if (!actividades_esp_aparicion[i]) {
         actividad_ids_irregularidad.push(actividades_ids_esp[i]);

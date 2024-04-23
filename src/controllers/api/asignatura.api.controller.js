@@ -1,10 +1,12 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
 
-async function getAsignaturaById(req, res, db) {
+async function getAsignaturaById(req, res, next, db) {
     let idAsignatura = Number(req.params.idAsignatura);
     if (!Number.isInteger(idAsignatura)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -19,9 +21,11 @@ async function getAsignaturaById(req, res, db) {
         });
 
         if (query_asig == null || Object.keys(query_asig.dataValues).length == 0) {
-            res.status(404).send('Asignatura no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Asignatura no encontrada';
+            return next(err);
         }
 
         const resultado = query_asig.dataValues;
@@ -31,9 +35,11 @@ async function getAsignaturaById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit();

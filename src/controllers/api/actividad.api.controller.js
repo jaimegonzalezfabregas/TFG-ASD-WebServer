@@ -1,10 +1,12 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
 
-async function getActividadesOfUsuario(req, res, db) {
+async function getActividadesOfUsuario(req, res, next, db) {
     let idUsuario = Number(req.params.idUsuario);
     if (!Number.isInteger(idUsuario)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
         
     const transaction = await db.sequelize.transaction();
@@ -20,9 +22,11 @@ async function getActividadesOfUsuario(req, res, db) {
     
         // Comprobamos que el usuario exista en la base de datos
         if (query_doc == null || Object.keys(query_doc.dataValues).length == 0) {
-            res.status(404).send('Usuario no encontrado');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Usuario no encontrado';
+            return next(err);
         }
     
         let respuesta = { actividades: [] };
@@ -52,19 +56,23 @@ async function getActividadesOfUsuario(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();    
 }
 
-async function getActividadesOfEspacio(req, res, db) {
+async function getActividadesOfEspacio(req, res, next, db) {
     let idEspacio = Number(req.params.idEspacio);
     if (!Number.isInteger(idEspacio)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -79,9 +87,11 @@ async function getActividadesOfEspacio(req, res, db) {
 
         // Comprobamos que el espacio exista en la base de datos
         if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
-            res.status(404).send('Espacio no encontrado');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 500;
+            err.message = 'Espacio no encontrado';
+            return next(err);
         }
     
         let respuesta = { actividades: [] };
@@ -111,19 +121,23 @@ async function getActividadesOfEspacio(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();
 }
 
-async function getActividadesOfClase(req, res, db) {
+async function getActividadesOfClase(req, res, next, db) {
     let idClase = Number(req.params.idClase);
-    if (!Number.isInteger(idClase)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+    if (!Number.isInteger(idClase)) { 
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -136,11 +150,13 @@ async function getActividadesOfClase(req, res, db) {
             }
         });
 
-        // Comprobamos que el espacio exista en la base de datos
+        // Comprobamos que la clase exista en la base de datos
         if (query_cla == null || Object.keys(query_cla.dataValues).length == 0) {
-            res.status(404).send('Clase no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Clase no encontrada';
+            return next(err);
         }
     
         let respuesta = { actividades: [] };
@@ -170,19 +186,23 @@ async function getActividadesOfClase(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();
 }
 
-async function getActividadById(req, res, db) {
+async function getActividadById(req, res, next, db) {
     let idActividad = Number(req.params.idActividad);
     if (!Number.isInteger(idActividad)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 404;
+        err.message = 'Espacio no encontrado';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -202,9 +222,11 @@ async function getActividadById(req, res, db) {
         });
 
         if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
-            res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Actividad no encontrada';
+            return next(err);
         }
 
         // Sacamos información no necesaria
@@ -225,9 +247,11 @@ async function getActividadById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit();    

@@ -1,10 +1,12 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
 
-async function getClaseById(req, res, db) {
+async function getClaseById(req, res, next, db) {
     let idClase = Number(req.params.idClase);
     if (!Number.isInteger(idClase)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -19,9 +21,11 @@ async function getClaseById(req, res, db) {
         });
 
         if (query_cla == null || Object.keys(query_cla.dataValues).length == 0) {
-            res.status(404).send('Clase no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Clase no encontrada';
+            return next(err);
         }
 
         const resultado = query_cla.dataValues;
@@ -31,21 +35,25 @@ async function getClaseById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit();
 }
 
-async function getClaseOfAsignaturaGrupo(req, res, db) {
+async function getClaseOfAsignaturaGrupo(req, res, next, db) {
     let asignatura_id = Number(req.body.asignatura_id);
     let grupo_id = Number(req.body.grupo_id);
 
     if (!Number.isInteger(asignatura_id) || !Number.isInteger(grupo_id)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -58,6 +66,15 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
             }
         });
 
+        // Comprobamos que la asignatura exista en la base de datos
+        if (query_asig == null || Object.keys(query_asig.dataValues).length == 0) {
+            await transaction.rollback();
+            let err = {};
+            err.status = 404;
+            err.message = 'Asignatura no encontrada';
+            return next(err);
+        }
+
         const query_gr = await db.sequelize.models.Grupo.findOne({
             attributes:['id'],
             where: {
@@ -65,11 +82,13 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
             }
         });
 
-        // Comprobamos que la asignatura y el grupo existan en la base de datos
-        if (query_asig == null || Object.keys(query_asig.dataValues).length == 0 || query_gr == null || Object.keys(query_gr.dataValues).length == 0) {
-            res.status(404).send('Clase no encontrada');
+        // Comprobamos que el grupo exista en la base de datos
+        if (query_gr == null || Object.keys(query_gr.dataValues).length == 0) {
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Grupo no encontrado';
+            return next(err);
         }
     
         logger.info('Searching in Clase for id');
@@ -83,9 +102,11 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
                
         //Si no se ha encontrado la clase
         if (query_cla.length == 0) {
-            res.status(404).send('Clase no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Clase no encontrada';
+            return next(err);
         }
         
         let respuesta = { id: query_cla.id };
@@ -96,9 +117,11 @@ async function getClaseOfAsignaturaGrupo(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();

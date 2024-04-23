@@ -61,11 +61,43 @@ async function createUser(req, res) {
     creador: req.session.user.id
   }
 
-  await messaging.sendToApiJSON(resultado, '/usuarios', res, false);
-  res.render('exito', {mensaje: 'Usuario creado con éxito'});
+  try {
+    await messaging.sendToApiJSON(resultado, '/usuarios', res, false);
+    res.render('exito', {mensaje: 'Usuario creado con éxito'});
+  }
+  catch (error) {
+    logger.error(`ERROR: ${error}`);
+    throw error;
+  }
 
 }
 
+async function assignMAC(req, res) {
+
+  let mac_regex = /^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/
+
+  for (mac in req.body) {
+    if (req.body[mac] != null && mac_regex.test(req.body[mac])) {
+      await messaging.sendToApiJSON({ mac: req.body[mac] }, `/usuarios/macs/${req.session.user.id}`, res, true);
+    }
+  }
+
+  res.render('exito', {mensaje: "Registro de MAC completado exitosamente"});
+}
+
+async function assignNFC(req, res) {
+
+  let nfc_regex = /^\d+$/
+
+  for (uid in req.body) {
+    if (req.body[uid] != null && nfc_regex.test(req.body[uid])) {
+      await messaging.sendToApiJSON({ nfc: req.body[uid] }, `/usuarios/nfcs/${req.session.user.id}`, res, true);
+    }
+  }
+
+  res.render('exito', {mensaje: 'Registro de UID de NFC completado exitosamente'});
+}
+
 module.exports = {
-  login, logout, createUser
+  login, logout, createUser, assignMAC, assignNFC
 }

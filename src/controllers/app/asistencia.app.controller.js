@@ -133,7 +133,7 @@ async function justificar(req, res) {
     }
     catch (error) {
         logger.error(error);
-        res.render('error', {error: error});
+        res.render('error', {error: error.error});
     }
 }
 
