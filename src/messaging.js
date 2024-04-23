@@ -30,6 +30,7 @@ async function sendToApiJSON(json, req_path, server_response, omit_error) {
 }).post(json, req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
+            logger.error(`Received status code ${response.status} on a post to ${req_path}`);
             throw response.status
         }
         else {

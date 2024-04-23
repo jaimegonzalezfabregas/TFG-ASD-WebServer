@@ -1,6 +1,7 @@
 require('dotenv').config();
 const pino = require('pino');
-const log_file = process.env.LOG_FILE !== undefined ? process.env.LOG_FILE : 'log.txt';
+const now = new Date();
+const log_file = process.env.LOG_FILE || `${now.getFullYear()}${now.getMonth()}${now.getDate()}_log.txt`;
 const log_path = process.env.LOG_PATH || 'logs'
 
 let transport = {

@@ -1,13 +1,16 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
+const authenticator = require('../../config/authenticator.config');
 
+const csv = require('csv-parser');
+const path = require('path');
+const fs = require('fs');
 const { Op } = require("sequelize");
-const { authenticator } = require('otplib');
 const moment = require('moment');
 const recurrence_tool = require('../../utils/recurrence_tool');
 
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
-async function registroAsistencia(req, res, db) {
+async function registroAsistencia(req, res, next, db) {
 
     logger.info(`Asistencia a registrar con datos: ${JSON.stringify(req.body)}`);
 
@@ -30,9 +33,11 @@ async function registroAsistencia(req, res, db) {
                         })
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Usuario no encontrado';
+                            return next(err);
                         }
                         
                         (req.body.estado == valoresAsistencia[0]) ? code = 1 : code = 2
@@ -49,14 +54,18 @@ async function registroAsistencia(req, res, db) {
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
-                        res.status(500).send('Something went wrong');
                         await transaction.rollback();
-                        return;
+                        let err = {};
+                        err.status = 500;
+                        err.message = 'Something went wrong';
+                        return next(err);
                     }
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
-                    return;
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);  
                 }
             break;
             case "RegistroSeguimientoUsuario": // Método registro a través del formulario (es necesario el totp)
@@ -74,9 +83,11 @@ async function registroAsistencia(req, res, db) {
                         });
 
                         if (query_disp.length == 0) {
-                            res.status(404).send('Dispositivo no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Dispositivo no encontrado';
+                            return next(err);
                         }
 
                         logger.info('Searching in Docente for id');
@@ -88,13 +99,14 @@ async function registroAsistencia(req, res, db) {
                         })
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Usuario no encontrado';
+                            return next(err);
                         }
 
                         let valid = false;
-                        authenticator.options = { digits: 6, step: 60, window: [10, 0] };
                         query_disp.forEach(async (disp) => {
                             if (authenticator.verify({token: req.body.totp, secret: disp.dataValues.secret})) {
                                 valid = true;
@@ -102,9 +114,11 @@ async function registroAsistencia(req, res, db) {
                         });
 
                         if (!valid) {
-                            res.status(422).send('Datos no válidos');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 422;
+                            err.message = 'Datos no válidos';
+                            return next(err);  
                         }
 
                         (req.body.estado == valoresAsistencia[0]) ? code = 1 : code = 2
@@ -120,14 +134,18 @@ async function registroAsistencia(req, res, db) {
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
-                        res.status(500).send('Something went wrong');
                         await transaction.rollback();
-                        return;
+                        let err = {};
+                        err.status = 500;
+                        err.message = 'Something went wrong';
+                        return next(err);
                     }
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
-                    return;
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);  
                 }
             break;
             case "RegistroSeguimientoDispositivoBle": // caso de registro por bluetooth
@@ -145,9 +163,11 @@ async function registroAsistencia(req, res, db) {
                         });
                                 
                         if (query_disp == null || Object.keys(query_disp.dataValues).length == 0) {
-                            res.status(404).send('Dispositivo no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Dispositivo no encontrado';
+                            return next(err);
                         }
 
                         logger.info('Searching in Docente for id');
@@ -163,9 +183,11 @@ async function registroAsistencia(req, res, db) {
                         });
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Usuario no encontrado';
+                            return next(err);
                         }
 
                         logger.info(`Docente de la MAC ${query_user}`);
@@ -197,14 +219,18 @@ async function registroAsistencia(req, res, db) {
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
-                        res.status(500).send('Something went wrong');
                         await transaction.rollback();
-                        return;
+                        let err = {};
+                        err.status = 500;
+                        err.message = 'Something went wrong';
+                        return next(err);
                     }
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
-                    return;
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);  
                 }
             break;
             case "RegistroSeguimientoDispositivoNFC": // caso de registro por lectura de nfc
@@ -222,9 +248,11 @@ async function registroAsistencia(req, res, db) {
                         });
 
                         if (query_disp.length == 0) {
-                            res.status(404).send('Dispositivo no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Dispositivo no encontrado';
+                            return next(err);
                         }
 
                         logger.info('Searching in Docente for id');
@@ -240,9 +268,11 @@ async function registroAsistencia(req, res, db) {
                         });
                         
                         if (query_user == null || Object.keys(query_user.dataValues).length == 0) {
-                            res.status(404).send('Usuario no encontrado');
                             await transaction.rollback();
-                            return;
+                            let err = {};
+                            err.status = 404;
+                            err.message = 'Usuario no encontrado';
+                            return next(err);
                         }
                         
                         let checkEstado = await checkEstadoAsistencia(db, res, query_user.dataValues.id, req.body.espacioId);
@@ -259,16 +289,25 @@ async function registroAsistencia(req, res, db) {
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
-                        res.status(500).send('Something went wrong');
                         await transaction.rollback();
-                        return;
+                        let err = {};
+                        err.status = 500;
+                        err.message = 'Something went wrong';
+                        return next(err);
                     }
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
-                    return;
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);  
                 }
             break;
+            default:
+                let err = {};
+                err.status = 422;
+                err.message = 'Datos no válidos';
+                return next(err);  
         }
      
         res.setHeader('Content-Type', 'application/json');
@@ -276,19 +315,24 @@ async function registroAsistencia(req, res, db) {
         //res.status(200).send({ resultado: 'correcto' });
     }
     else {
-        res.status(422).send('Datos no válidos');
-        return;
+        let err = {};
+        err.status = 422;
+        err.message = 'Datos no válidos';
+        return next(err);  
     }    
 }
 
-async function getMacsBLE(req, res, db) {
+async function getMacsBLE(req, res, next, db) {
+
     if (Object.keys(req.body).length > 0 && req.body.espacioId != null) {
         try {
             espId = parseInt(req.body.espacioId);
         }
         catch {
-            res.status(400).send("Id suministrado no válido");
-            return;
+            let err = {};
+            err.status = 400;
+            err.message = 'Id suministrado no válido';
+            return next(err);
         }
 
         const comienzo = (req.body.comienzo == null)? moment().subtract(30, 'minutes').utc() : moment(req.body.comienzo, 'HH:mmZ').utc();
@@ -307,9 +351,11 @@ async function getMacsBLE(req, res, db) {
 
             // Comprobamos que el espacio exista en la base de datos
             if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
-                res.status(404).send('Espacio no encontrado');
                 await transaction.rollback();
-                return;
+                let err = {};
+                err.status = 404;
+                err.message = 'Espacio no encontrado';
+                return next(err);
             }
         
             let respuesta = { macs: [] };
@@ -335,7 +381,9 @@ async function getMacsBLE(req, res, db) {
                     if ((moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= comienzo.format('HH:mm') 
                         && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  >= comienzo.format('HH:mm')) 
                         || (moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= fin.format('HH:mm') 
-                        && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  >= fin.format('HH:mm'))) {
+                        && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  >= fin.format('HH:mm'))
+                        || (moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') >= comienzo.format('HH:mm') 
+                        && moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')  <= fin.format('HH:mm'))) {
                             
                         let cancelada = false;
                         
@@ -415,24 +463,28 @@ async function getMacsBLE(req, res, db) {
                     let docentes = [];
                     query_doc.forEach((doc) => {
                         docentes.push(doc.dataValues.id);
-                    })
-
-                    const query_macs = await db.sequelize.models.Macs.findAll({
-                        attributes: ['usuario_id', 'mac'],
-                        include: {
-                            model: db.sequelize.models.Docente,
-                            as: 'asociado_a',
-                            where: {
-                                id: { [Op.or]: docentes }
-                            }
-                        }
                     });
 
-                    // Si tiene MACs
-                    if (query_macs.length != 0) {
-                        query_macs.forEach((mac) => {
-                            respuesta.macs.push(mac.dataValues.mac);
+                    if (docentes.length > 0) {
+
+                        const query_macs = await db.sequelize.models.Macs.findAll({
+                            attributes: ['usuario_id', 'mac'],
+                            include: {
+                                model: db.sequelize.models.Docente,
+                                as: 'asociado_a',
+                                where: {
+                                    id: { [Op.or]: docentes }
+                                }
+                            }
                         });
+
+                        // Si tiene MACs
+                        if (query_macs.length != 0) {
+                            query_macs.forEach((mac) => {
+                                respuesta.macs.push(mac.dataValues.mac);
+                            });
+                        }
+
                     }
                 }
             }
@@ -443,19 +495,24 @@ async function getMacsBLE(req, res, db) {
         }
         catch (error) {
             logger.error(`Error while interacting with database: ${error}`);
-            res.status(500).send('Something went wrong');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 500;
+            err.message = 'Something went wrong';
+            return next(err);
         }
             
         await transaction.commit();
     }
     else {
-        res.status(422).send("Datos no válidos");
+        let err = {};
+        err.status = 422;
+        err.message = 'Datos no válidos';
+        return next(err);  
     }
 }
 
-async function getAsistencias(req, res, db) {
+async function getAsistencias(req, res, next, db) {
 
     filtroEstado = req.body.estado || null;
     filtroMotivo = req.body.motivo || null;
@@ -493,19 +550,23 @@ async function getAsistencias(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }    
     
     await transaction.commit();
 }
 
-async function getAsistenciaById(req, res, db) {
+async function getAsistenciaById(req, res, next, db) {
     let idAsistencia = Number(req.params.idAsistencia);
     if (!Number.isInteger(idAsistencia)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -520,15 +581,17 @@ async function getAsistenciaById(req, res, db) {
         });
 
         if (query_asist == null || Object.keys(query_asist.dataValues).length == 0) {
-            res.status(404).send('Asistencia no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Asistencia no encontrada';
+            return next(err);
         }
 
         const resultado = { 
             id: query_asist.id, fecha: query_asist.fecha,
             motivo: query_asist.motivo, docenteId: query_asist.docente_id,
-            espacioId: query_asist.espacio_id, query_asist: query_asist.estado
+            espacioId: query_asist.espacio_id, estado: query_asist.estado
         };
 
         res.setHeader('Content-Type', 'application/json');
@@ -536,25 +599,31 @@ async function getAsistenciaById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit(); 
 }
 
-async function updateAsistenciaById(req, res, db) {
+async function updateAsistenciaById(req, res, next, db) {
 
     let idAsistencia = Number(req.params.idAsistencia);
     if (!Number.isInteger(idAsistencia)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     if (req.body.estado != null && !valoresAsistencia.includes(req.body.estado)) {
-        res.status(422).send('Datos no válidos');
-        return;
+        let err = {};
+        err.status = 422;
+        err.message = 'Datos no válidos';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -569,9 +638,11 @@ async function updateAsistenciaById(req, res, db) {
         });
 
         if (query_asist == null || Object.keys(query_asist.dataValues).length == 0) {
-            res.status(404).send('Asistencia no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Asistencia no encontrada';
+            return next(err);
         }
 
         let update_data = {};
@@ -597,13 +668,16 @@ async function updateAsistenciaById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
       
     await transaction.commit(); 
 }
+
 
 module.exports = {
     registroAsistencia, getMacsBLE, getAsistencias, getAsistenciaById, updateAsistenciaById

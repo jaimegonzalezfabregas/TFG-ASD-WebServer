@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const moment = require('moment');
 const { isInRecurrencia } = require("../../utils/recurrence_tool");
 
-async function getEspacios(req, res, db) {
+async function getEspacios(req, res, next, db) {
     const transaction = await db.sequelize.transaction();
     
     try {
@@ -25,15 +25,25 @@ async function getEspacios(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();
 }
 
-async function getEspacioById(req, res, db) {
+async function getEspacioById(req, res, next, db) {
+    let idEspacio = Number(req.params.idEspacio);
+    if (!Number.isInteger(idEspacio)) {
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
+    }
+
     const transaction = await db.sequelize.transaction();
     
     try {
@@ -41,10 +51,19 @@ async function getEspacioById(req, res, db) {
         const query = await db.sequelize.models.Espacio.findOne({
             attributes:['id', 'creadoPor', 'actualizadoPor', 'creadoEn', 'actualizadoEn', 'edificio', 'tipo', 'numero'],
             where: {
-                id: req.params.idEspacio
+                id: idEspacio
             }
         });
 
+        // Comprobamos que el usuario exista en la base de datos
+        if (query == null || Object.keys(query.dataValues).length == 0) {
+            await transaction.rollback();
+            let err = {};
+            err.status = 404;
+            err.message = 'Espacio no encontrado';
+            return next(err);
+        }
+        
         const respuesta = {
             id: query.id,
             creadoEn: query.creadoEn,
@@ -61,19 +80,23 @@ async function getEspacioById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();
 }
 
-async function getEspaciosOfUsuario(req, res, db) {
+async function getEspaciosOfUsuario(req, res, next, db) {
     let idUsuario = Number(req.params.idUsuario);
-    if (!Number.isInteger(idUsuario)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+    if (!Number.isInteger(idUsuario)) {           
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
     
     const transaction = await db.sequelize.transaction();
@@ -83,15 +106,17 @@ async function getEspaciosOfUsuario(req, res, db) {
         const query_doc = await db.sequelize.models.Docente.findOne({
             attributes:['id'],
             where: {
-                id: req.params.idUsuario
+                id: idUsuario
             }
-        })
+        });
 
         // Comprobamos que el usuario exista en la base de datos
         if (query_doc == null || Object.keys(query_doc.dataValues).length == 0) {
-            res.status(404).send('Usuario no encontrado');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Usuario no encontrado';
+            return next(err);
         }
 
         let respuesta = { espacios: [] };
@@ -355,8 +380,11 @@ async function getEspaciosOfUsuario(req, res, db) {
                 
             break;
             default:
-                res.status(422).send('Datos no válidos');
-                return;
+                await transaction.rollback();
+                let err = {};
+                err.status = 422;
+                err.message = 'Datos no válidos';
+                return next(err);
         }
 
         res.setHeader('Content-Type', 'application/json');
@@ -365,19 +393,23 @@ async function getEspaciosOfUsuario(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();
 }
 
-async function getEspacioOfActividad(req, res, db) {
+async function getEspacioOfActividad(req, res, next, db) {
     let idActividad = Number(req.params.idActividad);
     if (!Number.isInteger(idActividad)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -389,11 +421,13 @@ async function getEspacioOfActividad(req, res, db) {
             }
         });
     
-        // Comprobamos que el usuario exista en la base de datos
-        if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
-            res.status(404).send('Actividad no encontrada');
+        // Comprobamos que la actividad exista en la base de datos
+        if (query_act == null || Object.keys(query_act.dataValues).length == 0) {            
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Actividad no encontrada';
+            return next(err);
         }
     
         const query_act_esp = await db.sequelize.models.Espacio.findAll({
@@ -420,9 +454,11 @@ async function getEspacioOfActividad(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
 

@@ -37,13 +37,13 @@ async function noAsistenciar() {
                 if (exists && ultima_actividad.utc().format('DD-MM-YYYY') == current_date.format('DD-MM-YYYY')) {
                     actividades_del_dia.push({
                         id: act.dataValues.id,
-                        inicio: ultima_actividad.format('YYYY-MM-DD HH:mm:00'), 
-                        fin: recurrence_tool.getFinActividad(ultima_actividad, moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')).format('YYYY-MM-DD HH:mm:00')
+                        inicio: ultima_actividad.format('YYYY-MM-DD HH:mm:00[Z]'), 
+                        fin: recurrence_tool.getFinActividad(ultima_actividad, moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')).format('YYYY-MM-DD HH:mm:00[Z]')
                     });
                 }
             }
             else if (act.dataValues.fecha_fin && act.dataValues.fecha_fin.includes(current_date.format('DD-MM-YYYY'))) { // Termina en el día
-                actividades_del_dia.push({id: act.dataValues.id, inicio: act.dataValues.fecha_inicio, fin: act.dataValues.fecha_fin});
+                actividades_del_dia.push({id: act.dataValues.id, inicio: act.dataValues.fecha_inicio + 'Z', fin: act.dataValues.fecha_fin + 'Z'});
             }
         };
 
@@ -60,8 +60,6 @@ async function noAsistenciar() {
         reprogramaciones.forEach((rep => {
             actividades_del_dia.push({id: rep.dataValues.actividad_id, inicio: rep.dataValues.fecha_inicio_ex + 'Z', fin: rep.dataValues.fecha_fin_ex + 'Z'});
         }));
-
-        console.log(actividades_del_dia);
 
         for(let i = 0; i < actividades_del_dia.length; i++) {
             // El responsable de la actividad da clase en ella, así que está en la relación imparte

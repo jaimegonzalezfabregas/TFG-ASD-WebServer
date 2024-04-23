@@ -2,17 +2,20 @@ const logger = require('../../config/logger.config').child({"process": "api"});
 const recurrence_tool = require('../../utils/recurrence_tool');
 const moment = require('moment');
 
-async function createExcepcion(req, res, db) {
+async function createExcepcion(req, res, next, db) {
     let actividadId = Number(req.body.actividad_id);
     if (!Number.isInteger(actividadId)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     if (req.body.esta_cancelado == null && req.body.esta_reprogramado == null) {
-        res.status(422).send('Datos no válidos');
-        await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 422;
+        err.message = 'Datos no válidos';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -28,9 +31,11 @@ async function createExcepcion(req, res, db) {
     
         // Comprobamos que la actividad exista en la base de datos
         if (query_act == null || Object.keys(query_act.dataValues).length == 0) {
-            res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Actividad no encontrada';
+            return next(err);
         }
 
         const query_ex = await db.sequelize.models.Excepcion.findAll({
@@ -83,9 +88,11 @@ async function createExcepcion(req, res, db) {
                     });
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
                     await transaction.rollback();
-                    return;    
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);    
                 }
                 
             }
@@ -141,9 +148,11 @@ async function createExcepcion(req, res, db) {
                     });
                 }
                 else {
-                    res.status(422).send('Datos no válidos');
                     await transaction.rollback();
-                    return;    
+                    let err = {};
+                    err.status = 422;
+                    err.message = 'Datos no válidos';
+                    return next(err);   
                 }
             }
         }
@@ -154,19 +163,23 @@ async function createExcepcion(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit();   
 }
 
-async function getExcepcionById(req, res, db) {
+async function getExcepcionById(req, res, next, db) {
     let excepcionId = Number(req.params.idExcepcion);
     if (!Number.isInteger(excepcionId)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -180,9 +193,11 @@ async function getExcepcionById(req, res, db) {
     
         // Comprobamos que la actividad exista en la base de datos
         if (query_ex == null || Object.keys(query_ex.dataValues).length == 0) {
-            res.status(404).send('Excepcion no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Excepción no encontrada';
+            return next(err);
         }
 
         let respuesta = {
@@ -201,19 +216,23 @@ async function getExcepcionById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();
 }
 
-async function getExcepcionesOfActividad(req, res, db) {
+async function getExcepcionesOfActividad(req, res, next, db) {
     let idActividad = Number(req.params.idActividad);
     if (!Number.isInteger(idActividad)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -228,9 +247,11 @@ async function getExcepcionesOfActividad(req, res, db) {
 
         // Comprobamos que la actividad exista en la base de datos
         if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
-            res.status(404).send('Actividad no encontrada');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Actividad no encontrada';
+            return next(err);
         }
     
         let respuesta = { excepciones: [] };
@@ -260,9 +281,11 @@ async function getExcepcionesOfActividad(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
     
     await transaction.commit()
@@ -274,7 +297,7 @@ module.exports = {
 
 // Comprueba que exista una actividad en la fecha pasada en req
 async function verifyActividad(db, fecha_inicio_act, query_act, actividadId) {
-    let fecha = moment(query_act.dataValues.fecha_inicio + 'Z').format('YYYY-MM-DD');
+    let fecha = moment(fecha_inicio_act + 'Z').format('YYYY-MM-DD');
     let mmt_inicio = moment(fecha + 'T' + query_act.dataValues.tiempo_inicio, 'YYYY-MM-DDTHH:mm').utc();
 
     if (query_act.dataValues.es_recurrente == 'Sí') {
@@ -292,7 +315,7 @@ async function verifyActividad(db, fecha_inicio_act, query_act, actividadId) {
             let recurrencia = recurrencias_actividad[k].dataValues;
             
             // Si una recurrencia encaja con la fecha de la asistencia, tenemos lo que buscamos, nos saltamos el resto
-            if (recurrence_tool.isInRecurrencia(query_act.dataValues, recurrencia,  moment(fecha_inicio_act + 'Z', 'YYYY-MM-DD HH:mm:00Z').format('YYYY-MM-DD[T]HH:mm'))) {
+            if (recurrence_tool.isInRecurrencia(query_act.dataValues, recurrencia,  moment(fecha_inicio_act + 'Z', 'YYYY-MM-DD HH:mm:00Z').utc().format('YYYY-MM-DD[T]HH:mm'))) {
                 return true;
             }
         }

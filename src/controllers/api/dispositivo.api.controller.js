@@ -3,7 +3,7 @@ const logger = require('../../config/logger.config').child({"process": "api"});
 const moment = require('moment');
 const { authenticator } = require('otplib');
 
-async function getDispositivos(req, res, db) {
+async function getDispositivos(req, res, next, db) {
 
     const transaction = await db.sequelize.transaction();
     
@@ -23,20 +23,24 @@ async function getDispositivos(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();    
 }
 
-async function creaDispositivo(req, res, db, api_config) {
+async function creaDispositivo(req, res, next, db, api_config) {
     if (req.body != null && Object.keys(req.body).length == 3 && req.body.nombre != null && req.body.espacioId != null && req.body.idExternoDispositivo != null) {
 
         if (!Number.isInteger(req.body.espacioId) || typeof req.body.nombre != 'string' || typeof req.body.idExternoDispositivo != 'string') {
-            res.status(422).send('Datos no válidos');
-            return;
+            let err = {};
+            err.status = 422;
+            err.message = 'Datos no válidos';
+            return next(err);
         }
         
         const transaction = await db.sequelize.transaction();
@@ -92,24 +96,31 @@ async function creaDispositivo(req, res, db, api_config) {
         }
         catch (error) {
             logger.error(`Error while interacting with database: ${error}`);
-            res.status(500).send('Something went wrong');
             await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 500;
+            err.message = 'Something went wrong';
+            return next(err);
         }
 
         await transaction.commit();
     } 
     else {
-        res.status(422).send('Datos no válidos');
+        let err = {};
+        err.status = 422;
+        err.message = 'Datos no válidos';
+        return next(err);
     }    
 }
 
-async function getDispositivoById(req, res, db) {
+async function getDispositivoById(req, res, next, db) {
 
     let idDispositivo = Number(req.params.idDispositivo);
     if (!Number.isInteger(idDispositivo)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
         
     const transaction = await db.sequelize.transaction();
@@ -124,9 +135,10 @@ async function getDispositivoById(req, res, db) {
         });
 
         if (query == null || Object.keys(query.dataValues).length == 0) {
-            res.status(404).send('Dispositivo no encontrado');
-            await transaction.rollback();
-            return;
+            let err = {};
+            err.status = 404;
+            err.message = 'Dispositivo no encontrado';
+            return next(err);
         }
             
         res.setHeader('Content-Type', 'application/json');
@@ -134,20 +146,24 @@ async function getDispositivoById(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }                                                                                                                                                                   
         
     await transaction.commit();   
 }
 
-async function deleteDispositivo(req, res, db) {
+async function deleteDispositivo(req, res, next, db) {
     
     let idDispositivo = Number(req.params.idDispositivo);
     if (!Number.isInteger(idDispositivo)) {
-        res.status(400).send('Id suministrado no válido');
-        return;
+        let err = {};
+        err.status = 400;
+        err.message = 'Id suministrado no válido';
+        return next(err);
     }
 
     const transaction = await db.sequelize.transaction();
@@ -162,9 +178,12 @@ async function deleteDispositivo(req, res, db) {
         });
                     
         if (query == null || Object.keys(query.dataValues).length == 0) {
-            res.status(404).send('Dispositivo no encontrado');
-            await transaction.rollback();
-            return;
+            
+        await transaction.rollback();
+        let err = {};
+        err.status = 404;
+        err.message = 'Dispositivo no encontrado';
+        return next(err);
         }
             
         await db.sequelize.models.Dispositivo.destroy({
@@ -177,15 +196,17 @@ async function deleteDispositivo(req, res, db) {
     }
     catch (error) {
         logger.error(`Error while interacting with database: ${error}`);
-        res.status(500).send('Something went wrong');
         await transaction.rollback();
-        return;
+        let err = {};
+        err.status = 500;
+        err.message = 'Something went wrong';
+        return next(err);
     }
 
     await transaction.commit();    
 }
 
-async function getLocalTime(req, res, db) {
+async function getLocalTime(req, res, next, db) {
     
     const resultado = {
         epoch: Math.floor(new Date().getTime() / 1000)
