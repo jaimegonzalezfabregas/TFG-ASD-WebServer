@@ -26,7 +26,11 @@
                                         <p class="text-error text-center"> <%= error %> </p>
                                     </div>
                                     <div class="card-body">
+                                        <% if (typeof redirect != 'undefined') { %>
+                                        <a href="<%= redirect %>" class="btn btn-primary text-center">Volver</a>
+                                        <% } else { %>
                                         <a href="/" class="btn btn-primary text-center">Volver a la página principal</a>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>

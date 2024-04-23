@@ -52,6 +52,18 @@
                                     <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
+                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
+                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                Gestión de Dispositivos
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                <nav class="sb-sidenav-menu-nested nav">
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                    <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
+                                    <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
+                                </nav>
+                            </div>
                             <% if (usuario.rol == 'Decanato') { %>
                                 <!-- <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>

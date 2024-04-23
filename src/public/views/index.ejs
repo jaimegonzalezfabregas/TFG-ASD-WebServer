@@ -52,6 +52,18 @@
                                     <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
                                 </nav>
                             </div>
+                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
+                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                Gestión de Dispositivos
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                <nav class="sb-sidenav-menu-nested nav">
+                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                    <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
+                                    <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
+                                </nav>
+                            </div>
                             <% if (usuario.rol == 'Decanato') { %>
                                 <!-- <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
@@ -120,6 +132,22 @@
                                     <div class="row justify-content-center"><i class="py-2 fas fa-user-clock link-icon d-none d-md-block"></i></div>
                                     <div class="justify-content-center"> 
                                         <p class="btn-text"> Registrar motivo de falta </p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-menu align-items-middle" href="registro-mac">
+                                    <div class="row justify-content-center"><i class="py-2 fab fa-bluetooth-b link-icon d-none d-md-block"></i></div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Registrar MACs </p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                <a class="btn btn-primary btn-menu align-items-middle" href="registro-nfc">
+                                    <div class="row justify-content-center"><i class="py-2 fab fa-nfc-symbol link-icon d-none d-md-block"></i></div>
+                                    <div class="justify-content-center"> 
+                                        <p class="btn-text"> Registrar UIDs de NFC </p>
                                     </div>
                                 </a>
                             </div>
