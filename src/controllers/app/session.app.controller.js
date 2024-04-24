@@ -16,7 +16,7 @@ async function login(req, res) {
     usuario = await (messaging.sendToApiJSON(data, '/login', res, false));
   }
   catch (error) {
-    logger.error(`ERROR: ${error}`);
+    logger.error(error);
     res.render('login', { usuario: req.body.usuario, error: 'Usuario o contraseña incorrectos' });
     return;
   }
@@ -66,7 +66,7 @@ async function createUser(req, res) {
     res.render('exito', {mensaje: 'Usuario creado con éxito'});
   }
   catch (error) {
-    logger.error(`ERROR: ${error}`);
+    logger.error(error);
     throw error;
   }
 
@@ -78,7 +78,13 @@ async function assignMAC(req, res) {
 
   for (mac in req.body) {
     if (req.body[mac] != null && mac_regex.test(req.body[mac])) {
-      await messaging.sendToApiJSON({ mac: req.body[mac] }, `/usuarios/macs/${req.session.user.id}`, res, true);
+      try {
+        await messaging.sendToApiJSON({ mac: req.body[mac] }, `/usuarios/macs/${req.session.user.id}`, res, true);
+      }
+      catch (error) {
+        logger.error(error);
+        throw error;
+      }
     }
   }
 
@@ -91,7 +97,13 @@ async function assignNFC(req, res) {
 
   for (uid in req.body) {
     if (req.body[uid] != null && nfc_regex.test(req.body[uid])) {
-      await messaging.sendToApiJSON({ nfc: req.body[uid] }, `/usuarios/nfcs/${req.session.user.id}`, res, true);
+      try {
+        await messaging.sendToApiJSON({ uid: req.body[uid] }, `/usuarios/nfcs/${req.session.user.id}`, res, true);
+      }
+      catch (error) {
+        logger.error(error);
+        throw error;
+      }
     }
   }
 
