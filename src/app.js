@@ -175,7 +175,6 @@ app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkCl
 });
 
 app.get('/registro-mac', [checkSesion, middleware.request_security.escapeRequest], async (req, res) => {
-  
   logger.info('Got a GET in registrar-macs');
   res.render('registro-mac', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
@@ -187,13 +186,12 @@ app.post('/registro-mac', [checkSesion, middleware.request_security.escapeReques
     await app_controllers.session.assignMAC(req, res);
   }
   catch (error) {
-    res.render('registro-mac', {error: error, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+    res.render('registro-mac', {error: JSON.parse(error.message), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
 });
 
 app.get('/registro-nfc', [checkSesion, middleware.request_security.escapeRequest], async (req, res) => {
-  
   logger.info('Got a GET in registrar-macs');
   res.render('registro-nfc', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
@@ -206,7 +204,7 @@ app.post('/registro-nfc', [checkSesion, middleware.request_security.escapeReques
     await app_controllers.session.assignNFC(req, res);
   }
   catch (error) {
-    res.render('registro-nfc', {error: error, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+    res.render('registro-nfc', {error: JSON.parse(error.message), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
 });
