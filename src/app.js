@@ -228,6 +228,11 @@ app.post('/registro-nfc', [checkSesion, middleware.cookie_mantainer.keepCookies(
   }
 });
 
+app.get('/profesores-infracciones', [checkSesion, checkClearanceDecanato, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
+  logger.info(`Got a GET in profesores-infracciones`);
+  await app_controllers.asistencia.verProfesoresInfracciones(req, res);
+});
+
 app.listen(server_config.port, () => {
   const port_spec = (server_config.port_spec) ? ':' + server_config.port : ''
   logger.info(`App listening on port ${server_config.port} at ${server_config.protocol}://${server_config.host}${port_spec}`);

@@ -308,6 +308,49 @@ async function verAsistencias(req, res) {
     return resultado;
 }
 
+async function verProfesoresInfracciones(req, res) {
+
+    const data = {estado: 'No Asistida'};
+
+    const asistencias_ids = (await messaging.sendToApiJSON(data, `/seguimiento/asistencias`, res, true)).asistencias;
+    
+    console.log(asistencias_ids);
+
+    let profesores = [];
+    for (let i = 0; i < asistencias_ids.length; i++) {
+        const asistencia_info = await messaging.getFromApi(`/seguimiento/asistencias/${asistencias_ids[i].id}`, res, true);
+        console.log(asistencia_info);
+        const docente_id = asistencia_info.docenteId;
+
+        if (profesores[docente_id] == null) profesores[docente_id] = {};
+
+        if (profesores[docente_id].nombre == null) {
+            const docente_info = await messaging.getFromApi(`/usuarios/${docente_id}`, res, true);
+            profesores[docente_id].nombre = docente_info.nombre + ' ' + docente_info.apellidos;
+        }
+
+        if (profesores[docente_id].totales == null) profesores[docente_id].totales = 0;
+        profesores[docente_id].totales++;
+
+        if (profesores[docente_id].justificadas == null) profesores[docente_id].justificadas = 0;
+        if (asistencia_info.motivo != null) {
+            profesores[docente_id].justificadas++;
+        }
+        
+        if (profesores[docente_id].mes == null) profesores[docente_id].mes = 0;
+        if (moment(asistencia_info.fecha + 'Z', 'YYYY-MM-DD HH:mmZ').format('MM') == moment().format('MM')) {
+            profesores[docente_id].mes++;
+        }
+    }
+
+    const resultado = {
+        usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos},
+        docentes: profesores
+    }
+
+    res.render('profesores-infracciones', resultado);
+}
+
 module.exports = {
-    getAJustificar, justificar, confirmarFirma, filtrarAsistencias, verAsistencias
+    getAJustificar, justificar, confirmarFirma, filtrarAsistencias, verAsistencias, verProfesoresInfracciones
 }
