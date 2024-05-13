@@ -15,7 +15,7 @@
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-menu">
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <a class="navbar-brand ps-3" href="/"> Seguimiento Docente </a>
+            <a class="navbar-brand ps-3 title" href="/"> Seguimiento Docente </a>
             
             <!-- Navbar-->
             <ul class="d-md-inline-block navbar-nav ms-auto me-0 me-md-3 my-2 my-md-0">
@@ -65,11 +65,11 @@
                                 </nav>
                             </div>
                             <% if (usuario.rol == 'Decanato') { %>
-                                <!-- <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
-                                <a class="nav-link text-bg-menu" href="/profesores-infracciones"></a>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
+                                <a class="nav-link text-bg-menu" href="/profesores-infracciones">
                                     <div class="sb-nav-link-icon"><i class="fas fa-file-circle-exclamation"></i></div>
                                     Resumen de faltas
-                                </a> -->
+                                </a>
                             <% } %>
                             <% if (usuario.rol == 'Admin') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Administrador</div>
@@ -77,10 +77,10 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-file-signature"></i></div>
                                     Registrar firmas
                                 </a>
-                                <!-- <a class="nav-link text-bg-menu" href="/verificar-docencias">
+                                <a class="nav-link text-bg-menu" href="/verificar-docencias">
                                     <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
                                     Ver docencias
-                                </a> -->
+                                </a>
                                 <!-- <a class="nav-link text-bg-menu" href="/enviar-avisos">
                                     <div class="sb-nav-link-icon"><i class="fas fa-envelope"></i></div>
                                     Enviar avisos

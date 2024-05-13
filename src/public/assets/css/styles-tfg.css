@@ -49,6 +49,10 @@
     color: #990033;
 }
 
+.below-navbar {
+    padding-top: 56px;
+}
+
 .text-error {
     color: #d60000;
 }
@@ -103,4 +107,49 @@ a:hover {
 
 .select2-container--default .select2-selection--single {
     border: 1px solid #ced4da;
+}
+
+:root {
+  --bs-primary-rgb: 255, 255, 255;
+  --bs-primary: #ffffff;
+}
+
+.btn-primary {
+    --bs-btn-bg: #990033;
+    --bs-btn-border-color: #980032;
+    --bs-btn-hover-bg: #660022;
+    --bs-btn-hover-border-color: #650021;
+    --bs-btn-active-bg: #770025;
+    --bs-btn-active-border-color: #760024;
+    --bs-btn-disabled-bg: #454545;
+    --bs-btn-disabled-border-color: #444444;
+}
+
+.dropdown-menu-end[data-bs-popper] {
+    right: 0;
+}
+
+.card {
+    --bs-card-cap-bg: #990033;
+    --bs-card-cap-color: #fff;
+}
+
+@font-face {
+    font-family: 'Quattrocento'; 
+    src: url(../fonts/QuattrocentoSans-Regular.ttf) format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'QuattrocentoBold'; 
+    src: url(../fonts/QuattrocentoSans-Bold.ttf) format('truetype');
+    font-display: swap;
+}
+
+.title {
+    font-family: 'QuattrocentoBold'; 
+}
+
+* {
+    font-family: 'Quattrocento'; 
 }
