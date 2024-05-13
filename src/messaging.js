@@ -26,8 +26,7 @@ async function getFromApi(req_path, server_response, omit_error) {
 
 async function sendToApiJSON(json, req_path, server_response, omit_error) {
     
-    const postResult = await api.headers({"X-Token": "app:" + api_config.secrets["app"]
-}).post(json, req_path)
+    const postResult = await api.headers({"X-Token": "app:" + api_config.secrets["app"]}).post(json, req_path)
     .error(response => {
         if (!omit_error && response.status >= 400 && response.status < 500) {
             logger.error(`Received status code ${response.status} on a post to ${req_path}`);

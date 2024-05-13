@@ -125,7 +125,7 @@ async function getForm(req, res) {
   //Si no hay ninguna, estamos ante una irregularidad => mostramos todas las del docente en este momento, y las del espacio en este momento
   if (actividades_posibles == 0) {
     irregularidad = true;
-    if (req.session.user.estado == null) req.session.user.estado = valoresAsistencia[1];
+    req.session.user.estado = valoresAsistencia[1];
 
     for (let i = 0; i < actividades_ids_esp.length; i++) {
       if (!actividades_esp_aparicion[i]) {
