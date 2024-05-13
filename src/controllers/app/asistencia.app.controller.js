@@ -1,9 +1,9 @@
+require('dotenv').config();
 const logger = require('../../config/logger.config').child({"process": "server"});
 
 const messaging = require('../../messaging');
 const recurrence_tool = require('../../utils/recurrence_tool');
 const moment = require('moment');
-const getOffsetString = require('../../utils/offset_string');
 
 async function getAJustificar(req, res) {
 
@@ -102,19 +102,6 @@ async function getAJustificar(req, res) {
 
     return resultado;
 }
-
-
-// let recurrencias_ids = (await messaging.getFromApi(`/recurrencias/actividades/${actividad_id.id}`, res, true)).recurrencias;
-// for (let l = 0; l < recurrencias_ids.length; l++) {
-//     let recurrencia_id = recurrencias_ids[l].id;
-//     let recurrencia = await messaging.getFromApi(`/recurrencias/${recurrencia_id}`, res, true);
-//     actividad.fecha_fin = moment.now();
-//     if (isInRecurrencia(actividad, recurrencia, asistencia_info.fecha)) {
-//         resultado.push({fechayhora: asistencia_info.fecha, clase: clase_strings, pos: k});
-//         k++;
-//         req.session.user.no_justificadas.push(asistencia.id);
-//     }
-// }
 
 async function justificar(req, res) {
     let motivo = null;
@@ -266,6 +253,61 @@ async function confirmarFirma(req, res) {
     res.render('registrar-firmas', resultado);
 }
 
+async function verAsistencias(req, res) {
+    
+    const fecha_busqueda = req.body.fecha || moment().format('YYYY-MM-DD');
+    const asistencia_ids = (await messaging.sendToApiJSON({ fecha: fecha_busqueda }, '/seguimiento/asistencias', res, true)).asistencias;
+
+    let asistencias = [];
+    console.log(asistencia_ids);
+
+    for (let i = 0; i < asistencia_ids.length; i++) {
+        const asistencia_info = (await messaging.getFromApi(`/seguimiento/asistencias/${asistencia_ids[i].id}`, res, true));
+        const docente = await messaging.getFromApi(`/usuarios/${asistencia_info.docenteId}`, res, true);
+        const espacio = await messaging.getFromApi(`/espacios/${asistencia_info.espacioId}`, res, true);
+        const actividades_esp = (await messaging.getFromApi(`/actividades/espacios/${asistencia_info.espacioId}`, res, true)).actividades;
+        const actividades_doc = (await messaging.getFromApi(`/actividades/usuarios/${asistencia_info.docenteId}`, res, true)).actividades;
+
+        let actividades_ids = actividades_doc.filter(x => {
+            for(let j = 0; j < actividades_esp.length; j++) {
+              if (x.id == actividades_esp[j].id) {
+                return true;
+              }
+            }
+            return false;
+        });
+
+        for (let j = 0; j < actividades_ids.length; j++) {
+            const actividad_id = actividades_ids[j];
+            const actividad = await messaging.getFromApi(`/actividades/${actividad_id.id}`, res, true);
+            let clase = [];
+
+            for(let k = 0; k < actividad.clase_ids.length; k++) {
+                const clase_info = await messaging.getFromApi(`/clases/${actividad.clase_ids[k].id}`, res, true);
+                const grupo_info = await messaging.getFromApi(`/grupos/${clase_info.grupo_id}`, res, true);
+                const asignatura_info = await messaging.getFromApi(`/asignaturas/${clase_info.asignatura_id}`, res, true);
+
+                clase.push(asignatura_info.nombre + ' ' + grupo_info.curso + 'º' + grupo_info.letra);                
+            }
+
+            asistencias.push({hora: actividad.tiempo_inicio + " - " + actividad.tiempo_fin, 
+                         clase: clase, 
+                         docente: docente.nombre + ' ' + docente.apellidos,
+                         espacio: espacio.nombre + ' ' + espacio.edificio,
+                         estado: asistencia_info.estado,
+                         motivo: asistencia_info.motivo });
+        }
+    }
+
+    let resultado = { 
+        asistencias: asistencias,
+        fecha: fecha_busqueda,
+        fecha_max: moment().format("YYYY-MM-DD")
+    };
+
+    return resultado;
+}
+
 module.exports = {
-    getAJustificar, justificar, confirmarFirma, filtrarAsistencias
+    getAJustificar, justificar, confirmarFirma, filtrarAsistencias, verAsistencias
 }
