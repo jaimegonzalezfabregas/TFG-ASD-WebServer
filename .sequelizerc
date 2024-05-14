@@ -1,7 +1,12 @@
-// Archivo para especificar el fichero config a leer para la configuración de la db
+// Archivo para especificar el fichero config a leer para la configuración de la db, y los seeders a ejecutar según el modo de prueba
+require('dotenv').config();
+const process = require('process');
 
+const env = process.env.NODE_ENV || 'development';
 const path = require('path');
 
 module.exports = {
-    config: path.resolve('src', 'config/db.config.js')
+    config: path.resolve('.', 'src/config/db.config.js'),
+    "seeders-path": (env === 'test') ? path.resolve('.', `seeders/test_cases/${process.env.TEST_CASE}`) : 
+                    (env === 'development') ? path.resolve('.', 'seeders/dev/') : path.resolve('.', 'seeders')
 }
