@@ -6,6 +6,7 @@ const express = require('express');
 const path = require('path');
 const moment = require('moment');
 const session = require('express-session');
+const trustproxy = require('trustproxy');
 const memory_store = require('memorystore')(session);
 const app_controllers =  require('./controllers/app/');
 const middleware = require("./middleware/");
@@ -17,6 +18,7 @@ const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistid
 
 app.set('views', path.join(staticname, '/views'));
 app.set('view engine', 'ejs');
+app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));
 app.use(console_morgan);
 app.use(file_morgan);
 app.use(express.json());

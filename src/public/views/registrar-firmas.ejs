@@ -125,9 +125,10 @@
                                                 <% } %>
                                             <% }); %>
                                         </select>
-                                        <button class="btn btn-primary" type="submit"> Filtrar </button>
+                                        <button class="btn btn-primary" id="filter-button" type="submit"> Filtrar </button>
                                     </form>
                                 </div>
+                                <div class="justify-content-between"  style="display: none;" id="mensaje_carga"> <h5> Cargando datos... </h5> </div>
                                 <table id="datatable" class="w-100">
                                     <thead>
                                         <tr>
@@ -182,6 +183,7 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.2/js/dataTables.js"></script>
         <script src="../assets/js/datatables-demo.min.js"></script>
+        <script src="../assets/js/filtro-firmas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
         <script> 
             $(document).ready(function() {

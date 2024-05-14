@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const fs = require('fs');
 const path = require('path');
 const now = new Date()
-const log_file = process.env.LOG_FILE || `${now.getFullYear()}${now.getMonth()}${now.getDate()}_log.txt`;
+const log_file = process.env.LOG_FILE || `${now.getFullYear()}${now.getMonth()+1}${now.getDate()}_log.txt`;
 const log_path = process.env.LOG_PATH || 'logs'
 
 const log_format = '[:date[iso]] addr :remote-addr user :remote-user | :method at :url | HTTP/:http-version :status :res[content-length] | :response-time ms';

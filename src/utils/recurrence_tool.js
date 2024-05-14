@@ -127,16 +127,18 @@ function fechaFromActividadRecurrencia(act, rec) {
     fecha: String en formato YYYY-MM-DDTHH:mm
 */
 function isInRecurrencia(act, rec, fecha) {
-    let inicio = primeraRecurrencia(act, rec).utc();
+    let inicio = primeraRecurrencia(act, rec);
+
     let separacion = rec.separacion + 1; // Se añade uno para no hacer módulo 0 (da NaN)
     let tipo_rec = recTypeParser[rec.tipo_recurrencia];
-    let a_comparar = moment(fecha + 'Z', 'YYYY-MM-DDTHH:mmZ').utc();
+    let a_comparar = moment(fecha + "Z", 'YYYY-MM-DDTHH:mmZ').utc();
+    let comparar_hora = moment(a_comparar.format('YYYY-MM-DD') + ' ' + inicio.format('HH:mm'), "YYYY-MM-DD HH:mm").utc();
     let [,, diferencia_horas, diferencia_minutos] = getInicioDiferencia(act);
-    let fin = inicio.clone().add(diferencia_horas, 'hours').add(diferencia_minutos, 'minutes').utc();
+    let fin = moment(fecha + "Z", 'YYYY-MM-DDTHH:mmZ').add(diferencia_horas, 'hours').add(diferencia_minutos, 'minutes').utc();
     // Para que esté en la recurrencia, la diferencia entre la primera actividad y esta debe, en la unidad de separación,
     // ser divisible por la separación entre actividades impuesta por la recurrencia
 
-    let aux = (inicio.format("HH:mm") <= a_comparar.format("HH:mm") && a_comparar.format("HH:mm") <= fin.format("HH:mm")); 
+    let aux = (comparar_hora.format("HH:mm") <= a_comparar.format("HH:mm") && a_comparar.format("HH:mm") <= fin.format("HH:mm")); 
     // Descartamos por hora la fecha propuesta
     if (aux == false) return false;
     

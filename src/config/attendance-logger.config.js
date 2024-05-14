@@ -1,7 +1,7 @@
 require('dotenv').config();
 const pino = require('pino');
 const now = new Date();
-const log_file = process.env.ATTENDANCE_LOG_FILE || `${now.getFullYear()}${now.getMonth()}${now.getDate()}_attendance_log.txt`;
+const log_file = process.env.ATTENDANCE_LOG_FILE || `${now.getFullYear()}${now.getMonth()+1}${now.getDate()}_attendance_log.txt`;
 const log_path = process.env.ATTENDANCE_LOG_FILE || 'logs'
 
 let transport = {

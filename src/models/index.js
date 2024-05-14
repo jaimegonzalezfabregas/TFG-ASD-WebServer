@@ -23,7 +23,7 @@ async function connect() {
     logger.info("Connected to database successfully");
   }
   catch (err) {
-    logger.error("Couldn't connect to database");
+    logger.fatal("Couldn't connect to database");
     throw "Couldn't connect to database";
   }
 }

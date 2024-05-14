@@ -39,15 +39,18 @@
 
         const fecha = document.getElementById('date-filter');
         const estado = $('#status-filter').select2();
+        const feedback_carga = document.getElementById('mensaje_carga');
     
         fecha.addEventListener('change', async (fecha_event) => { // Cuando cambia la fecha filtrar por fecha y estado
             tabla.clear();
             // Pedir datos de asistencias de la fecha a app
+            feedback_carga.style.display = "block";
             let new_content = (await endpoint.post({ fecha: fecha.value })
                 .res(async response => { 
                     return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
                 })).asistencias;
             console.log(new_content);
+            feedback_carga.style.display = "none";
             for (let i = 0; i < new_content.length; i++) {
                 let asist = new_content[i];
                 let clases = asist.clase[0];
@@ -60,7 +63,7 @@
             estado.trigger('change');
         });
     
-        estado.on('change', (estado_event) => { // Cuando cambia el estado tiene que cambiar solo por estado, la fecha ya deberÃa estar filtrado
+        estado.on('change', (estado_event) => { // Cuando cambia el estado tiene que cambiar solo por estado, la fecha ya debería estar filtrado
             if (estado.val() == 'Todas') {
                 tabla.search((val, val1) => {
                     return true;

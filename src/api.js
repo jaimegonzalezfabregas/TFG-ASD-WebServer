@@ -3,12 +3,15 @@ const logger = require('./config/logger.config').child({"process": "api"});
 const {console_morgan, file_morgan} = require('./config/morgan.config');
 
 const express = require('express');
+const trustproxy = require('trustproxy');
 const db = require('./models');
 const app = express();
 
 // Controladores de la API
 const api_controllers = require('./controllers/api');
 
+
+app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));
 app.use(console_morgan);
 app.use(file_morgan);
 app.use(express.json());
