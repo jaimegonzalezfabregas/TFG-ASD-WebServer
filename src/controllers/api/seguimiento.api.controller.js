@@ -1,4 +1,5 @@
 const logger = require('../../config/logger.config').child({"process": "api"});
+const attendance_logger = require('../../config/attendance-logger.config');
 const authenticator = require('../../config/authenticator.config');
 
 const csv = require('csv-parser');
@@ -17,16 +18,33 @@ async function registroAsistencia(req, res, next, db) {
     if (Object.keys(req.body).length > 0 && req.body.tipo_registro != null && req.body.espacioId != null && Number.isInteger(req.body.espacioId)) {
 
         let code = 0;
+
+        const transaction = await db.sequelize.transaction();
+
+        logger.info('Searching in Espacio for id');
+        const query_esp = await db.sequelize.models.Espacio.findOne({
+            attributes: ['id', 'tipo', 'numero', 'edificio'],
+            where: {
+                id: req.body.espacioId
+            }
+        })
+                        
+        if (query_esp == null || Object.keys(query_esp.dataValues).length == 0) {
+            await transaction.rollback();
+            let err = {};
+            err.status = 404;
+            err.message = 'Espacio no encontrado';
+            return next(err);
+        }                
+        
         switch (req.body.tipo_registro) {
             case "RegistroSeguimientoFormulario": // Método de registro para administración (registrar firmas)
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId) && req.body.estado != null && valoresAsistencia.includes(req.body.estado)) {
 
-                    const transaction = await db.sequelize.transaction();
-
                     try {
                         logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
-                            attributes: ['id'],
+                            attributes: ['id', 'nombre', 'apellidos'],
                             where: {
                                 id: req.body.usuarioId
                             }
@@ -51,6 +69,9 @@ async function registroAsistencia(req, res, next, db) {
                         });
 
                         await transaction.commit();
+                        attendance_logger.info('Registrada asistencia sin totp de ' + query_user.dataValues.nombre + ' ' + query_user.dataValues.apellidos + 
+                                ' (' + query_user.dataValues.id + ') en ' + query_esp.dataValues.tipo + ' ' + query_esp.dataValues.numero + ' ' + 
+                                query_esp.dataValues.edificio + ' (' + query_esp.dataValues.id + ') con estado ' + req.body.estado);
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
@@ -71,8 +92,6 @@ async function registroAsistencia(req, res, next, db) {
             case "RegistroSeguimientoUsuario": // Método registro a través del formulario (es necesario el totp)
                 if (req.body.usuarioId != null && Number.isInteger(req.body.usuarioId)) {
 
-                    const transaction = await db.sequelize.transaction();
-
                     try {
                         logger.info('Searching in Dispositivo for id');
                         const query_disp = await db.sequelize.models.Dispositivo.findAll({ // Si hay más de un dispositivo por espacio habría que comprobar todos
@@ -92,7 +111,7 @@ async function registroAsistencia(req, res, next, db) {
 
                         logger.info('Searching in Docente for id');
                         const query_user = await db.sequelize.models.Docente.findOne({
-                            attributes: ['id'],
+                            attributes: ['id', 'nombre', 'apellidos'],
                             where: {
                                 id: req.body.usuarioId
                             }
@@ -131,6 +150,10 @@ async function registroAsistencia(req, res, next, db) {
                         });
 
                         await transaction.commit();
+                        attendance_logger.info('Registrada asistencia con totp válido de ' + query_user.dataValues.nombre + ' ' + query_user.dataValues.apellidos + 
+                                ' (' + query_user.dataValues.id + ') en ' + query_esp.dataValues.tipo + ' ' + query_esp.dataValues.numero + ' ' + 
+                                query_esp.dataValues.edificio + ' (' + query_esp.dataValues.id + ') con estado ' + req.body.estado);
+
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
@@ -150,8 +173,6 @@ async function registroAsistencia(req, res, next, db) {
             break;
             case "RegistroSeguimientoDispositivoBle": // caso de registro por bluetooth
                 if (req.body.mac != null && req.body.dispositivoId != null && Number.isInteger(req.body.dispositivoId)) {
-
-                    const transaction = await db.sequelize.transaction();
 
                     try {
                         logger.info('Searching in Dispositivo for id');
@@ -216,6 +237,9 @@ async function registroAsistencia(req, res, next, db) {
                         });
 
                         await transaction.commit();
+                        attendance_logger.info('Registrada asistencia por bluetooth de ' + query_user.dataValues.nombre + ' ' + query_user.dataValues.apellidos + 
+                                ' (' + query_user.dataValues.id + ') en ' + query_esp.dataValues.tipo + ' ' + query_esp.dataValues.numero + ' ' + 
+                                query_esp.dataValues.edificio + ' (' + query_esp.dataValues.id + ') con estado ' + (checkEstado) ? valoresAsistencia[0] : valoresAsistencia[1]);
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
@@ -235,8 +259,6 @@ async function registroAsistencia(req, res, next, db) {
             break;
             case "RegistroSeguimientoDispositivoNFC": // caso de registro por lectura de nfc
                 if (req.body.uid != null) {
-
-                    const transaction = await db.sequelize.transaction();
 
                     try {
                         logger.info('Searching in Dispositivo for id');
@@ -286,6 +308,9 @@ async function registroAsistencia(req, res, next, db) {
                         });
 
                         await transaction.commit();
+                        attendance_logger.info('Registrada asistencia por NFC de ' + query_user.dataValues.nombre + ' ' + query_user.dataValues.apellidos + 
+                                ' (' + query_user.dataValues.id + ') en ' + query_esp.dataValues.tipo + ' ' + query_esp.dataValues.numero + ' ' + 
+                                query_esp.dataValues.edificio + ' (' + query_esp.dataValues.id + ') con estado ' + (checkEstado) ? valoresAsistencia[0] : valoresAsistencia[1]);
                     }
                     catch (error) {
                         logger.error(`Error while interacting with database: ${error}`);
@@ -514,16 +539,20 @@ async function getMacsBLE(req, res, next, db) {
 
 async function getAsistencias(req, res, next, db) {
 
-    filtroEstado = req.body.estado || null;
-    filtroMotivo = req.body.motivo || null;
-    filtroFecha = moment(req.body.fecha + 'Z', 'YYYY-MM-DDZ').utc().format('YYYY-MM-DD 00:00:00[Z]');
-    filtroEspacio = req.body.espacioId || null;
+    let filtroEstado = req.body.estado || null;
+    let filtroMotivo = req.body.motivo || null;
+    let filtroFecha = moment(req.body.fecha + 'Z', 'YYYY-MM-DDZ').utc().format('YYYY-MM-DD 00:00:00[Z]');
+    let filtroEspacio = req.body.espacioId || null;
 
-    let fechaSiguiente = moment(req.body.fecha + 'Z', 'YYYY-MM-DDZ').utc().add(1, 'days').format('YYYY-MM-DD 00:00:00[Z]');
+    let filtroMax = req.body.fecha_max || req.body.fecha;
+
+    let fechaSiguiente = moment(filtroMax + 'Z', 'YYYY-MM-DDZ').add(1, 'days').utc().format('YYYY-MM-DD 00:00:00[Z]');
 
     const transaction = await db.sequelize.transaction();
 
     try {
+
+        // Buscamos en el intervalo [filtroFecha,fechaSiguiente)
         const query_asist = await db.sequelize.models.Asistencia.findAll({
             attributes: ['id'],
             where: {
@@ -531,7 +560,7 @@ async function getAsistencias(req, res, next, db) {
                     (filtroEstado != null) ? { estado: filtroEstado } : {},
                     (filtroMotivo != null) ? { [Op.and]: [(filtroMotivo == 'Sí') ? { motivo: { [Op.not]: null } } : {motivo: { [Op.is]: null } }] } : {},
                     (req.body.fecha != null) ? { fecha: { [Op.gte]: filtroFecha } } :  {},
-                    (req.body.fecha != null) ? { fecha: { [Op.lte]: fechaSiguiente }} : {},
+                    (req.body.fecha != null) ? { fecha: { [Op.lt]: fechaSiguiente }} : {},
                     (filtroEspacio != null) ? { espacio_id: filtroEspacio } : {},
                 ]
             }
@@ -677,7 +706,6 @@ async function updateAsistenciaById(req, res, next, db) {
       
     await transaction.commit(); 
 }
-
 
 module.exports = {
     registroAsistencia, getMacsBLE, getAsistencias, getAsistenciaById, updateAsistenciaById

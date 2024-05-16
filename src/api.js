@@ -3,12 +3,15 @@ const logger = require('./config/logger.config').child({"process": "api"});
 const {console_morgan, file_morgan} = require('./config/morgan.config');
 
 const express = require('express');
+const trustproxy = require('trustproxy');
 const db = require('./models');
 const app = express();
 
 // Controladores de la API
 const api_controllers = require('./controllers/api');
 
+
+app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));
 app.use(console_morgan);
 app.use(file_morgan);
 app.use(express.json());
@@ -87,6 +90,8 @@ app.post(api_config.path + '/espacios/usuarios/:idUsuario', authenticateClient, 
           description: Actividad no encontrada
 */
 app.get(api_config.path + '/espacios/actividades/:idActividad', authenticateClient, async (req, res, next) => await api_controllers.espacio.getEspacioOfActividad(req, res, next, db));
+
+app.get(api_config.path + '/espacios/qr/:idEspacio', authenticateClient, async (req, res, next) => await api_controllers.qr.generateQR(req, res, next, db));
 
 /* /dispositivos
 
@@ -518,7 +523,7 @@ app.post(api_config.path + '/excepciones', authenticateClient, async (req, res, 
         '404':
           description: Excepción no encontrada
 */
-app.get(api_config.path + '/excepciones/:idExcepcion', authenticateClient, async (req, res, next) => api_controllers.excepcion.getExcepcionById(req, res, next, db));
+app.get(api_config.path + '/excepciones/:idExcepcion', authenticateClient, async (req, res, next) => await api_controllers.excepcion.getExcepcionById(req, res, next, db));
 
 /* /excepciones/actividades/{idActividad}:
 
@@ -538,7 +543,7 @@ app.get(api_config.path + '/excepciones/:idExcepcion', authenticateClient, async
         '404':
           description: Actividad no encontrada
 */
-app.get(api_config.path + '/excepciones/actividades/:idActividad', authenticateClient, async (req, res, next) => api_controllers.excepcion.getExcepcionesOfActividad(req, res, next, db));
+app.get(api_config.path + '/excepciones/actividades/:idActividad', authenticateClient, async (req, res, next) => await api_controllers.excepcion.getExcepcionesOfActividad(req, res, next, db));
 
 /* /clases/:idClase
 
@@ -557,7 +562,7 @@ app.get(api_config.path + '/excepciones/actividades/:idActividad', authenticateC
         '404':
           description: Clase no encontrada      
 */
-app.get(api_config.path + '/clases/:idClase', authenticateClient, async (req, res, next) => api_controllers.clase.getClaseById(req, res, next, db));
+app.get(api_config.path + '/clases/:idClase', authenticateClient, async (req, res, next) => await api_controllers.clase.getClaseById(req, res, next, db));
 
 /* /clases/compose
     tags:
@@ -577,7 +582,7 @@ app.get(api_config.path + '/clases/:idClase', authenticateClient, async (req, re
         '404':
           description: Clase no encontrada
 */
-app.post(api_config.path + '/clases/compose', authenticateClient, async (req, res, next) => api_controllers.clase.getClaseOfAsignaturaGrupo(req, res, next, db));
+app.post(api_config.path + '/clases/compose', authenticateClient, async (req, res, next) => await api_controllers.clase.getClaseOfAsignaturaGrupo(req, res, next, db));
 
 /* /asignaturas/:idAsignatura
 
@@ -596,7 +601,7 @@ app.post(api_config.path + '/clases/compose', authenticateClient, async (req, re
         '404':
           description: Asignatura no encontrada      
 */
-app.get(api_config.path + '/asignaturas/:idAsignatura',  authenticateClient, async (req, res, next) => api_controllers.asignatura.getAsignaturaById(req, res, next, db));
+app.get(api_config.path + '/asignaturas/:idAsignatura',  authenticateClient, async (req, res, next) => await api_controllers.asignatura.getAsignaturaById(req, res, next, db));
 
 /* /grupos/:idGrupo
 
@@ -615,7 +620,7 @@ app.get(api_config.path + '/asignaturas/:idAsignatura',  authenticateClient, asy
         '404':
             description: Grupo no encontrado      
 */
-app.get(api_config.path + '/grupos/:idGrupo', authenticateClient, async (req, res, next) => api_controllers.grupo.getGrupoById(req, res, next, db));
+app.get(api_config.path + '/grupos/:idGrupo', authenticateClient, async (req, res, next) => await api_controllers.grupo.getGrupoById(req, res, next, db));
 
 /* /grupos/compose
     tags:
@@ -633,7 +638,7 @@ app.get(api_config.path + '/grupos/:idGrupo', authenticateClient, async (req, re
         '404':
           description: Grupo no encontrado
 */
-app.post(api_config.path + '/grupos/compose', authenticateClient, async (req, res, next) => api_controllers.grupo.getGrupoByCursoLetra(req, res, next, db));
+app.post(api_config.path + '/grupos/compose', authenticateClient, async (req, res, next) => await api_controllers.grupo.getGrupoByCursoLetra(req, res, next, db));
 
 /* /recurrencias/:idRecurrencia
     tags:
@@ -651,7 +656,7 @@ app.post(api_config.path + '/grupos/compose', authenticateClient, async (req, re
         '404':
           description: Clase no encontrada
 */
-app.get(api_config.path + '/recurrencias/:idRecurrencia', authenticateClient, async (req, res, next) => api_controllers.recurrencia.getRecurrenciaById(req, res, next, db));
+app.get(api_config.path + '/recurrencias/:idRecurrencia', authenticateClient, async (req, res, next) => await api_controllers.recurrencia.getRecurrenciaById(req, res, next, db));
 
 /* /recurrencias/actividades/:idActividad
     tags:
@@ -670,7 +675,7 @@ app.get(api_config.path + '/recurrencias/:idRecurrencia', authenticateClient, as
         '404':
           description: Clase no encontrada
 */
-app.get(api_config.path + '/recurrencias/actividades/:idActividad', authenticateClient, async (req, res, next) => api_controllers.recurrencia.getRecurrenciaByActividad(req, res, next, db));
+app.get(api_config.path + '/recurrencias/actividades/:idActividad', authenticateClient, async (req, res, next) => await api_controllers.recurrencia.getRecurrenciaByActividad(req, res, next, db));
 
 // Middleware to handle 404 and 405 errors (page not found and method not allowed)
 app.use((req, res, next) => {
@@ -695,7 +700,6 @@ app.use((req, res, next) => {
   err.status = 404;
   return next(err);
 });
-
 
 app.use((err, req, res, next) => {
   // Si se ha detectado algún error, usamos su código, si no 500

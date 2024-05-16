@@ -1,7 +1,7 @@
 require('dotenv').config();
 const pino = require('pino');
 const now = new Date();
-const log_file = process.env.LOG_FILE || `${now.getFullYear()}${now.getMonth()}${now.getDate()}_log.txt`;
+const log_file = process.env.LOG_FILE || `${now.getFullYear()}${now.getMonth()+1}${now.getDate()}_log.txt`;
 const log_path = process.env.LOG_PATH || 'logs'
 
 let transport = {
@@ -10,7 +10,7 @@ let transport = {
             target: 'pino/file',
             level: (process.env.LOG_LEVEL || 'info'),
             options: {
-                destination: `${log_path}/${log_file}`,  // El camino es relativo desde donde se ejecute el código. Debe ejecutarse desde src para que funcione correctamente
+                destination: `${log_path}/${log_file}`,  // El camino por defecto es relativo a donde se ejecute el código. Debe ejecutarse desde src para que funcione correctamente
                 mkdir: true
             }
         }   

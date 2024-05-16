@@ -6,6 +6,7 @@ const express = require('express');
 const path = require('path');
 const moment = require('moment');
 const session = require('express-session');
+const trustproxy = require('trustproxy');
 const memory_store = require('memorystore')(session);
 const app_controllers =  require('./controllers/app/');
 const middleware = require("./middleware/");
@@ -13,9 +14,11 @@ const app = express();
 const staticname = __dirname + '/public';
 
 const valoresRol = ['Usuario', 'Decanato', 'Admin'];
+const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
 app.set('views', path.join(staticname, '/views'));
 app.set('view engine', 'ejs');
+app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));
 app.use(console_morgan);
 app.use(file_morgan);
 app.use(express.json());
@@ -76,12 +79,23 @@ app.post('/formulario-end', [checkSesion, middleware.cookie_mantainer.keepCookie
   app_controllers.form.postForm(req, res);
 });
 
-app.get('/formulario-end-qr', checkSesion, (req, res) => {
+app.get('/formulario-aulas-qr', [checkSesion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
+  logger.info('Got a GET in formulario-aulas-qr');
+  await app_controllers.form.getAllEspacios(req, res);
+});
+
+app.post('/formulario-aulas-qr', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest], 
+    (req, res) => {
+  logger.info(`Got a POST in formulario-aulas-qr with ${JSON.stringify(req.body)}`);
+  res.redirect(`formulario-end-qr/?espacio=${req.body.espacio}`);
+});
+
+app.get('/formulario-end-qr', [checkSesion, middleware.cookie_mantainer.keepCookies([])], (req, res) => {
   logger.info('Got a GET in formulario-end-qr');
   res.render('formulario-end-qr', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
-app.get('/lista-registro-motivo-falta', checkSesion, async (req, res) => {
+app.get('/lista-registro-motivo-falta', [checkSesion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
   logger.info(`Got a GET in lista-registro-motivo-falta`);
   const resultado = await app_controllers.asistencia.getAJustificar(req, res);
   res.render('lista-registro-motivo-falta', {clases: resultado, 
@@ -102,30 +116,34 @@ app.post('/registro-motivo-falta', [checkSesion, middleware.cookie_mantainer.kee
   app_controllers.asistencia.justificar(req, res);
 });
 
-app.get('/anular-clase', checkSesion, (req, res) => {
+app.get('/anular-clase', [checkSesion, middleware.cookie_mantainer.keepCookies([])], (req, res) => {
   logger.info(req.query);
   let fechayhora = req.query.fecha || moment.now();
   app_controllers.clase.getClases(req, res, fechayhora);
 });
 
-app.post('/anular-clase', [checkSesion, middleware.request_security.escapeRequest, 
+app.post('/anular-clase', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest, 
     middleware.request_security.checkRequest(['meeting_time', 'motivo'])], async (req, res) => {
-  
   logger.info(`Got a POST in anular-clase with ${JSON.stringify(req.body)}`);
   app_controllers.clase.anularClase(req, res);
 });
 
-app.get('/verificar-docencias', checkSesion, async (req, res) => {
+app.get('/verificar-docencias', [checkSesion, checkClearanceAdministracion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
   logger.info(`Got a GET in verificar-docencias`);
+  let resultado = await app_controllers.asistencia.verAsistencias(req, res);
   res.render('verificar-docencias', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos},
-    fecha: moment().format('YYYY-MM-DD'), asistencias: [{hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
-    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
-    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''}, 
-    {hora:'13:40', docente:'Marcelo Adilo Orense', espacio: 'Aula 4', clase: 'PD', estado: 'Asistida', motivo: ''} ]
+    fecha: resultado.fecha, fecha_max: resultado.fecha_max, asistencias: resultado.asistencias, valores_asist: valoresAsistencia
   });
 });
 
-app.get('/registrar-firmas', [checkSesion, checkClearanceAdministracion], async (req, res) => {
+app.post('/verificar-docencias', [checkSesion, checkClearanceAdministracion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
+  logger.info(`Got a POST in verificar-docencias with ${JSON.stringify(req.body)}`);
+  let resultado = await app_controllers.asistencia.verAsistencias(req, res);
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).send({asistencias: resultado.asistencias});
+});
+
+app.get('/registrar-firmas', [checkSesion, checkClearanceAdministracion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
   logger.info(`Got a GET in registrar-firmas`);
   await app_controllers.asistencia.filtrarAsistencias(req, res);
 });
@@ -144,7 +162,7 @@ app.post('/registrar-firmas', [checkSesion, checkClearanceAdministracion,
   }
 });
 
-app.get('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato], async (req, res) => {
+app.get('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
   logger.info(`Got a GET in crear-usuario`);
   let resultado = {
     email: '',
@@ -152,11 +170,13 @@ app.get('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkCle
     apellidos: '',
     password: ''
   }
-  res.render('crear-usuario', {resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, roles: valoresRol});
+  res.render('crear-usuario', {resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, 
+      roles: valoresRol});
 });
 
-app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato, middleware.request_security.escapeRequest, 
-    middleware.request_security.checkRequest(['nombre', 'apellidos', 'email', 'rol', 'password'])], async (req, res) => {
+app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkClearanceDecanato, middleware.cookie_mantainer.keepCookies([]),
+    middleware.request_security.escapeRequest, middleware.request_security.checkRequest(['nombre', 'apellidos', 'email', 'rol', 'password'])], 
+    async (req, res) => {
   logger.info(`Got a POST in crear-usuario with ${JSON.stringify(req.body)}`);
   
   try {
@@ -174,12 +194,13 @@ app.post('/crear-usuario', [checkSesion, checkClearanceAdministracion || checkCl
   }
 });
 
-app.get('/registro-mac', [checkSesion, middleware.request_security.escapeRequest], async (req, res) => {
+app.get('/registro-mac', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest], async (req, res) => {
   logger.info('Got a GET in registrar-macs');
   res.render('registro-mac', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
-app.post('/registro-mac', [checkSesion, middleware.request_security.escapeRequest, middleware.request_security.checkRequest(['mac1'])], async (req, res) => {
+app.post('/registro-mac', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest, 
+    middleware.request_security.checkRequest(['mac1'])], async (req, res) => {
   logger.info(`Got a POST in registro-mac with ${JSON.stringify(req.body)}`);
   
   try {
@@ -191,12 +212,12 @@ app.post('/registro-mac', [checkSesion, middleware.request_security.escapeReques
   }
 });
 
-app.get('/registro-nfc', [checkSesion, middleware.request_security.escapeRequest], async (req, res) => {
+app.get('/registro-nfc', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest], async (req, res) => {
   logger.info('Got a GET in registrar-macs');
   res.render('registro-nfc', {usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
 });
 
-app.post('/registro-nfc', [checkSesion, middleware.request_security.escapeRequest,
+app.post('/registro-nfc', [checkSesion, middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest,
     middleware.request_security.checkRequest(['nfc1'])], async (req, res) => {
   logger.info(`Got a POST in registro-nfc with ${JSON.stringify(req.body)}`);
   
@@ -207,6 +228,11 @@ app.post('/registro-nfc', [checkSesion, middleware.request_security.escapeReques
     res.render('registro-nfc', {error: JSON.parse(error.message), usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
     return;
   }
+});
+
+app.get('/profesores-infracciones', [checkSesion, checkClearanceDecanato, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
+  logger.info(`Got a GET in profesores-infracciones`);
+  await app_controllers.asistencia.verProfesoresInfracciones(req, res);
 });
 
 app.listen(server_config.port, () => {

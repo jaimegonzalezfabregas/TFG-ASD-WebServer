@@ -55,7 +55,7 @@ module.exports = {
       indexes: [
         {
           unique: true,
-          fields: ['docente_id', 'espacio_id', 'fecha'] //Solo docente y fecha o todos??
+          fields: ['docente_id', 'espacio_id', 'fecha']
         }
       ]
     });

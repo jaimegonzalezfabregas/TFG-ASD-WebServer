@@ -1,6 +1,6 @@
 {
   "name": "tfg-asd-webserver-development",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "## Funcionalidades - Formulario de inscripción simple",
   "main": "src/app.js",
   "scripts": {
@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "canvas": "^2.11.2",
     "croner": "^8.0.1",
     "csv-parser": "^3.0.0",
     "datatables": "^1.10.18",
@@ -34,6 +35,7 @@
     "qrcode": "^1.5.3",
     "sequelize": "^6.37.0",
     "sequelize-cli": "^6.6.2",
+    "trustproxy": "^1.1.1",
     "wretch": "^2.8.0"
   },
   "devDependencies": {

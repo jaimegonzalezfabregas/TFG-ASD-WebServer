@@ -179,6 +179,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ResultadoSeguimiento'
+        '404':
+          description: Espacio o Usuario no encontrado
         '422':
           description: Datos no válidos
       security:
@@ -1035,12 +1037,12 @@ components:
           description: Id del espacio para filtrar la búsqueda
         comienzo:
           type: string
-          format: date-time
-          description: Fecha y hora de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
+          description: Hora y timezone de comienzo para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos antes de la hora actual del servidor al recibir la petición.
+          example: "17:20Z"
         fin:
           type: string
-          format: date-time
-          description: Fecha y hora de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+          description: Hora y timezone de fin para la la búsqueda. Si no se especifica, la ventana el comienzo serán 30 minutos después de la hora actual del servidor al recibir la petición.
+          example: "20:00+02:00"
       required:
         - espacioId
         

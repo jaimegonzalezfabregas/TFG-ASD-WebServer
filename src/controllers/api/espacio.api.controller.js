@@ -312,7 +312,6 @@ async function getEspaciosOfUsuario(req, res, next, db) {
                         }   
                     });
 
-
                     query_act_i.forEach((act) => {
                         if (moment(act.dataValues.tiempo_inicio, 'HH:mm').utc().format('HH:mm') <= moment(currentHour, "HH:mm").utc().format('HH:mm') 
                             && moment(currentHour, "HH:mm").utc().format('HH:mm') <= moment(act.dataValues.tiempo_fin, 'HH:mm').utc().format('HH:mm')) {
