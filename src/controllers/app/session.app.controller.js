@@ -77,13 +77,21 @@ async function assignMAC(req, res) {
   let mac_regex = /^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/
 
   for (mac in req.body) {
-    if (req.body[mac] != null && mac_regex.test(req.body[mac])) {
-      try {
-        await messaging.sendToApiJSON({ mac: req.body[mac] }, `/usuarios/macs/${req.session.user.id}`, res, true);
+    if (req.body[mac] != null) { 
+      console.log(req.body[mac], mac);
+      let mac_string = (req.body[mac]).toUpperCase();
+      console.log(mac_string);
+      if (mac_regex.test(mac_string)) {
+        try {
+          await messaging.sendToApiJSON({ mac: mac_string }, `/usuarios/macs/${req.session.user.id}`, res, true);
+        }
+        catch (error) {
+          logger.error(error);
+          throw error;
+        }
       }
-      catch (error) {
-        logger.error(error);
-        throw error;
+      else if (!mac_regex.test(mac_string)) {
+        res.render('registro-mac', {error: {error: 'Datos no válidos'}, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
       }
     }
   }
