@@ -13,8 +13,8 @@ window.addEventListener('DOMContentLoaded', event => {
 
         let input = document.createElement("input");
         input.type = "text";
-        input.className = "form-control text-uppercase";
-        input.pattern = "^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$";
+        input.className = "form-control";
+        input.pattern = "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$";
         input.name = `mac${iteration}`;
         input.id = `mac${iteration}`;
 
