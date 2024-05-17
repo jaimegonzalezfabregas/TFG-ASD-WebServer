@@ -1,6 +1,6 @@
 {
   "name": "tfg-asd-webserver-development",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "## Funcionalidades - Formulario de inscripción simple",
   "main": "src/app.js",
   "scripts": {
