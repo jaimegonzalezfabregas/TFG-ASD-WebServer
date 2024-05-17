@@ -36,35 +36,37 @@
                 <nav class="sb-sidenav accordion sb-sidenav-dark bg-menu" id="sidenavAccordion">
                     <div class="sb-sidenav-menu">
                         <div class="nav">
-                            <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
-                            <a class="nav-link text-bg-menu" href="/formulario-aulas">
-                                <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
-                                Registrar asistencia
-                            </a>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
-                                <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
-                                Gestión
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
-                                    <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
-                                    <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
-                                </nav>
-                            </div>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
-                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
-                                Gestión de Dispositivos
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
-                                    <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
-                                    <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
-                                </nav>
-                            </div>
+                            <% if (usuario.rol != 'Admin') { %>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
+                                <a class="nav-link text-bg-menu" href="/formulario-aulas">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
+                                    Registrar asistencia
+                                </a>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
+                                    <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
+                                    Gestión
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                        <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
+                                        <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
+                                    </nav>
+                                </div>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                    Gestión de Dispositivos
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                        <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
+                                        <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
+                                    </nav>
+                                </div>
+                            <% } %>
                             <% if (usuario.rol == 'Decanato') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones">
@@ -82,7 +84,7 @@
                                     <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
                                     Ver docencias
                                 </a>
-                                <a class="nav-link text-bg-menu" href="/enviar-avisos">
+                                <a class="nav-link text-bg-menu" href="/generar-avisos">
                                     <div class="sb-nav-link-icon"><i class="fas fa-envelope"></i></div>
                                     Enviar avisos
                                 </a>
@@ -109,7 +111,7 @@
                                 <div class="card-header"><h3 class="text-center font-weight-light my-3">Formulario</h3></div>
                                 <div class="card-body">
                                     <% if (typeof error != 'undefined') { %>
-                                    <p class="text-error"><%= error.error %></p>
+                                    <p class="text-error"><%= error %></p>
                                     <% } %>
                                     <form method="post"> 
                                         <div class="form-floating mb-3">

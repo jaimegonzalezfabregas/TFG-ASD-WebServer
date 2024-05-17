@@ -249,6 +249,25 @@ app.post('/registro-nfc', [checkSesion, middleware.cookie_mantainer.keepCookies(
   }
 });
 
+app.get('/generar-avisos', [checkSesion, checkClearanceAdministracion, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
+  logger.info(`Got a GET in generar-avisos`);
+  const resultado = await app_controllers.asistencia.generarAvisos(req, res);
+  res.render('generar-avisos', {resultado: resultado, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}});
+});
+
+app.post('/generar-avisos', [checkSesion, checkClearanceAdministracion, middleware.request_security.checkRequest(['tipo']),
+    middleware.cookie_mantainer.keepCookies([]), middleware.request_security.escapeRequest], async (req, res) => {
+  logger.info(`Got a POST in generar-avisos with ${JSON.stringify(req.body)}`);
+  if (req.body.tipo == 'filtroFecha') {
+    const resultado = await app_controllers.asistencia.generarAvisos(req, res);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send({asistencias: resultado.clases});
+  }
+  else if (req.body.tipo == 'avisos') {
+    await app_controllers.asistencia.enviarAvisos(req, res);
+  }
+});
+
 app.get('/profesores-infracciones', [checkSesion, checkClearanceDecanato, middleware.cookie_mantainer.keepCookies([])], async (req, res) => {
   logger.info(`Got a GET in profesores-infracciones`);
   await app_controllers.asistencia.verProfesoresInfracciones(req, res);
