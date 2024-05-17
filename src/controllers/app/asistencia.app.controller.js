@@ -1,5 +1,7 @@
 require('dotenv').config();
 const logger = require('../../config/logger.config').child({"process": "server"});
+const mailer = require('../../config/mail.config');
+const server_config = require('../../config/server.config');
 
 const messaging = require('../../messaging');
 const recurrence_tool = require('../../utils/recurrence_tool');
@@ -216,7 +218,7 @@ async function filtrarAsistencias(req, res) {
     }
 
     logger.info(JSON.stringify(resultado));
-    
+
     const espacios_ids = await messaging.getFromApi('/espacios', res, true);
     let espacios = [];
     for (let i  = 0; i < espacios_ids.length; i++) {
@@ -341,6 +343,119 @@ async function verAsistencias(req, res) {
     return resultado;
 }
 
+async function generarAvisos(req, res) {
+    
+    const fecha_busqueda = req.body.fecha || moment().format('YYYY-MM-DD');
+    const fecha_max_busqueda = req.body.fecha_max || moment().format('YYYY-MM-DD');
+    const asistencia_ids = (await messaging.sendToApiJSON({ estado: 'No Asistida', fecha: fecha_busqueda, fecha_max: fecha_max_busqueda }, '/seguimiento/asistencias', res, true)).asistencias;
+
+    let asistencias = [];
+
+    for (let i = 0; i < asistencia_ids.length; i++) {
+        const asistencia_info = (await messaging.getFromApi(`/seguimiento/asistencias/${asistencia_ids[i].id}`, res, true));
+        const docente = await messaging.getFromApi(`/usuarios/${asistencia_info.docenteId}`, res, true);
+        const actividades_esp = (await messaging.getFromApi(`/actividades/espacios/${asistencia_info.espacioId}`, res, true)).actividades;
+        const actividades_doc = (await messaging.getFromApi(`/actividades/usuarios/${asistencia_info.docenteId}`, res, true)).actividades;
+
+        let actividades_ids = actividades_doc.filter(x => {
+            for(let j = 0; j < actividades_esp.length; j++) {
+              if (x.id == actividades_esp[j].id) {
+                return true;
+              }
+            }
+            return false;
+        });
+
+        for (let j = 0; j < actividades_ids.length; j++) {
+            const actividad_id = actividades_ids[j];
+            const actividad = await messaging.getFromApi(`/actividades/${actividad_id.id}`, res, true);
+            let clase = [];
+
+            for(let k = 0; k < actividad.clase_ids.length; k++) {
+                const clase_info = await messaging.getFromApi(`/clases/${actividad.clase_ids[k].id}`, res, true);
+                const grupo_info = await messaging.getFromApi(`/grupos/${clase_info.grupo_id}`, res, true);
+                const asignatura_info = await messaging.getFromApi(`/asignaturas/${clase_info.asignatura_id}`, res, true);
+
+                clase.push(asignatura_info.nombre + ' ' + grupo_info.curso + 'º' + grupo_info.letra);                
+            }
+
+            asistencias.push({fecha: moment(asistencia_info.fecha + 'Z', 'YYYY-MM-DD HH:mmZ').format('DD/MM/YYYY'), //.utcOffset(req.session.user.offset)
+                        hora: actividad.tiempo_inicio + " - " + actividad.tiempo_fin, 
+                        clase: clase, 
+                        docente: docente.nombre + ' ' + docente.apellidos});
+        }
+    }
+
+    let resultado = { 
+        clases: asistencias,
+        fecha_inicio: fecha_busqueda,
+        fecha_fin: fecha_max_busqueda,
+        fecha_max: moment().format("YYYY-MM-DD")
+    };
+
+    return resultado;
+}
+
+async function enviarAvisos(req, res) {
+    const fecha_inicio = req.body.fecha_min;
+    const fecha_fin = req.body.fecha_max;
+    const data = {fecha: fecha_inicio, max: fecha_fin, estado: 'No Asistida'};
+
+    const asistencias_ids = (await messaging.sendToApiJSON(data, `/seguimiento/asistencias`, res, true)).asistencias;
+
+    const port_spec = (server_config.port_spec) ? ':' + server_config.port : ''
+    const url_justificaciones = `${server_config.protocol}://${server_config.host}${port_spec}/lista-registro-motivo-falta`;
+
+    for (let i = 0; i < asistencias_ids.length; i++) {
+        const asistencia_info = (await messaging.getFromApi(`/seguimiento/asistencias/${asistencias_ids[i].id}`, res, true));
+        const docente = await messaging.getFromApi(`/usuarios/${asistencia_info.docenteId}`, res, true);
+        const espacio = await messaging.getFromApi(`/espacios/${asistencia_info.espacioId}`, res, true);
+        const actividades_esp = (await messaging.getFromApi(`/actividades/espacios/${asistencia_info.espacioId}`, res, true)).actividades;
+        const actividades_doc = (await messaging.getFromApi(`/actividades/usuarios/${asistencia_info.docenteId}`, res, true)).actividades;
+
+        let actividades_ids = actividades_doc.filter(x => {
+            for(let j = 0; j < actividades_esp.length; j++) {
+              if (x.id == actividades_esp[j].id) {
+                return true;
+              }
+            }
+            return false;
+        });
+
+        for (let j = 0; j < actividades_ids.length; j++) {
+            const actividad_id = actividades_ids[j];
+            const actividad = await messaging.getFromApi(`/actividades/${actividad_id.id}`, res, true);
+            let clase = [];
+
+            for(let k = 0; k < actividad.clase_ids.length; k++) {
+                const clase_info = await messaging.getFromApi(`/clases/${actividad.clase_ids[k].id}`, res, true);
+                const grupo_info = await messaging.getFromApi(`/grupos/${clase_info.grupo_id}`, res, true);
+                const asignatura_info = await messaging.getFromApi(`/asignaturas/${clase_info.asignatura_id}`, res, true);
+
+                clase.push(asignatura_info.nombre + ' ' + grupo_info.curso + 'º' + grupo_info.letra);                
+            }
+
+            // const message = {
+            //     from: process.env.MAIL_USER,
+            //     to: `${docente.email}`,
+            //     subject: `Justificación de faltas necesaria`,
+            //     text: `No hemos detectado tu presencia a las ${actividad.fecha_inicio} en el aula ${espacio.nombre}. Puedes hacernos saber porqué en ${url_justificaciones}.`
+            // };
+            
+            // mailer.sendMail(message, (err, info) => {
+            //     if (err) {
+            //         logger.warn(`No se ha podido enviar el correo a ${docente.email}`);
+            //         res.render('error', { error: 'Ha ocurrido un error al enviar los avisos', redirect: 'generar-avisos'});
+            //         return;
+            //     }
+            //     logger.info(`Se ha enviado un aviso por falta de asistencia a ${docente.email} correctamente`);
+            // });
+        }
+    }
+
+    res.render('exito', {mensaje: 'Todos los correos se han enviado con éxito'});
+}
+
 async function verProfesoresInfracciones(req, res) {
 
     const data = {estado: 'No Asistida'};
@@ -382,5 +497,5 @@ async function verProfesoresInfracciones(req, res) {
 }
 
 module.exports = {
-    getAJustificar, justificar, confirmarFirma, filtrarAsistencias, verAsistencias, verProfesoresInfracciones
+    getAJustificar, justificar, confirmarFirma, filtrarAsistencias, verAsistencias, generarAvisos, verProfesoresInfracciones, enviarAvisos
 }
