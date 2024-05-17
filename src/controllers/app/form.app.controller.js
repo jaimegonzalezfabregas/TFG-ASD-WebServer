@@ -1,5 +1,6 @@
 const messaging = require('../../messaging');
 const moment = require('moment');
+const he = require('he');
 const recurrence_tool = require('../../utils/recurrence_tool');
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
@@ -203,14 +204,14 @@ async function postForm(req, res) {
     await messaging.sendToApiJSON(data, '/seguimiento', res, false);
   }
   catch(error) {
+    let clases = he.decode(req.body.clases);
     let redo = {
       usuario: req.body.docente, 
       espacio: req.body.espacio, totp: req.body.totp, 
       hora: `${moment().utc().utcOffset(req.session.user.offset).format('HH:mm')}`, 
-      clases: JSON.parse(req.body.clases),
-      error: "Datos no válidos"
+      clases: JSON.parse(clases)
     }
-    res.render('formulario-end', {resultado: redo, usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: state == valoresAsistencia[1]});
+    res.render('formulario-end', {resultado: redo, error: "Datos no válidos", usuario: {rol: req.session.user.rol, nombre: req.session.user.nombre, apellidos: req.session.user.apellidos}, irregularidad: state == valoresAsistencia[1]});
     return;
   }
   
