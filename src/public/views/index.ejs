@@ -35,35 +35,37 @@
                 <nav class="sb-sidenav accordion sb-sidenav-dark bg-menu" id="sidenavAccordion">
                     <div class="sb-sidenav-menu">
                         <div class="nav">
-                            <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
-                            <a class="nav-link text-bg-menu" href="/formulario-aulas">
-                                <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
-                                Registrar asistencia
-                            </a>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
-                                <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
-                                Gestión
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
-                                    <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
-                                    <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
-                                </nav>
-                            </div>
-                            <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
-                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
-                                Gestión de Dispositivos
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
-                                    <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
-                                    <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
-                                </nav>
-                            </div>
+                            <% if (usuario.rol != 'Admin') { %>
+                                <div class="sb-sidenav-menu-heading text-bg-menu">Docente</div>
+                                <a class="nav-link text-bg-menu" href="/formulario-aulas">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-user-pen"></i></div>
+                                    Registrar asistencia
+                                </a>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGestionDocente" aria-expanded="false" aria-controls="collapseGestionDocente">
+                                    <div class="sb-nav-link-icon"><i class="far fa-calendar-days"></i></div>
+                                    Gestión
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseGestionDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                        <a class="nav-link text-bg-menu" href="/anular-clase">Cancelar Clase</a>
+                                        <a class="nav-link text-bg-menu" href="/lista-registro-motivo-falta">Registrar motivo de falta</a>
+                                    </nav>
+                                </div>
+                                <a class="nav-link collapsed text-bg-menu" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDispositivosDocente" aria-expanded="false" aria-controls="collapseDispositivosDocente">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                    Gestión de Dispositivos
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="collapseDispositivosDocente" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <!-- <a class="nav-link text-bg-menu" href="/cambio-clase">Intercambiar Clase</a> -->
+                                        <a class="nav-link text-bg-menu" href="/registro-mac">Registro de MACs</a>
+                                        <a class="nav-link text-bg-menu" href="/registro-nfc">Registro de NFCs</a>
+                                    </nav>
+                                </div>
+                            <% } %>
                             <% if (usuario.rol == 'Decanato') { %>
                                 <div class="sb-sidenav-menu-heading text-bg-menu">Decanato</div>
                                 <a class="nav-link text-bg-menu" href="/profesores-infracciones">
@@ -167,65 +169,67 @@
                                 </div>
                             </div>
                         <% } %>
-                        <div class="row justify-content-center px-4 py-3"> 
-                            <span class="border-top py-1"></span>
-                            <a class="d-flex" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDocencia" aria-expanded="true" aria-controls="collapseDocencia">
-                                <div><h2 class="text-title py-2"> Docencia </h2></div>
-                                <div class="py-3 px-3 text-title sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse show" id="collapseDocencia" aria-labelledby="headingOne">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu" href="formulario-aulas">
-                                            <div class="row justify-content-center"><i class="py-2 fas fa-user-pen link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Registrar asistencia </p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <!-- <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu" href="cambio-clase">
-                                            <div class="row justify-content-center"><i class="py-2 fas fa-arrows-rotate link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Cambios de clase </p>
-                                            </div>
-                                        </a>
-                                    </div> -->
-                                    <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu" href="anular-clase">
-                                            <div class="row justify-content-center"><i class="py-2 fas fa-calendar-xmark link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Cancelar clase </p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu align-items-middle" href="lista-registro-motivo-falta">
-                                            <div class="row justify-content-center"><i class="py-2 fas fa-user-clock link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Registrar motivo de falta </p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu align-items-middle" href="registro-mac">
-                                            <div class="row justify-content-center"><i class="py-2 fab fa-bluetooth-b link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Registrar MACs </p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
-                                        <a class="btn btn-primary btn-menu align-items-middle" href="registro-nfc">
-                                            <div class="row justify-content-center"><i class="py-2 fab fa-nfc-symbol link-icon d-none d-md-block"></i></div>
-                                            <div class="justify-content-center"> 
-                                                <p class="btn-text"> Registrar UIDs de NFC </p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </nav>
+                        <% if (usuario.rol != 'Admin') { %>
+                            <div class="row justify-content-center px-4 py-3"> 
+                                <span class="border-top py-1"></span>
+                                <a class="d-flex" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDocencia" aria-expanded="true" aria-controls="collapseDocencia">
+                                    <div><h2 class="text-title py-2"> Docencia </h2></div>
+                                    <div class="py-3 px-3 text-title sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse show" id="collapseDocencia" aria-labelledby="headingOne">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu" href="formulario-aulas">
+                                                <div class="row justify-content-center"><i class="py-2 fas fa-user-pen link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Registrar asistencia </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <!-- <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu" href="cambio-clase">
+                                                <div class="row justify-content-center"><i class="py-2 fas fa-arrows-rotate link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Cambios de clase </p>
+                                                </div>
+                                            </a>
+                                        </div> -->
+                                        <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu" href="anular-clase">
+                                                <div class="row justify-content-center"><i class="py-2 fas fa-calendar-xmark link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Cancelar clase </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu align-items-middle" href="lista-registro-motivo-falta">
+                                                <div class="row justify-content-center"><i class="py-2 fas fa-user-clock link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Registrar motivo de falta </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu align-items-middle" href="registro-mac">
+                                                <div class="row justify-content-center"><i class="py-2 fab fa-bluetooth-b link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Registrar MACs </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-6 col-auto mb-4 mx-auto">
+                                            <a class="btn btn-primary btn-menu align-items-middle" href="registro-nfc">
+                                                <div class="row justify-content-center"><i class="py-2 fab fa-nfc-symbol link-icon d-none d-md-block"></i></div>
+                                                <div class="justify-content-center"> 
+                                                    <p class="btn-text"> Registrar UIDs de NFC </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </nav>
+                                </div>
                             </div>
-                        </div>
+                        <% } %>
                     </div>
                 </main>
             </div>
