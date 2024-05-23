@@ -213,7 +213,7 @@ async function registroAsistencia(req, res, next, db) {
 
                         logger.info(`Docente de la MAC ${query_user}`);
 
-                        let checkEstado = await checkEstadoAsistencia(db, res, query_user.dataValues.id, req.body.espacioId);
+                        let checkEstado = await checkEstadoAsistencia(db, query_user.dataValues.id, req.body.espacioId, null);
                         (checkEstado) ? code = 1 : code = 2
 
                         let ahora = moment().utc()
@@ -297,7 +297,7 @@ async function registroAsistencia(req, res, next, db) {
                             return next(err);
                         }
                         
-                        let checkEstado = await checkEstadoAsistencia(db, res, query_user.dataValues.id, req.body.espacioId);
+                        let checkEstado = await checkEstadoAsistencia(db, query_user.dataValues.id, req.body.espacioId, null);
                         (checkEstado) ? code = 1 : code = 2
 
                         await db.sequelize.models.Asistencia.create({ 
@@ -707,11 +707,103 @@ async function updateAsistenciaById(req, res, next, db) {
     await transaction.commit(); 
 }
 
-module.exports = {
-    registroAsistencia, getMacsBLE, getAsistencias, getAsistenciaById, updateAsistenciaById
+async function registroPLA(req, res, next, db) {
+    
+    let pla_logs = req.body.logfile;
+
+    const results = [];
+    let keys = [];
+    fs.createReadStream(path.join(__dirname, pla_logs))
+    .on('error', (error) => logger.error(`Error while trying to read file ${pla_logs}: ${error}`))
+    .pipe(csv({separator: ';'}))
+    .on('headers', (headers) => keys = headers)
+    .on('data', (data) => results.push(data))
+    .on('end', async () => {
+
+        const transaction = await db.sequelize.transaction();
+
+        try {
+            for (let row in results) {
+                
+                const espacio = results[row][keys[0]]; // Ejs: Aula 1, Laboraorio 1
+                const puesto = results[row][keys[1]];
+                const datetime = results[row][keys[2]];
+                const correo = results[row][keys[3]];
+                
+                const query_doc = await db.sequelize.models.Docente.findOne({
+                   attributes: ['id'],
+                   where: {
+                        email: correo
+                   } 
+                });
+            
+                if (query_doc == null || Object.keys(query_doc).length == 0) {
+                    await transaction.rollback();
+                    let err = {};
+                    err.status = 404;
+                    err.message = "Usuario no encontrado";
+                    return next(err);
+                }
+
+                const [tipo, numero] = espacio.split(' '); // espacio = 'Aula 1'; tipo = Aula; numero = 1
+                const query_esp = await db.sequelize.models.Espacio.findOne({
+                    attributes: ['id'],
+                    where: {
+                        numero: numero,
+                        tipo: tipo,
+                        edificio: 'FdI' //Preguntar si todo es de FdI o no
+                    }
+                });
+
+                if (query_esp == null || Object.keys(query_esp).length == 0) {
+                    await transaction.rollback();
+                    let err = {};
+                    err.status = 404;
+                    err.message = "Espacio no encontrado";
+                    return next(err);
+                }
+
+                let checkEstado = await checkEstadoAsistencia(db, query_doc.dataValues.id, query_esp.dataValues.id, datetime);
+                console.log(checkEstado, (checkEstado) ? valoresAsistencia[0] : valoresAsistencia[1]);
+
+                await db.sequelize.models.Asistencia.findOrCreate({
+                    where: {
+                        espacio_id: query_esp.dataValues.id,
+                        docente_id: query_doc.dataValues.id,
+                        fecha: datetime
+                    },
+                    defaults: {
+                        espacio_id: query_esp.dataValues.id,
+                        docente_id: query_doc.dataValues.id,
+                        fecha: datetime,
+                        estado: (checkEstado) ? valoresAsistencia[0] : valoresAsistencia[1]
+                    }
+                });
+            }
+
+            res.setHeader('Content-Type', 'text/html');
+            res.status(200).send('Asistencias registradas con exito');
+
+        }
+        catch (error) {
+            logger.error(`Error while interacting with database: ${error}`);
+            await transaction.rollback();
+            let err = {};
+            err.status = 500;
+            err.message = 'Something went wrong';
+            return next(err);
+        }
+
+        await transaction.commit();
+
+    });
 }
 
-async function checkEstadoAsistencia(db, res, docenteId, espacioId) {
+module.exports = {
+    registroAsistencia, getMacsBLE, getAsistencias, getAsistenciaById, updateAsistenciaById, registroPLA
+}
+
+async function checkEstadoAsistencia(db, docenteId, espacioId, fecha) {
 
     let actividades_posibles = [];
 
@@ -724,78 +816,82 @@ async function checkEstadoAsistencia(db, res, docenteId, espacioId) {
             where: {
                 id: docenteId
             } 
-            },
-            include: {
-                model: db.sequelize.models.Espacio,
-                as: 'impartida_en',
-                where: {
-                    id: espacioId
-                }
-            }
-        });
-                            
-        for (let i = 0; i < query_act.length; i++) {
-            const act = query_act[i].dataValues;
-            // Comprobar si existe excepcion que este reprogramada para hoy
-            // Si esta cancelada, pasamos de ella
-            const query_ex = await db.sequelize.models.Excepcion.findAll({
-                attributes: ['esta_cancelado', 'esta_reprogramado', 'fecha_inicio_act', 'fecha_fin_act', 'fecha_inicio_ex', 'fecha_fin_ex'],
-                where: {
-                    actividad_id: act.id
-                }
-            });
-
-
-            let ignore_actividad = false;
-            for (let j = 0; j < query_ex; j++) {
-                let excep = query_ex[j].dataValues;
-                let a_comparar = moment().format('YYYY-MM-DD HH:mm');
-                //Está reprogramado para ahora, y no cancelado (está antes en el if para comprobar casos de desplazamientos menores que la duración del evento original)
-                if (excep.esta_cancelado == 'No' && excep.esta_reprogramado == 'Sí' && 
-                    moment(excep.fecha_inicio_ex + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
-                    moment(excep.fecha_fin_ex + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
-                        actividades_posibles.push(act);
-                        break;
-                } //Está cancelada la instancia de ahora o se ha reprogamado para otro día
-                else if ((excep.esta_cancelado == 'Sí' || excep.esta_reprogramado == 'Sí') && 
-                    moment(excep.fecha_inicio_act + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
-                    moment(excep.fecha_fin_act + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
-                        ignore_actividad = true;
-                        break;
-                }
-            }
-
-            if (ignore_actividad) continue;
-
-            // Si no tiene excepcion para este día
-            const currentHour = moment().format('HH:mm');
-            const inicio = moment(act.tiempo_inicio, 'HH:mm');
-            const fin = moment(act.tiempo_fin, 'HH:mm');
-            if (inicio <= currentHour && currentHour <= fin) {
-                if (act.es_recurrente == 'Sí') {
-                    const query_rec = await db.sequelize.models.Recurrencia.findAll({
-                        where: {
-                            actividad_id: act.id
-                        }
-                    });
-        
-                    query_rec.forEach(rec => {
-                        rec_list.push(rec.dataValues)
-                    });
-                                        
-                    let [exists, last] = recurrence_tool.getLastEventOfActividad(act, rec_list).utc();
-                    // Si está en el día de hoy, Asistida, si no, la ignoramos
-                    if (exists && last.format('YYYY-MM-DD') == moment().utc().format('YYYY-MM-DD')) {
-                        actividades_posibles.push(act);
-                    }
-        
-                }
-                else if (moment(act.fecha_inicio + 'Z').format('YYYY-MM-DD') == moment().format('YYYY-MM-DD')) {
-                    actividades_posibles.push(act);
-                }
+        },
+        include: {
+            model: db.sequelize.models.Espacio,
+            as: 'impartida_en',
+            where: {
+                id: espacioId
             }
         }
-    
+    });
+                            
+    for (let i = 0; i < query_act.length; i++) {
+        let fecha_comparar = fecha ? moment(fecha, 'YYYY-MM-DD HH:mm:ss') : moment();
 
-    return actividades_posibles > 0;
+        const act = query_act[i].dataValues;    
+        // Comprobar si existe excepcion que este reprogramada para hoy
+        // Si esta cancelada, pasamos de ella
+        const query_ex = await db.sequelize.models.Excepcion.findAll({
+            attributes: ['esta_cancelado', 'esta_reprogramado', 'fecha_inicio_act', 'fecha_fin_act', 'fecha_inicio_ex', 'fecha_fin_ex'],
+            where: {
+                actividad_id: act.id
+            }
+        });
+
+        let ignore_actividad = false;
+        for (let j = 0; j < query_ex.length; j++) {
+            let excep = query_ex[j].dataValues;
+            let a_comparar = fecha_comparar.format('YYYY-MM-DD HH:mm');
+            //Está reprogramado para ahora, y no cancelado (está antes en el if para comprobar casos de desplazamientos menores que la duración del evento original)
+            if (excep.esta_cancelado == 'No' && excep.esta_reprogramado == 'Sí' && 
+                moment(excep.fecha_inicio_ex + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
+                moment(excep.fecha_fin_ex + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
+                    actividades_posibles.push(act);
+                    break;
+            } //Está cancelada la instancia de ahora o se ha reprogamado para otro día
+            else if ((excep.esta_cancelado == 'Sí' || excep.esta_reprogramado == 'Sí') && 
+                moment(excep.fecha_inicio_act + 'Z').format('YYYY-MM-DD HH:mm') >= a_comparar &&
+                moment(excep.fecha_fin_act + 'Z').format('YYYY-MM-DD HH:mm') <= a_comparar) {
+                    ignore_actividad = true;
+                    break;
+            }
+        }
+        
+        if (ignore_actividad) continue;
+
+        // Si no tiene excepcion para este día
+        const currentHour = fecha_comparar.format('HH:mm');
+        const inicio = moment(act.tiempo_inicio, 'HH:mm').format('HH:mm');
+        const fin = moment(act.tiempo_fin, 'HH:mm').format('HH:mm');
+        if (inicio <= currentHour && currentHour <= fin) {
+            if (act.es_recurrente == 'Sí') {
+                const query_rec = await db.sequelize.models.Recurrencia.findAll({
+                    where: {
+                        actividad_id: act.id
+                    }
+                });
+
+                let rec_list = [];
+                query_rec.forEach(rec => {
+                    rec_list.push(rec.dataValues)
+                });
+                                    
+                let [exists, last] = recurrence_tool.getLastEventOfActividad(act, rec_list);
+                console.log("Last event of actividad", exists, last);
+                // Si está en el día de hoy, Asistida, si no, la ignoramos
+                //console.log(last.utc().format('YYYY-MM-DD'), fecha_comparar.utc().format('YYYY-MM-DD'), last.format('YYYY-MM-DD') == fecha_comparar.utc().format('YYYY-MM-DD'))
+                if (exists && last.utc().format('YYYY-MM-DD') == fecha_comparar.utc().format('YYYY-MM-DD')) {
+                    actividades_posibles.push(act);
+                }
+    
+            }
+            else if (moment(act.fecha_inicio + 'Z', 'YYYY-MM-DD HH:mm:ssZ').format('YYYY-MM-DD') == fecha_comparar.format('YYYY-MM-DD')) {
+                actividades_posibles.push(act);
+            }
+        }
+    }
+    console.log('Actividades posibles:', actividades_posibles);
+
+    return actividades_posibles.length > 0;
 }

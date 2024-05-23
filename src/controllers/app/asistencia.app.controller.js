@@ -256,7 +256,7 @@ async function confirmarFirma(req, res) {
     const ids = req.session.user.no_asistidas[Number(req.body.pos)];
     
     let data = null;
-    if (req.body.checkSustituto != null) {
+    if (req.body.sustituto != 'no') {
 
         const actividad = await messaging.getFromApi(`/actividades/${ids.actividad_id}`, res, true);
         let mmt_inicio = moment(actividad.tiempo_inicio, "HH:mm");
@@ -435,21 +435,21 @@ async function enviarAvisos(req, res) {
                 clase.push(asignatura_info.nombre + ' ' + grupo_info.curso + 'º' + grupo_info.letra);                
             }
 
-            // const message = {
-            //     from: process.env.MAIL_USER,
-            //     to: `${docente.email}`,
-            //     subject: `Justificación de faltas necesaria`,
-            //     text: `No hemos detectado tu presencia a las ${actividad.fecha_inicio} en el aula ${espacio.nombre}. Puedes hacernos saber porqué en ${url_justificaciones}.`
-            // };
+            const message = {
+                from: process.env.MAIL_USER,
+                to: `${docente.email}`,
+                subject: `Justificación de faltas necesaria`,
+                text: `No hemos detectado tu presencia a las ${actividad.fecha_inicio} en el aula ${espacio.nombre}. Puedes hacernos saber porqué en ${url_justificaciones}.`
+            };
             
-            // mailer.sendMail(message, (err, info) => {
-            //     if (err) {
-            //         logger.warn(`No se ha podido enviar el correo a ${docente.email}`);
-            //         res.render('error', { error: 'Ha ocurrido un error al enviar los avisos', redirect: 'generar-avisos'});
-            //         return;
-            //     }
-            //     logger.info(`Se ha enviado un aviso por falta de asistencia a ${docente.email} correctamente`);
-            // });
+            mailer.sendMail(message, (err, info) => {
+                if (err) {
+                    logger.warn(`No se ha podido enviar el correo a ${docente.email}`);
+                    res.render('error', { error: 'Ha ocurrido un error al enviar los avisos', redirect: 'generar-avisos'});
+                    return;
+                }
+                logger.info(`Se ha enviado un aviso por falta de asistencia a ${docente.email} correctamente`);
+            });
         }
     }
 

@@ -16,6 +16,8 @@ const staticname = __dirname + '/public';
 const valoresRol = ['Usuario', 'Decanato', 'Admin'];
 const valoresAsistencia = ['Asistida', 'Asistida con Irregularidad', 'No Asistida'];
 
+logger.info(`Starting app considering timezone ${server_config.timezone}`);
+
 app.set('views', path.join(staticname, '/views'));
 app.set('view engine', 'ejs');
 app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));

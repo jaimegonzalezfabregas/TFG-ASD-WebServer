@@ -10,6 +10,7 @@ const app = express();
 // Controladores de la API
 const api_controllers = require('./controllers/api');
 
+logger.info(`Starting api considering timezone ${api_config.timezone}`);
 
 app.set('trust proxy', trustproxy(['loopback', 'linklocal', 'uniquelocal']));
 app.use(console_morgan);
@@ -293,6 +294,24 @@ app.post(api_config.path + '/seguimiento/asistencias/:idAsistencia', authenticat
         - ApiKeyAuth: []
 */
 app.post(api_config.path + '/ble', authenticateClient, async (req, res, next) => await api_controllers.seguimiento.getMacsBLE(req, res, next, db));
+
+/*
+tags:
+  - seguimiento
+  summary: Registra una asistencia en un espacio dada desde un archivo csv
+    description: Registra una asistencia en un espacio dada desde un archivo csv
+    operationId: registroPLA
+    requestBody:
+      $ref: '#/components/requestBodies/SeguimientoPLA'
+    responses:
+      '200':
+        $ref: '#/components/responses/ResultadoSeguimiento'
+      '422':
+        description: Datos no válidos
+    security:
+      - ApiKeyAuth: []
+*/
+app.post(api_config.path + '/pla', authenticateClient, async (req, res, next) => await api_controllers.seguimiento.registroPLA(req, res, next, db));
 
 /* /login
 
