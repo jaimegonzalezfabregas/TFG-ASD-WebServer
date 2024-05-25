@@ -8,5 +8,6 @@ module.exports = {
     path: (process.env.SERVER_PATH) ? process.env.SERVER_PATH : '',
     protocol: (process.env.SERVER_PROTOCOL) ? process.env.SERVER_PROTOCOL : "http",
     port_spec: (process.env.SERVER_PORT_SPECIFICATION === "true" || host == 'localhost') ? true : false,
-    session_secret: (process.env.SESSION_SECRET) ? process.env.SESSION_SECRET : 'secretoPocoSeguro'
+    session_secret: (process.env.SESSION_SECRET) ? process.env.SESSION_SECRET : 'secretoPocoSeguro',
+    timezone: (process.env.TZ)? process.env.TZ : 'Europe/Madrid' 
 }

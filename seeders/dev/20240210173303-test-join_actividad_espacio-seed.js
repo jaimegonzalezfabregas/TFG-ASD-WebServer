@@ -15,7 +15,8 @@ module.exports = {
     return await queryInterface.bulkInsert('Join_Actividad_Espacio', [
       { actividad_id: 1, espacio_id: 4 },
       { actividad_id: 1, espacio_id: 5 },
-      { actividad_id: 2, espacio_id: 5 }
+      { actividad_id: 2, espacio_id: 5 },
+      { actividad_id: 2, espacio_id: 10 }
     ]);
     
   },

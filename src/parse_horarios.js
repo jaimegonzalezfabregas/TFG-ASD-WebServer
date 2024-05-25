@@ -5,11 +5,11 @@ const path = require('path');
 const fs = require('fs');
 const db = require('./models');
 const moment = require('moment');
-const iana_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Europe/Madrid
+const readline = require('readline');
 
 const tiempo_periodos = {
-    1: {inicio: "2023-09-11T09:00:00", fin: "2023-12-21T21:00:00"},
-    2: {inicio: "2024-01-22T09:00:00", fin: "2024-05-10T21:00:00"}
+    1: {inicio: "2023-09-11 09:00:00", fin: "2023-12-21 21:00:00"},
+    2: {inicio: "2024-01-22 09:00:00", fin: "2024-05-10 21:00:00"}
 }
 
 const dias_int = {
@@ -27,8 +27,25 @@ const tipo_espacios = {
     "Lab.": "Laboratorio"
 }
 
-//TODO asumir que las fusiones ya existen y comprobar que los horarios coincidan en lugar de crearlas
-//TODO pasar las horas a UTC antes de guardarlas en la base de datos
+const fusiones = {};
+
+async function parseFusiones(filename) {
+    const results = [];
+    const file_stream = fs.createReadStream(path.join(__dirname, filename), 'utf-8')
+    .on('error', (error) => logger.error(`Error while trying to read file ${filename}: ${error}`));
+
+    const rl = readline.createInterface({
+        input: file_stream,
+        crlfDelay: Infinity
+    });
+
+    for await (const line of rl) {
+        let clases = line.split(' - ');
+        for (let i = 0; i < clases.length; i++) {
+            fusiones[clases[i]] = clases.slice(0, i).concat(clases.slice(i + 1));
+        }
+    }
+}
 
 async function parseHorarios(filename) {
     const results = [];
@@ -39,8 +56,9 @@ async function parseHorarios(filename) {
     .on('headers', (headers) => keys = headers)
     .on('data', (data) => results.push(data))
     .on('end', async () => {
-        let actividades_borradas = 0;
-
+        parseFusiones('fusiones.txt');
+        let clases_fusiones = {};
+        let actividades_fusiones = {};
         for (let i = 0; i < results.length; i++) {
             
             while (results[i][keys[7]].includes('UPM') || results[i][keys[7]].includes('IMDEA')) { // Recursión externa a la UCM
@@ -130,7 +148,7 @@ async function parseHorarios(filename) {
                             letra: grupo
                         },
                         defaults: { 
-                            curso: curso,
+                            curso: curso, 
                             letra: grupo
                         }
                     });
@@ -139,13 +157,25 @@ async function parseHorarios(filename) {
                     if (!(await entidad_asignatura.hasPara_grupos(entidad_grupo))) {
                         await entidad_asignatura.addPara_grupos(entidad_grupo);
                     }
-                    
-                    entidades_clase.push(await db.sequelize.models.Clase.findOne({
+
+                    const clase = await db.sequelize.models.Clase.findOne({
                         where: {
                             asignatura_id: entidad_asignatura.dataValues.id,
                             grupo_id: entidad_grupo.dataValues.id
                         }
-                    }));
+                    });
+                    
+                    let nombre_clase = entidad_asignatura.dataValues.nombre + ' ' + entidad_grupo.dataValues.curso + entidad_grupo.dataValues.letra;
+                    // Si la clase se corresponde con alguna de las fusiones
+                    if (Object.keys(fusiones).includes(nombre_clase)) {
+                        // Y no se ha registrado antes en las posibles actividades
+                        if (!Object.keys(actividades_fusiones).includes(nombre_clase)) {
+                            actividades_fusiones[nombre_clase] = []; 
+                        }
+                        // Añadimos el nombre de esta clase para no tener que volver a buscarlo luego
+                        clases_fusiones[clase.dataValues.id] = nombre_clase;  // id: nombre => guardar nombre, actividades_fusiones[nombre].push(actividad)
+                    }                                      // clase -> nombre; if fusiones has nombre -> candidatos = actividades_fusiones[nombrefusion]
+                    entidades_clase.push(clase);
                 }
                 
                 // Docente responsable de la actividad 
@@ -231,92 +261,48 @@ async function parseHorarios(filename) {
                     
                     let [hora_inicio, hora_fin] = horas.split('-');
 
-                    // Si existe una misma actividad, con las mismas recurrencias y la misma asociación con clase, está repetida
-                    // Obtener todas las actividades que compartan parámetros con la recién creada
-                    let checkDup = await db.sequelize.models.Actividad.findAll({
-                        where: {
-                            fecha_inicio: tiempo_periodos[periodo].inicio,
-                            fecha_fin: tiempo_periodos[periodo].fin,    
-                            tiempo_inicio: ( hora_inicio.includes(':') ? moment(hora_inicio, 'HH:mm').format('HH:mm') : moment(hora_inicio, 'HH').format('HH:mm') ),
-                            tiempo_fin: ( hora_fin && hora_fin.includes(':') ? moment(hora_fin, 'HH:mm').format('HH:mm') : moment(hora_fin, 'HH').format('HH:mm') ),
-                            responsable_id: entidad_docente.id,
-                            es_todo_el_dia: 'No',
-                            es_recurrente: 'Sí'
-                        }
-                    });
-
-                    const actividad_resultante = await db.sequelize.models.Actividad.create({
+                    let actividad_resultante = await db.sequelize.models.Actividad.create({
                         fecha_inicio: tiempo_periodos[periodo].inicio,
                         fecha_fin: tiempo_periodos[periodo].fin,
                         tiempo_inicio: ( hora_inicio.includes(':') ? moment(hora_inicio, 'HH:mm').format('HH:mm') : moment(hora_inicio, 'HH').format('HH:mm') ),
                         tiempo_fin: ( hora_fin && hora_fin.includes(':') ? moment(hora_fin, 'HH:mm').format('HH:mm') : moment(hora_fin, 'HH').format('HH:mm') ),
-                        responsable_id: entidad_docente.id, //Tiene que ser declarado explícitamente en Sequelize v6
+                        responsable_id: entidad_docente.id, //Tiene que ser declarado explícitamente por no poder ser nulo en la base de datos
                         es_todo_el_dia: 'No',
                         es_recurrente: 'Sí',
                         creadoPor: "CSVParser" 
                     });
-                    
-                    let dupeOf = [];
-                    let dupeEspComp = [];
-                    let esp_entities = [];
 
-                    // Considerar que la actividad pueda estar repetida por parámetros de actividad
-                    if (checkDup.length > 0) {
-                        checkDup.forEach(dupe => { 
-                            dupeOf.push(dupe);
-                            dupeEspComp.push([]);
-                        });
-                    }
-
+                    let candidatos = [];
+                    let actividad_fusion;
                     // Crear la relación entre la clase de la asignatura y las actividades que dará dicha clase.
                     for (let k = 0; k < entidades_clase.length; k++) {   
-                        // Si es posible que esté duplicada, considerar el caso en el que tengan la misma asociación con clases
-                        for (let l = 0; l < dupeOf.length; l++) {
-                            // Comprobar si se comparten las relaciones con clases. Si no se comparten, descartar el candidato
-                            if (!(await entidades_clase[k].hasCon_sesiones(dupeOf[l]))) {
-                                dupeOf.splice(l, 1);
-                                dupeEspComp.splice(l, 1);
-                                l--;
-                                break;
-                            }
-                        }
-
                         await entidades_clase[k].addCon_sesiones(actividad_resultante);
-                    }
-
-                    // Relacionar la actividad con cada espacio
-                    for (let k = 0; k < espacios_procesados.length; k++) { 
-                        let esp = espacios_procesados[k];
-
-                        let esp_entity = await db.sequelize.models.Espacio.findOne({ //Solo hay uno, pues hay un constraint unique para (tipo, numero, edificio)
-                            attributes: ['id'],
-                            where: {
-                                tipo: tipo_espacios[esp.tipo],
-                                numero: esp.numero,
-                                edificio: esp.edificio
-                            }
-                        });
-
-                        // Relacionar la actividad con el espacio
-                        await actividad_resultante.addImpartida_en(esp_entity);
-                        
-                        if (dupeOf.length > 0) {
-                            esp_entities.push(esp_entity);
-
-                            for (let l = 0; l < dupeOf.length; l++) {
-                                let orig_esp = await db.sequelize.models.Join_Actividad_Espacio.findOne({ 
-                                    where: {
-                                        actividad_id: dupeOf[l].dataValues.id,
-                                        espacio_id: esp_entity.dataValues.id
+                        let fusiones_clase = clases_fusiones[entidades_clase[k].dataValues.id];
+                        // Si tiene fusiones, hay que considerarlas
+                        if (fusiones_clase) {
+                            let nombre_clase = clases_fusiones[entidades_clase[k].dataValues.id];
+                            // Buscamos para toda fusión de la clase
+                            for (let m = 0; m < fusiones[nombre_clase].length; m++) {
+                                let fusion_candidata = fusiones[nombre_clase][m];
+                                if (actividades_fusiones[fusion_candidata]) {
+                                    candidatos.push({nombre: fusion_candidata, actividades: []});
+                                    for (let l = 0; l < actividades_fusiones[fusion_candidata].length; l++) {
+                                        let cand = actividades_fusiones[fusion_candidata][l];
+                                        if (moment(actividad_resultante.fecha_inicio).format('YYYY-MM-DD HH:mm') == moment(cand.fecha_inicio).format('YYYY-MM-DD HH:mm') && 
+                                                moment(actividad_resultante.fecha_fin).format('YYYY-MM-DD HH:mm') == moment(cand.fecha_fin).format('YYYY-MM-DD HH:mm') &&
+                                                actividad_resultante.tiempo_inicio == cand.tiempo_inicio && actividad_resultante.tiempo_fin == cand.tiempo_fin && 
+                                                actividad_resultante.responsable_id == cand.responsable_id) {
+                                            candidatos[m].actividades.push(cand);
+                                        }
                                     }
-                                });
-
-                                if (orig_esp == null) dupeEspComp[l].push(esp_entities.length - 1);
+                                }
                             }
+                            actividades_fusiones[nombre_clase].push(actividad_resultante);
                         }
                     }
 
                     let rec_list = [];
+                    dias = dias.split(',');
                     for (let l = 0; l < dias.length; l++) { // Crear una recurrencia por cada dia de la semana que se repita la actividad
                         let dia = dias[l];
 
@@ -330,143 +316,249 @@ async function parseHorarios(filename) {
                             mes_anio: null,
                             actividad_id: actividad_resultante.id
                         }));
-                    } 
-
-                    // En el peor caso de que siga pudiendo haber una copia de la actividad, comprobar sus recurrencias
-                    for (let k = 0; k < dupeOf.length; k++) {
-                        // Obtener todas las recurrencias del candidato
-                        const orig_recs = await db.sequelize.models.Recurrencia.findAll({
-                            attributes: ['tipo_recurrencia', 'separacion', 'maximo', 'dia_semana', 'semana_mes', 'dia_mes', 'mes_anio'],
-                            where: {
-                                actividad_id: dupeOf[k].dataValues.id
-                            }
-                        });
-
-                        let keepComparing = (rec_list.length == orig_recs.length) || (rec_list.length < orig_recs.length && dupeEspComp[k].length == 0);
-
-                        // Si no tienen la misma longitud no son la misma actividad
-                        if (!keepComparing) {
-                            // Pero una puede estar contenida en la otra, y si esta contiene a la copia, 
-                            // podemos pasarle las recurrencias que no tenga la copia a dicha copia. Para esto, deben tener los mismos espacios
-                            if (dupeEspComp[k].length == 0) {
-                                let orig_id = dupeOf[k].dataValues.id;
-                                for (let l = 0; l < rec_list.length; l++) { 
-                                    let comp_rec = rec_list[l];
-                                    let hasMatch = false;
-                                    
-                                    for (let m = 0; m < orig_recs.length; m++) {
-                                        hasMatch = (comp_rec.dataValues.tipo_recurrencia === orig_recs[m].dataValues.tipo_recurrencia &&
-                                            comp_rec.dataValues.separacion === orig_recs[m].dataValues.separacion &&
-                                            comp_rec.dataValues.maximo === orig_recs[m].dataValues.maximo &&
-                                            comp_rec.dataValues.dia_semana === orig_recs[m].dataValues.dia_semana &&
-                                            comp_rec.dataValues.semana_mes === orig_recs[m].dataValues.semana_mes &&
-                                            comp_rec.dataValues.dia_mes === orig_recs[m].dataValues.dia_mes &&
-                                            comp_rec.dataValues.mes_anio === orig_recs[m].dataValues.mes_anio);
-        
-                                        if (hasMatch) { 
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // Si esta recurrencia no está en el candidato, añadirla al candidato y quitarla de la lista de recurrencias
-                                    if (!hasMatch) {
-                                        await rec_list[l].update({
-                                            actividad_id: orig_id
-                                        });
-                                        rec_list.splice(l, 1);
-                                        l--;
-                                    }
-                                }
-                            }
-                            else {
-                                dupeOf.splice(k, 1); 
-                                dupeEspComp.splice(k, 1);
-                                k--;
-                            }
-                        }
-
-                        // Mientras no se haya descartado al candidato, comparar cada una de las recurrencias
-                        for (let l = 0; l < rec_list.length && keepComparing; l++) { 
-                            let comp_rec = rec_list[l];
-                            let hasMatch = false;
-                            
-                            for (let m = 0; m < orig_recs.length && keepComparing; m++) {
-                                hasMatch = (comp_rec.dataValues.tipo_recurrencia === orig_recs[m].dataValues.tipo_recurrencia &&
-                                    comp_rec.dataValues.separacion === orig_recs[m].dataValues.separacion &&
-                                    comp_rec.dataValues.maximo === orig_recs[m].dataValues.maximo &&
-                                    comp_rec.dataValues.dia_semana === orig_recs[m].dataValues.dia_semana &&
-                                    comp_rec.dataValues.semana_mes === orig_recs[m].dataValues.semana_mes &&
-                                    comp_rec.dataValues.dia_mes === orig_recs[m].dataValues.dia_mes &&
-                                    comp_rec.dataValues.mes_anio === orig_recs[m].dataValues.mes_anio);
-
-                                if (hasMatch) { 
-                                    break;
-                                }
-                            }
-                            
-                            // Si esta recurrencia no está en el candidato, descartar el candidato
-                            if (!hasMatch) {
-                                keepComparing = false;
-                                dupeOf.splice(k, 1); 
-                                dupeEspComp.splice(k, 1);
-                                k--;
-                            }
-                        }
                     }
 
-                    // En caso de que verdaderamente sea una copia, destruimos todo lo creado de la actividad
-                    if (dupeOf.length > 0) {
+                    let comprobados_set = {};
+                    for (let l = 0; l < candidatos.length; l++) {
+                        let candidatos_act = candidatos[l].actividades;
+                        for (let n = 0; n < candidatos_act.length; n++) {
+                            let candidato = candidatos_act[n];
+                            
+                            if (comprobados_set[candidato.id]) continue;
+                            else comprobados_set[candidato.id] = true;
 
-                        for (let k = 0; k < dupeOf.length; k++) {
-                            for (let l = 0; l < dupeEspComp[k].length; l++) {
-                                await dupeOf[k].addImpartida_en(esp_entities[dupeEspComp[k][l]]);
-                            }
-                        }
-
-                        for (let k = 0; k < esp_entities.length; k++) {
-                            await db.sequelize.models.Join_Actividad_Espacio.destroy({
+                            let recs_cand = await db.sequelize.models.Recurrencia.findAll({
+                                attributes: ['id', 'dia_semana'],
                                 where: {
-                                    espacio_id: esp_entities[k].dataValues.id,
-                                    actividad_id: actividad_resultante.dataValues.id
-                                }
+                                    actividad_id: candidato.id
+                                },
+                                order: ['dia_semana']
                             });
-                        }
-
-                        for (let k = 0; k < rec_list.length; k++) {
-                            await db.sequelize.models.Recurrencia.destroy({
-                                where: {
-                                    id: rec_list[k].dataValues.id
+                            let interseccion = [];
+                            let ia = 0, ib = 0;
+                            while (ia != rec_list.length && ib != recs_cand.length) {
+                                let ia_value = rec_list[ia].dataValues.dia_semana;
+                                let ib_value = recs_cand[ib].dataValues.dia_semana;
+                                if (ia_value < ib_value) {
+                                    ia++;
                                 }
-                            })
-                        }
-
-                        for (let k = 0; k < entidades_clase.length; k++) {
-                            await db.sequelize.models.Join_Actividad_Clase.destroy({
-                                where: {
-                                    actividad_id: actividad_resultante.dataValues.id,
-                                    clase_id: entidades_clase[k].dataValues.id
+                                else if (ia_value > ib_value) {
+                                    ib++;
                                 }
-                            })
-                        }
+                                else { //Son la misma recurrencia
+                                    interseccion.push({valor: ia_value, index_a: ia, index_b: ib});
+                                    ia++;
+                                    ib++;
+                                }
+                            }
+                            if (interseccion.length == rec_list.length) {
+                                if (interseccion.length == recs_cand.length) { // Todo se puede fusionar
+                                    // eliminar rec_list
+                                    for (let m = 0; m < rec_list.length; m++) {
+                                        await db.sequelize.models.Recurrencia.destroy({
+                                            where: {
+                                                id: rec_list[m].dataValues.id
+                                            }
+                                        });
+                                    }
+                                    // añadir entidades_clase a candidato
+                                    // eliminar la actividad_resultante
+                                    for (let m = 0; m < entidades_clase.length; m++) {
+                                        await entidades_clase[m].removeCon_sesiones(actividad_resultante);
+                                        await entidades_clase[m].addCon_sesiones(candidato);
+                                        let nombre_clase = clases_fusiones[entidades_clase[m].dataValues.id];
+                                        actividades_fusiones[nombre_clase].pop();
+                                    }
+                                    
+                                    await db.sequelize.models.Actividad.destroy({
+                                        where: {
+                                            id: actividad_resultante.dataValues.id
+                                        }
+                                    });
+                                    // actividad_resultante = candidato
+                                    actividad_resultante = candidato;
+                                }
+                                else { // rec_list contenido en recs_cand 
+                                    // eliminar en recs_cand las recurrencias de rec_list que estén en este
+                                    for (let m = 0; m < interseccion.length; m++) {
+                                        await db.sequelize.models.Recurrencia.destroy({
+                                            where: {
+                                                id: recs_cand[interseccion[m].index_b].dataValues.id
+                                            }
+                                        });
+                                    }
+                                    // añadir las clases del candidato a actividad_resultante
+                                    
+                                    let clases_candidato = await db.sequelize.models.Clase.findAll({
+                                        include: {
+                                            model: db.sequelize.models.Actividad,
+                                            as: 'con_sesiones',
+                                            where: {
+                                                id: candidato.dataValues.id
+                                            }
+                                        }
+                                    });
 
-                        await db.sequelize.models.Actividad.destroy({
+                                    for (let m = 0; m < clases_candidato.length; m++) {
+                                        if (!(await clases_candidato[m].hasCon_sesiones(actividad_resultante))) {
+                                            await clases_candidato[m].addCon_sesiones(actividad_resultante);
+                                            let nombre_clase = clases_fusiones[clases_candidato[m].dataValues.id];
+                                            actividades_fusiones[nombre_clase].push(actividad_resultante);
+                                        }
+                                    }
+                                    // añadir los espacios del candidato a actividad_resultante
+
+                                    let espacios_candidato = await db.sequelize.models.Espacio.findAll({
+                                        include: {
+                                            model: db.sequelize.models.Actividad,
+                                            as: 'ocupado_por',
+                                            where: {
+                                                id: candidato.dataValues.id
+                                            }
+                                        }
+                                    });
+
+                                    for (let m = 0; m < espacios_candidato.length; m++) {
+                                        await actividad_resultante.addImpartida_en(espacios_candidato[m]);
+                                    }
+                                }
+                            }
+                            else if (interseccion.length == recs_cand.length) { // recs_cand contenido en rec_list
+                                // eliminar en rec_list las recurrencias de recs_cand que estén en este
+                                for (let m = 0; m < interseccion.length; m++) {
+                                    await db.sequelize.models.Recurrencia.destroy({
+                                        where: {
+                                            id: rec_list[interseccion[m].index_a].dataValues.id
+                                        }
+                                    });
+                                }
+                                // actividad_resultante = candidato
+                                actividad_resultante = candidato;
+                                // añadir las clases de actividad_resultante al candidato
+                                for (let m = 0; m < entidades_clase.length; m++) {
+                                    await entidades_clase[m].addCon_sesiones(candidato);
+                                }
+                            }
+                            else if (interseccion.length != 0) {
+                                // Crear nueva actividad actividad_fusion
+                                actividad_fusion = await db.sequelize.models.Actividad.create({
+                                    fecha_inicio: actividad_resultante.fecha_inicio,
+                                    fecha_fin: actividad_resultante.fecha_fin,
+                                    tiempo_inicio: actividad_resultante.tiempo_inicio,
+                                    tiempo_fin: actividad_resultante.tiempo_fin,
+                                    responsable_id: actividad_resultante.responsable_id,
+                                    es_todo_el_dia: actividad_resultante.es_todo_el_dia,
+                                    es_recurrente: actividad_resultante.es_recurrente,
+                                    creadoPor: actividad_resultante.creadoPor 
+                                });
+
+                                // Pasar las clases de actividad_resultante y candidato a la nueva actividad
+                                let clases_candidato = await db.sequelize.models.Clase.findAll({
+                                    include: {
+                                        model: db.sequelize.models.Actividad,
+                                        as: 'con_sesiones',
+                                        where: {
+                                            id: candidato.dataValues.id
+                                        }
+                                    }
+                                });
+
+                                let m = 0, n = 0;
+                                while (m < clases_candidato.length || n < entidades_clase.length) {
+                                    if (m < clases_candidato.length && !(await clases_candidato[m].hasCon_sesiones(actividad_fusion))) {
+                                        await clases_candidato[m].addCon_sesiones(actividad_fusion);
+                                        let nombre_clase = clases_fusiones[clases_candidato[m].dataValues.id];
+                                        actividades_fusiones[nombre_clase].push(actividad_fusion);
+                                    }
+                                    if (n < entidades_clase.length && !(await entidades_clase[m].hasCon_sesiones(actividad_fusion))) {
+                                        await entidades_clase[m].addCon_sesiones(actividad_fusion);
+                                        let nombre_clase = clases_fusiones[clases_candidato[m].dataValues.id];
+                                        actividades_fusiones[nombre_clase].push(actividad_fusion);
+                                    }
+                                    m++;
+                                    n++;
+                                }
+                                
+                                // Pasar los espacios del candidato a la nueva actividad
+                                let espacios_candidato = await db.sequelize.models.Espacio.findAll({
+                                    include: {
+                                        model: db.sequelize.models.Actividad,
+                                        as: 'ocupado_por',
+                                        where: {
+                                            id: candidato.dataValues.id
+                                        }
+                                    }
+                                });
+
+                                for (let m = 0; m < espacios_candidato.length; m++) {
+                                    await actividad_resultante.addImpartida_en(espacios_candidato[m]);
+                                }
+
+                                // Quitar recurrencias de actividad_resultante y candidato, y crear recurrencias de la fusión
+                                for (let m = 0; m < interseccion.length; m++) {
+                                    await db.sequelize.models.Recurrencia.destroy({
+                                        where: {
+                                            id: recs_cand[interseccion[m].index_b].dataValues.id
+                                        }
+                                    });
+                                    let rec_interseccion = await db.sequelize.models.Recurrencia.update(
+                                        {actividad_id: actividad_fusion.id},
+                                        { 
+                                            where: {
+                                                id: rec_list[interseccion[m].index_a].dataValues.id
+                                            }
+                                        }
+                                    );
+                                }
+                            }
+                            // Si no coinciden, nos da igual
+                        }
+                        
+                    }
+
+                    // Relacionar la actividad (o las actividades) con cada espacio
+                    for (let k = 0; k < espacios_procesados.length; k++) { 
+                        let esp = espacios_procesados[k];
+
+                        let esp_entity = await db.sequelize.models.Espacio.findOne({ //Solo hay uno, pues hay un constraint unique para (tipo, numero, edificio)
+                            attributes: ['id'],
                             where: {
-                                id: actividad_resultante.dataValues.id
+                                tipo: tipo_espacios[esp.tipo],
+                                numero: esp.numero,
+                                edificio: esp.edificio
                             }
                         });
 
-                        actividades_borradas++;
-                        continue;
-                    }   
+                        let esp_join_query = await db.sequelize.models.Join_Actividad_Espacio.findAll({
+                            where: {
+                                espacio_id: esp_entity.dataValues.id
+                            }
+                        })
 
-                    await actividad_resultante.addImpartida_por(entidad_docente);
+                        // Relacionar la actividad con el espacio, comprobando para no duplicar la relación en las fusiones
+                        if (!(await actividad_resultante.hasImpartida_en(esp_entity))) { 
+                            await actividad_resultante.addImpartida_en(esp_entity);
+                        }
+                        if (actividad_fusion && !(await actividad_fusion.hasImpartida_en(esp_entity))) { 
+                            await actividad_fusion.addImpartida_en(esp_entity);
+                        }
+                        
+                    }
 
+                    if (!(await actividad_resultante.hasImpartida_por(entidad_docente))) { 
+                        await actividad_resultante.addImpartida_por(entidad_docente);
+                    }
+                    if (actividad_fusion && !(await actividad_resultante.hasImpartida_por(entidad_docente))) { 
+                        await actividad_resultante.addImpartida_por(entidad_docente);
+                    }
                 }
+                
                 await transaction.commit();
             }
             catch (error) {
-                logger.error(`Something went wrong when parsing: ${error}`);
+                logger.error(`Something went wrong while parsing: ${error}`);
                 await transaction.rollback();
+                return;
             }
         }
     });
@@ -474,5 +566,18 @@ async function parseHorarios(filename) {
     logger.info('Horarios insertados');
 }
 
-parseHorarios('Horario2324.csv');
-//parseHorarios('prueba.csv');
+
+async function generarHorarios(archivo_fusiones, archivo_horario) {
+    await parseFusiones(archivo_fusiones);
+    await parseHorarios(archivo_horario);
+}
+
+module.exports = {
+    generarHorarios
+}
+
+// Por línea de comandos (solo cuando este archivo se ejecute directamente, no como import)
+// El primer parámetro es la ruta al archivo de fusiones, y el segundo la ruta al archivo del horario
+if (require.main === module) {
+    generarHorarios(process.argv[2], process.argv[3]);
+}
