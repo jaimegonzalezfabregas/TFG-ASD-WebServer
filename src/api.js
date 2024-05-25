@@ -92,6 +92,24 @@ app.post(api_config.path + '/espacios/usuarios/:idUsuario', authenticateClient, 
 */
 app.get(api_config.path + '/espacios/actividades/:idActividad', authenticateClient, async (req, res, next) => await api_controllers.espacio.getEspacioOfActividad(req, res, next, db));
 
+/*
+  tags:
+    - espacios
+  summary: Devuelve un QR de un aula con un código
+  description: Devuelve el QR que redirecciona al final del formulario con campos prerellenos considerando el espacio con id = {idEspacio}, y el TOTP actual de uno de los dispositivos asociados a dicho espacio 
+  operationId: generateQR
+  parameters:
+    - $ref: '#/components/parameters/idEspacio'
+  responses:
+    '200':
+      $ref: '#/components/responses/QREspacio'
+    '400':
+      description: Id suministrado no válido o error al generar el QR
+    '404':
+      description: El archivo no existe
+    '500':
+      description: Error al cargar la imagen
+*/
 app.get(api_config.path + '/espacios/qr/:idEspacio', authenticateClient, async (req, res, next) => await api_controllers.qr.generateQR(req, res, next, db));
 
 /* /dispositivos
