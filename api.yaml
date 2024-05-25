@@ -8,7 +8,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.1.0
 servers:
-  - url: http://localhost:8070/api/v1/
+  - url: https://asistencia-api.dev.fdi.ucm.es/api/v1/
 tags:
   - name: espacios
     description: Gestión de espacios
@@ -100,6 +100,25 @@ paths:
           description: Id suministrado no válido
         '404':
           description: Actividad no encontrada
+          
+  /espacios/qr/{idEspacio}:
+    get:
+      tags:
+        - espacios
+      summary: Devuelve un QR de un aula con un código
+      description: Devuelve el QR que redirecciona al final del formulario con campos prerellenos considerando el espacio con id = {idEspacio}, y el TOTP actual de uno de los dispositivos asociados a dicho espacio 
+      operationId: generateQR
+      parameters:
+        - $ref: '#/components/parameters/idEspacio'
+      responses:
+        '200':
+          $ref: '#/components/responses/QREspacio'
+        '400':
+          description: Id suministrado no válido o error al generar el QR
+        '404':
+          description: El archivo no existe
+        '500':
+          description: Error al cargar la imagen
 
   /dispositivos:
     get:
@@ -1619,6 +1638,14 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/EspacioRef'
+  
+    QREspacio:
+      description: QR de formulario asociado a un espacio
+      content:
+        image/png:
+          schema:
+            type: string
+            format: binary
 
     Dispositivo:
       description: Dispositivo
@@ -1780,4 +1807,4 @@ components:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: X-API-KEY
+      name: X-Token

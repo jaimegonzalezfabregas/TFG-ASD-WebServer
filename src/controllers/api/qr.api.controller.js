@@ -82,14 +82,14 @@ async function generateQR(req, res, next, db) {
           }).catch((error) => {
             logger.error('Error cargando la imagen:', error);
             let err = {};
-            err.status = 400;
+            err.status = 500;
             err.message = `Error cargando la imagen: ${error}`;
             return next(err);
           });
         } else {
           logger.error('El archivo no existe:', filename);
           let err = {};
-          err.status = 400;
+          err.status = 404;
           err.message = `El archivo no existe: ${error}`;
           return next(err);
         }
