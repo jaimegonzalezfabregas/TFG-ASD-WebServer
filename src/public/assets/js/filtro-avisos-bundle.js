@@ -40,7 +40,8 @@
         const fecha_inicio = document.getElementById('date-filter-desde');
         const fecha_fin = document.getElementById('date-filter-hasta');
         const form_avisos = document.getElementById('form_avisos');
-    
+        let feedback_carga = document.getElementById('mensaje_carga');
+
         let intervalo = {min: fecha_inicio.value, inicio: fecha_inicio.value, fin: fecha_fin.value, max: fecha_fin.value};
     
         fecha_inicio.addEventListener('change', async (fecha_event) => {
@@ -51,11 +52,13 @@
             
             if (ini < intervalo.min) { // Se amplia intervalo
                 // Pedir datos de asistencias de la fecha a app, desde el mínimo nuevo al mínimo anterior
+                feedback_carga.style.display = "block";
                 let new_content = (await endpoint.post({ tipo:'filtroFecha', fecha: ini, fecha_max: intervalo.min })
                     .res(async response => { 
                         return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
                     })).asistencias;
                 intervalo.min = ini;
+                feedback_carga.style.display = "none";
                 for (let i = 0; i < new_content.length; i++) {
                     let asist = new_content[i];
                     let clases = asist.clase[0];
@@ -83,11 +86,13 @@
 
             if (fin > intervalo.max) { // Se amplia intervalo
                 // Pedir datos de asistencias de la fecha a app, desde el máximo anterior hasta el máximo nuevo
+                feedback_carga.style.display = "block";
                 let new_content = (await endpoint.post({ tipo:'filtroFecha', fecha: intervalo.max, fecha_max: fin })
                     .res(async response => { 
                         return (response.headers.get('Content-Type').includes('application/json')) ? response.json() : response.text();
                     })).asistencias;
                 intervalo.max = fin;
+                feedback_carga.style.display = "none";
                 for (let i = 0; i < new_content.length; i++) {
                     let asist = new_content[i];
                     let clases = asist.clase[0];
